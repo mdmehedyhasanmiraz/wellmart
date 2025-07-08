@@ -1,0 +1,35 @@
+import Image from "next/image";
+import HeroSection from "@/components/home/HeroSection";
+import FeaturedProductsArchive from '@/components/home/FeaturedProductsArchive';
+import TopProductsArchive from '@/components/home/TopProductsArchive';
+import RecentProductsArchive from '@/components/home/RecentProductsArchive';
+
+export default function HomePage() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <HeroSection />
+
+      {/* CTA Section */}
+      {/* <section className="bg-gray-900 text-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">
+            Ready to Start Shopping?
+          </h2>
+          <p className="text-xl text-gray-300 mb-8">
+            Join thousands of satisfied customers who trust Wellmart
+          </p>
+          <a
+            href="/shop"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+          >
+            Browse Products
+          </a>
+        </div>
+      </section> */}
+      <FeaturedProductsArchive />
+      <TopProductsArchive />
+      <RecentProductsArchive />
+    </div>
+  );
+}

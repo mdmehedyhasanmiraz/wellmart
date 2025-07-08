@@ -1,0 +1,258 @@
+import { createClient } from '@/utils/supabase/server';
+import { CartItem, CartSummary, AddToCartRequest, UpdateCartItemRequest, CartFilters } from '@/types/cart';
+
+export class CartService {
+  private async getSupabase() {
+    return await createClient();
+  }
+
+  // Get user's cart with product details
+  async getUserCart(userId: string): Promise<CartSummary> {
+    const supabase = await this.getSupabase();
+    
+    const { data: cartItems, error } = await supabase
+      .from('user_carts')
+      .select(`
+        *,
+        product:products(
+          id,
+          name,
+          slug,
+          price,
+          image_url,
+          stock_quantity
+        )
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching user cart:', error);
+      throw new Error('Failed to fetch cart');
+    }
+
+    const items = cartItems || [];
+    const total_items = items.reduce((sum, item) => sum + item.quantity, 0);
+    const total_price = items.reduce((sum, item) => sum + (item.quantity * (item.product?.price || 0)), 0);
+
+    // Ensure a plain object is returned
+    return JSON.parse(JSON.stringify({
+      items,
+      total_items,
+      total_price,
+      item_count: items.length
+    }));
+  }
+
+  // Add item to cart
+  async addToCart(userId: string, request: AddToCartRequest): Promise<CartItem> {
+    const supabase = await this.getSupabase();
+    
+    const { data, error } = await supabase
+      .from('user_carts')
+      .upsert([{
+        user_id: userId,
+        product_id: request.product_id,
+        quantity: request.quantity
+      }], {
+        onConflict: 'user_id,product_id'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding to cart:', error);
+      throw new Error('Failed to add item to cart');
+    }
+
+    return data;
+  }
+
+  // Update cart item quantity
+  async updateCartItem(cartItemId: string, quantity: number): Promise<CartItem> {
+    const supabase = await this.getSupabase();
+    
+    if (quantity <= 0) {
+      // If quantity is 0 or negative, remove the item
+      await this.removeFromCart(cartItemId);
+      throw new Error('Item removed from cart');
+    }
+
+    const { data, error } = await supabase
+      .from('user_carts')
+      .update({ quantity })
+      .eq('id', cartItemId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating cart item:', error);
+      throw new Error('Failed to update cart item');
+    }
+
+    return data;
+  }
+
+  // Remove item from cart
+  async removeFromCart(cartItemId: string): Promise<void> {
+    const supabase = await this.getSupabase();
+    
+    const { error } = await supabase
+      .from('user_carts')
+      .delete()
+      .eq('id', cartItemId);
+
+    if (error) {
+      console.error('Error removing from cart:', error);
+      throw new Error('Failed to remove item from cart');
+    }
+  }
+
+  // Clear user's entire cart
+  async clearUserCart(userId: string): Promise<void> {
+    const supabase = await this.getSupabase();
+    
+    const { error } = await supabase
+      .from('user_carts')
+      .delete()
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error clearing cart:', error);
+      throw new Error('Failed to clear cart');
+    }
+  }
+
+  // Get cart count for user
+  async getCartCount(userId: string): Promise<number> {
+    const supabase = await this.getSupabase();
+    
+    const { data, error } = await supabase
+      .rpc('get_user_cart_count', { user_uuid: userId });
+
+    if (error) {
+      console.error('Error getting cart count:', error);
+      return 0;
+    }
+
+    return data || 0;
+  }
+
+  // Get cart total for user
+  async getCartTotal(userId: string): Promise<number> {
+    const supabase = await this.getSupabase();
+    
+    const { data, error } = await supabase
+      .rpc('get_user_cart_total', { user_uuid: userId });
+
+    if (error) {
+      console.error('Error getting cart total:', error);
+      return 0;
+    }
+
+    return data || 0;
+  }
+
+  // Check if product is in user's cart
+  async isProductInCart(userId: string, productId: string): Promise<boolean> {
+    const supabase = await this.getSupabase();
+    
+    const { data, error } = await supabase
+      .from('user_carts')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('product_id', productId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error checking if product in cart:', error);
+      return false;
+    }
+
+    return !!data;
+  }
+
+  // Get cart item by product ID
+  async getCartItemByProduct(userId: string, productId: string): Promise<CartItem | null> {
+    const supabase = await this.getSupabase();
+    
+    const { data, error } = await supabase
+      .from('user_carts')
+      .select(`
+        *,
+        product:products(
+          id,
+          name,
+          slug,
+          price,
+          image_url,
+          stock_quantity
+        )
+      `)
+      .eq('user_id', userId)
+      .eq('product_id', productId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error getting cart item by product:', error);
+      return null;
+    }
+
+    return data;
+  }
+
+  // Merge guest cart with user cart
+  async mergeGuestCart(userId: string, guestCart: any[]): Promise<void> {
+    const supabase = await this.getSupabase();
+    
+    // Convert guest cart to JSONB format
+    const guestCartJson = guestCart.map(item => ({
+      product_id: item.product_id,
+      quantity: item.quantity
+    }));
+
+    const { error } = await supabase
+      .rpc('merge_guest_cart', {
+        guest_cart: JSON.stringify(guestCartJson),
+        user_uuid: userId
+      });
+
+    if (error) {
+      console.error('Error merging guest cart:', error);
+      throw new Error('Failed to merge guest cart');
+    }
+  }
+
+  // Validate cart items (check stock availability)
+  async validateCart(userId: string): Promise<{ valid: boolean; errors: string[] }> {
+    const supabase = await this.getSupabase();
+    const errors: string[] = [];
+
+    const { data: cartItems, error } = await supabase
+      .from('user_carts')
+      .select(`
+        quantity,
+        product:products(
+          name,
+          stock_quantity
+        )
+      `)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error validating cart:', error);
+      return { valid: false, errors: ['Failed to validate cart'] };
+    }
+
+    (cartItems as any[])?.forEach((item) => {
+      if (item.quantity > (item.product?.stock_quantity || 0)) {
+        errors.push(`${item.product?.name} - Only ${item.product?.stock_quantity} available`);
+      }
+    });
+
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  }
+} 
