@@ -15,7 +15,6 @@ interface AdminMainContentProps {
 export default function AdminMainContent({ 
   children, 
   user,
-  isSidebarOpen,
   setIsSidebarOpen 
 }: AdminMainContentProps) {
   const pathname = usePathname();
