@@ -3,14 +3,35 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 
+// Define a type for the test results
+interface TestResults {
+  auth?: {
+    user: any;
+    error: any;
+  };
+  userQuery?: {
+    data: any;
+    error: any;
+  };
+  allUsersQuery?: {
+    data: any;
+    error: any;
+  };
+  updateQuery?: {
+    data: any;
+    error: any;
+  };
+  generalError?: unknown;
+}
+
 export default function TestDbPage() {
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<TestResults | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const supabase = createClient();
 
   const testDatabaseAccess = async () => {
     setIsLoading(true);
-    const testResults: any = {};
+    const testResults: TestResults = {};
 
     try {
       // Test 1: Get current user
@@ -117,7 +138,7 @@ export default function TestDbPage() {
                 <div className="border border-red-200 rounded-lg p-4 bg-red-50">
                   <h2 className="text-lg font-semibold mb-2 text-red-800">General Error</h2>
                   <pre className="text-red-700 text-sm overflow-auto">
-                    {JSON.stringify(results.generalError, null, 2)}
+                    {String(results.generalError)}
                   </pre>
                 </div>
               )}

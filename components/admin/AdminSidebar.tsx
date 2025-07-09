@@ -13,9 +13,10 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { adminNavigation } from './adminNavigation';
+import { User } from '@supabase/supabase-js';
 
 interface AdminSidebarProps {
-  user: any;
+  user: User;
   userRole: string;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;

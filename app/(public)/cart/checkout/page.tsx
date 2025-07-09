@@ -44,26 +44,32 @@ const paymentMethods = [
 ];
 
 // Helper functions for product image and price
-function getProductImage(product: any) {
+type ProductType = CartItem['product'] | GuestCartItem['product'];
+
+function getProductImage(product: ProductType) {
   if (product) {
-    if (Array.isArray(product.image_urls) && product.image_urls.length > 0) {
+    // CartItem['product'] type
+    if ('image_urls' in product && Array.isArray(product.image_urls) && product.image_urls.length > 0) {
       return product.image_urls[0];
     }
-    if (typeof product.image_url === 'string' && product.image_url) {
+    // GuestCartItem['product'] type
+    if ('image_url' in product && typeof product.image_url === 'string' && product.image_url) {
       return product.image_url;
     }
   }
   return '/images/avatar.png';
 }
-function getProductPrice(product: any) {
+function getProductPrice(product: ProductType) {
   if (product) {
-    if (typeof product.price_offer !== 'undefined' && product.price_offer !== null && product.price_offer !== 0) {
+    // CartItem['product'] type
+    if ('price_offer' in product && typeof product.price_offer !== 'undefined' && product.price_offer !== null && product.price_offer !== 0) {
       return product.price_offer;
     }
-    if (typeof product.price_regular !== 'undefined') {
+    if ('price_regular' in product && typeof product.price_regular !== 'undefined') {
       return product.price_regular;
     }
-    if (typeof product.price !== 'undefined') {
+    // GuestCartItem['product'] type
+    if ('price' in product && typeof product.price !== 'undefined') {
       return product.price;
     }
   }

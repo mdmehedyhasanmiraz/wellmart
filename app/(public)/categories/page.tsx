@@ -21,6 +21,9 @@ export default function CategoriesPage() {
         .from('categories')
         .select('*')
         .order('name');
+      if (error) {
+        console.error('Error fetching categories:', error);
+      }
       setCategories(data || []);
       setLoading(false);
     };

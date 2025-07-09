@@ -5,15 +5,9 @@ import {
   Search, 
   Filter, 
   Eye, 
-  Package,
   ShoppingCart,
-  MoreHorizontal,
   ChevronDown,
   ChevronUp,
-  Calendar,
-  DollarSign,
-  User,
-  MapPin
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';

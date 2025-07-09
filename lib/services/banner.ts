@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
-import { Banner, BannerFormData, BannerFilters } from '@/types/banner';
+import { Banner, BannerFormData } from '@/types/banner';
 
 export class BannerService {
   private async getSupabase() {
@@ -124,7 +124,7 @@ export class BannerService {
     const fileExt = fileName.split('.').pop();
     const filePath = `banners/${Date.now()}.${fileExt}`;
 
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('images')
       .upload(filePath, file, {
         cacheControl: '3600',

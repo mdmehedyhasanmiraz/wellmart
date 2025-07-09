@@ -8,6 +8,7 @@ import { ReviewService } from '@/lib/services/reviews';
 import ReviewSummary from './ReviewSummary';
 import ReviewForm from './ReviewForm';
 import ReviewList from './ReviewList';
+import { User } from '@supabase/supabase-js';
 
 interface ReviewsSectionProps {
   productId: string;
@@ -23,12 +24,11 @@ export default function ReviewsSection({ productId, productSlug }: ReviewsSectio
   });
   const [userReview, setUserReview] = useState<Review | null>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   const supabase = createClient();
   const reviewService = new ReviewService();
@@ -70,7 +70,7 @@ export default function ReviewsSection({ productId, productSlug }: ReviewsSectio
 
   const loadUserReview = async () => {
     try {
-      const userReviewData = await reviewService.getUserReview(productId, user.id);
+      const userReviewData = await reviewService.getUserReview(productId, user?.id || '');
       setUserReview(userReviewData);
     } catch (error) {
       console.error('Error loading user review:', error);

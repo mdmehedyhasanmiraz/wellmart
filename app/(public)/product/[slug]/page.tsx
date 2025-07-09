@@ -29,7 +29,6 @@ export default function ProductPage({ params }: ProductPageProps) {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [userReview, setUserReview] = useState<Review | null>(null);
   const { addToCart } = useCart();
-  const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
@@ -146,6 +145,7 @@ export default function ProductPage({ params }: ProductPageProps) {
       toast.success('Added to cart');
     } catch (e) {
       toast.error('Failed to add to cart');
+      console.error('Failed to add to cart:', e);
     } finally {
       setAddLoading(false);
     }
@@ -166,6 +166,9 @@ export default function ProductPage({ params }: ProductPageProps) {
       );
     }
   };
+
+  // Define a type for tab values
+  type TabType = 'description' | 'reviews' | 'details';
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -444,13 +447,13 @@ export default function ProductPage({ params }: ProductPageProps) {
           <div className="border-b border-gray-200">
             <nav className="flex">
               {[
-                { id: 'description', label: 'Description' },
-                { id: 'details', label: 'Product Details' },
-                { id: 'reviews', label: `Reviews (${reviews.length})` }
+                { id: 'description' as TabType, label: 'Description' },
+                { id: 'details' as TabType, label: 'Product Details' },
+                { id: 'reviews' as TabType, label: `Reviews (${reviews.length})` }
               ].map((tabItem) => (
                 <button
                   key={tabItem.id}
-                  onClick={() => setTab(tabItem.id as any)}
+                  onClick={() => setTab(tabItem.id)}
                   className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
                     tab === tabItem.id
                       ? 'border-lime-500 text-lime-600'

@@ -19,6 +19,9 @@ export default function RecentProductsArchive() {
         .eq('status', 'published')
         .order('created_at', { ascending: false })
         .limit(8);
+      if (error) {
+        console.error('Error fetching products:', error);
+      }
       setProducts(data || []);
       setLoading(false);
     };

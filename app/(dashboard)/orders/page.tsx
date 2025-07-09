@@ -28,6 +28,7 @@ export default function UserOrdersPage() {
         setOrders(userOrders || []);
       } catch (error) {
         toast.error('Error loading orders');
+        console.error('Orders fetch error:', error);
       } finally {
         setLoading(false);
       }

@@ -115,7 +115,7 @@ export default function Footer() {
               <span className="text-xl font-bold">Wellmart</span>
             </div>
             <p className="text-gray-400 mb-6 leading-relaxed">
-              Your trusted destination for quality products. We're committed to providing exceptional 
+              Your trusted destination for quality products. We&apos;re committed to providing exceptional 
               customer service and a seamless shopping experience.
             </p>
             

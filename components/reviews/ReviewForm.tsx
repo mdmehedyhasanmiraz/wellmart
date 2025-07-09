@@ -107,10 +107,10 @@ export default function ReviewForm({
       // Reset form
       setFormData({ rating: 0, comment: '' });
       setErrors({});
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error submitting review:', error);
       
-      if (error.code === '23505') {
+      if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
         toast.error('You have already reviewed this product');
       } else {
         toast.error('Failed to submit review. Please try again.');

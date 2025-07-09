@@ -27,7 +27,7 @@ export default function LoginPage() {
       console.log('Sending OTP to:', email); // Debug log
       
       // Try to sign in first (existing user)
-      let { data, error } = await supabase.auth.signInWithOtp({
+      let { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
           shouldCreateUser: false, // Try existing user first
@@ -39,7 +39,7 @@ export default function LoginPage() {
         console.log('User not found, creating new user...');
         setIsNewUser(true);
         
-        const { data: signUpData, error: signUpError } = await supabase.auth.signInWithOtp({
+        const { error: signUpError } = await supabase.auth.signInWithOtp({
           email,
           options: {
             shouldCreateUser: true, // Create new user
@@ -140,6 +140,7 @@ export default function LoginPage() {
       }
     } catch (error) {
       toast.error('An error occurred. Please try again.');
+      console.error('OTP verification error:', error);
     } finally {
       setLoading(false);
     }
@@ -162,6 +163,7 @@ export default function LoginPage() {
       }
     } catch (error) {
       toast.error('An error occurred. Please try again.');
+      console.error('Google sign in error:', error);
       setLoading(false);
     }
   };

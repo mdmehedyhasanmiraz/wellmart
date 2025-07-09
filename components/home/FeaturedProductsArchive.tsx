@@ -19,6 +19,9 @@ export default function FeaturedProductsArchive() {
         .eq('is_active', true)
         .eq('status', 'published')
         .limit(8);
+      if (error) {
+        console.error('Error fetching products:', error);
+      }
       setProducts(data || []);
       setLoading(false);
     };

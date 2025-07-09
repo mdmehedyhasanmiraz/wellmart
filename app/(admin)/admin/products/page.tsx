@@ -10,7 +10,6 @@ import {
   Trash2, 
   Eye, 
   Package,
-  MoreHorizontal,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
@@ -34,6 +33,15 @@ interface Product {
   manufacturer_name?: string;
 }
 
+interface Category {
+  id: string;
+  name: string;
+}
+interface Manufacturer {
+  id: string;
+  name: string;
+}
+
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,8 +51,8 @@ export default function ProductsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
-  const [categories, setCategories] = useState<any[]>([]);
-  const [manufacturers, setManufacturers] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const supabase = createClient();
 
@@ -83,22 +91,22 @@ export default function ProductsPage() {
       if (error) throw error;
 
       // Fetch category and manufacturer names for each product
-      const categoryIds = Array.from(new Set((data || []).map((p: any) => p.category_id).filter(Boolean)));
-      const manufacturerIds = Array.from(new Set((data || []).map((p: any) => p.manufacturer_id).filter(Boolean)));
+      const categoryIds = Array.from(new Set((data || []).map((p: Product) => p.category_id).filter(Boolean)));
+      const manufacturerIds = Array.from(new Set((data || []).map((p: Product) => p.manufacturer_id).filter(Boolean)));
       let categoryMap: Record<string, string> = {};
       let manufacturerMap: Record<string, string> = {};
       if (categoryIds.length) {
         const { data: cats } = await supabase.from('categories').select('id, name').in('id', categoryIds);
-        categoryMap = Object.fromEntries((cats || []).map((c: any) => [c.id, c.name]));
+        categoryMap = Object.fromEntries((cats || []).map((c: Category) => [c.id, c.name]));
       }
       if (manufacturerIds.length) {
         const { data: mans } = await supabase.from('manufacturers').select('id, name').in('id', manufacturerIds);
-        manufacturerMap = Object.fromEntries((mans || []).map((m: any) => [m.id, m.name]));
+        manufacturerMap = Object.fromEntries((mans || []).map((m: Manufacturer) => [m.id, m.name]));
       }
-      const productsWithNames = (data || []).map((p: any) => ({
+      const productsWithNames = (data || []).map((p: Product) => ({
         ...p,
-        category_name: p.category_id ? categoryMap[p.category_id] : null,
-        manufacturer_name: p.manufacturer_id ? manufacturerMap[p.manufacturer_id] : null,
+        category_name: p.category_id ? categoryMap[p.category_id] : undefined,
+        manufacturer_name: p.manufacturer_id ? manufacturerMap[p.manufacturer_id] : undefined,
       }));
       setProducts(productsWithNames);
     } catch (error) {

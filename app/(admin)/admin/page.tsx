@@ -9,7 +9,8 @@ import {
   Star,
   TrendingUp,
   DollarSign,
-  Bell
+  Bell,
+  Link
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -19,6 +20,17 @@ interface DashboardStats {
   totalReviews: number;
   sales: number;
   growth: number;
+}
+
+interface LowStockProduct {
+  id: string;
+  name: string;
+  stock: number;
+}
+interface Notification {
+  type: 'order' | 'user' | 'lowstock';
+  message: string;
+  time: string;
 }
 
 export default function AdminDashboard() {
@@ -32,8 +44,8 @@ export default function AdminDashboard() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
-  const [lowStockProducts, setLowStockProducts] = useState<any[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
     fetchDashboardStats();
@@ -78,6 +90,7 @@ export default function AdminDashboard() {
       setLowStockProducts(data || []);
     } catch (e) {
       setLowStockProducts([]);
+      console.error('Error fetching low stock products:', e);
     }
   };
 
@@ -88,7 +101,7 @@ export default function AdminDashboard() {
       supabase.from('users').select('id, created_at').order('created_at', { ascending: false }).limit(1),
       supabase.from('products').select('id, name, stock').lt('stock', 6).order('stock').limit(1)
     ]);
-    const notifs = [];
+    const notifs: Notification[] = [];
     if (orders.data && orders.data.length > 0) notifs.push({ type: 'order', message: 'New order received', time: orders.data[0].created_at });
     if (users.data && users.data.length > 0) notifs.push({ type: 'user', message: 'New user registered', time: users.data[0].created_at });
     if (lowStock.data && lowStock.data.length > 0) notifs.push({ type: 'lowstock', message: `Low stock: ${lowStock.data[0].name}`, time: new Date().toISOString() });
@@ -216,34 +229,34 @@ export default function AdminDashboard() {
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <a
+          <Link
             href="/admin/products"
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <Package className="w-5 h-5 text-blue-600 mr-3" />
             <span className="font-medium">Manage Products</span>
-          </a>
-          <a
+          </Link>
+          <Link
             href="/admin/users"
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <Users className="w-5 h-5 text-green-600 mr-3" />
             <span className="font-medium">Manage Users</span>
-          </a>
-          <a
+          </Link>
+          <Link
             href="/admin/orders"
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <ShoppingCart className="w-5 h-5 text-purple-600 mr-3" />
             <span className="font-medium">View Orders</span>
-          </a>
-          <a
+          </Link>
+          <Link
             href="/admin/reviews"
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <Star className="w-5 h-5 text-yellow-600 mr-3" />
             <span className="font-medium">Manage Reviews</span>
-          </a>
+          </Link>
         </div>
       </div>
 

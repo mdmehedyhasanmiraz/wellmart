@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { CartItem, CartSummary, AddToCartRequest, UpdateCartItemRequest, CartFilters } from '@/types/cart';
+import { CartItem, CartSummary, AddToCartRequest } from '@/types/cart';
 
 export class CartService {
   private async getSupabase() {
@@ -208,7 +208,7 @@ export class CartService {
   }
 
   // Merge guest cart with user cart
-  async mergeGuestCart(userId: string, guestCart: any[]): Promise<void> {
+  async mergeGuestCart(userId: string, guestCart: CartItem[]): Promise<void> {
     const supabase = await this.getSupabase();
     
     // Convert guest cart to JSONB format
@@ -250,9 +250,9 @@ export class CartService {
       return { valid: false, errors: ['Failed to validate cart'] };
     }
 
-    (cartItems as any[])?.forEach((item) => {
-      if (item.quantity > (item.product?.stock_quantity || 0)) {
-        errors.push(`${item.product?.name} - Only ${item.product?.stock_quantity} available`);
+    (cartItems as unknown as CartItem[])?.forEach((item) => {
+      if (item.quantity > (item.product?.stock || 0)) {
+        errors.push(`${item.product?.name} - Only ${item.product?.stock} available`);
       }
     });
 

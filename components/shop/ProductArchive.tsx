@@ -28,7 +28,6 @@ export default function ProductArchive({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
 
   const supabase = createClient();
   const ITEMS_PER_PAGE = 12;
@@ -58,9 +57,12 @@ export default function ProductArchive({
       setIsLoading(true);
       try {
         // TEMP: Remove all filters and joins for debugging
-        let query = supabase
+        const query = supabase
           .from('products')
-          .select('*', { count: 'exact' });
+          .select('*', { count: 'exact' })
+          .eq('status', 'published')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
 
         // Uncomment below to re-add filters/joins after debugging
         // .eq('status', 'published')
@@ -82,7 +84,6 @@ export default function ProductArchive({
 
         setProducts(data || []);
         setTotalCount(count || 0);
-        setHasMore((data?.length || 0) === ITEMS_PER_PAGE);
       } catch (error) {
         console.error('Error fetching products:', error);
       } finally {
@@ -91,7 +92,7 @@ export default function ProductArchive({
     };
 
     fetchProducts();
-  }, [/*filters, currentPage, supabase*/]);
+  }, [filters, currentPage, supabase]);
 
   const handleFiltersChange = (newFilters: ProductFilters) => {
     setFilters(newFilters);

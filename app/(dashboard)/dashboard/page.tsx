@@ -75,6 +75,7 @@ export default function UserDashboardPage() {
       setOrders(userOrders || []);
     } catch (error) {
       toast.error('Error loading dashboard');
+      console.error('Dashboard error:', error);
     } finally {
       setLoading(false);
     }
@@ -104,6 +105,7 @@ export default function UserDashboardPage() {
       }
     } catch (error) {
       toast.error('Error updating profile');
+      console.error('Profile update error:', error);
     } finally {
       setLoading(false);
     }

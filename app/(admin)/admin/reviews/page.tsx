@@ -4,11 +4,9 @@ import { useState, useEffect } from 'react';
 import { 
   Search, 
   Filter, 
-  Eye, 
   Check,
   X,
   Star,
-  MoreHorizontal,
   ChevronDown,
   ChevronUp,
   MessageSquare,

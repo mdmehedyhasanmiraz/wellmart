@@ -1,8 +1,38 @@
-import Image from "next/image";
 import HeroSection from "@/components/home/HeroSection";
 import FeaturedProductsArchive from '@/components/home/FeaturedProductsArchive';
 import TopProductsArchive from '@/components/home/TopProductsArchive';
 import RecentProductsArchive from '@/components/home/RecentProductsArchive';
+
+export const metadata = {
+  title: "Wellmart",
+  description: "Your trusted online shop for all your medical needs.",
+  keywords: ["medical", "health", "wellness", "pharmacy", "online pharmacy", "medical supplies", "medical equipment", "medical products", "medical equipment", "medical products", "medical equipment", "medical products"],
+  openGraph: {
+    title: "Wellmart",
+    description: "Your trusted online shop for all your medical needs.",
+    images: ["/logos/logo-wellmart.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Wellmart",
+    description: "Your trusted online shop for all your medical needs.",
+    images: ["/logos/logo-wellmart.png"],
+  },
+  icons: {
+    icon: "/logos/logo-wellmart.png",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: "https://wellmart.com.bd",
+  },
+  // verification: {
+  //   google: "google-site-verification=1234567890",
+  // },
+};
+
 
 export default function HomePage() {
   return (

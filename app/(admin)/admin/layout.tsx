@@ -6,13 +6,14 @@ import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminMainContent from '@/components/admin/AdminMainContent';
+import type { AuthUser } from '@supabase/supabase-js';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [userRole, setUserRole] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);

@@ -3,13 +3,8 @@
 import { useState, useEffect } from 'react';
 import { 
   Save, 
-  Settings as SettingsIcon,
   Store,
-  Mail,
   Shield,
-  Palette,
-  Globe,
-  CreditCard
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
@@ -50,7 +45,6 @@ export default function SettingsPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const supabase = createClient();
 
   useEffect(() => {
     loadSettings();

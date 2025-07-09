@@ -1,12 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronDown, ChevronRight, Package, Heart, Star, ShoppingCart } from 'lucide-react';
+import { ChevronDown, ChevronRight, Package } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
-import { useCart } from '@/contexts/CartContext';
-import { toast } from 'react-hot-toast';
 
 interface Category {
   id: string;
@@ -38,7 +36,6 @@ export default function HeroSection() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { addToCart } = useCart();
   const supabase = createClient();
 
   useEffect(() => {
@@ -133,15 +130,6 @@ export default function HeroSection() {
 
   const getMainBanner = () => banners.find(b => b.position === 'main');
   const getCardBanners = () => banners.filter(b => b.position.startsWith('card'));
-
-  const handleQuickAdd = async (productId: string) => {
-    try {
-      await addToCart(productId, 1);
-      toast.success('Added to cart!');
-    } catch (error) {
-      toast.error('Failed to add to cart');
-    }
-  };
 
   if (isLoading) {
     return (
@@ -269,7 +257,7 @@ export default function HeroSection() {
 
             {/* Feature Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {getCardBanners().map((banner, index) => (
+              {getCardBanners().map((banner) => (
                 <Link key={banner.id} href={banner.link_url || '#'}>
                   <div className="relative h-32 rounded-xl overflow-hidden shadow-md group cursor-pointer">
                     <Image

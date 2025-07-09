@@ -3,18 +3,17 @@
 import { Menu } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { adminNavigation } from './adminNavigation';
+import { User } from '@supabase/supabase-js';
 
 interface AdminMainContentProps {
   children: React.ReactNode;
-  user: any;
-  isSidebarOpen: boolean;
+  user: User;
   setIsSidebarOpen: (open: boolean) => void;
 }
 
 export default function AdminMainContent({ 
   children, 
-  user, 
-  isSidebarOpen, 
+  user,
   setIsSidebarOpen 
 }: AdminMainContentProps) {
   const pathname = usePathname();

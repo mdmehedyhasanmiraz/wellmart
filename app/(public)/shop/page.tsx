@@ -16,6 +16,7 @@ export default function ShopPage() {
       toast.success(`${product.name} added to cart`);
     } catch (error) {
       toast.error('Failed to add to cart');
+      console.error('Failed to add to cart:', error);
     }
   };
 

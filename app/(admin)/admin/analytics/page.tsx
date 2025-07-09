@@ -28,9 +28,6 @@ interface RecentOrder {
   created_at: string;
   user?: { name: string };
 }
-interface MonthlySale {
-  // Define fields if used, otherwise leave as an empty object
-}
 
 interface AnalyticsData {
   totalSales: number;
@@ -43,7 +40,7 @@ interface AnalyticsData {
   userGrowth: number;
   topProducts: TopProduct[];
   recentOrders: RecentOrder[];
-  monthlySales: MonthlySale[];
+  monthlySales: unknown[]; // Changed from MonthlySale[] to unknown[]
 }
 
 export default function AnalyticsPage() {
@@ -154,6 +151,12 @@ export default function AnalyticsPage() {
         .order('created_at', { ascending: false })
         .limit(10);
 
+      // After fetching recentOrders, map user to a single object if it's an array
+      const normalizedRecentOrders = (recentOrders || []).map((order: any) => ({
+        ...order,
+        user: Array.isArray(order.user) ? order.user[0] : order.user
+      }));
+
       setAnalytics({
         totalSales,
         totalOrders,
@@ -164,7 +167,7 @@ export default function AnalyticsPage() {
         orderGrowth,
         userGrowth,
         topProducts: topProducts || [],
-        recentOrders: recentOrders || [],
+        recentOrders: normalizedRecentOrders,
         monthlySales: [] // Simplified for now
       });
     } catch (error) {

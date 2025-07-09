@@ -5,7 +5,6 @@ import { useRouter, useParams } from "next/navigation";
 import {
   ArrowLeft,
   Save,
-  Upload,
   X,
   Package,
   DollarSign,

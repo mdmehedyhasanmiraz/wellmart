@@ -8,12 +8,8 @@ import {
   Trash2, 
   Eye, 
   Users,
-  MoreHorizontal,
   ChevronDown,
   ChevronUp,
-  Shield,
-  UserCheck,
-  UserX
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';

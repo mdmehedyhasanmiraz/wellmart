@@ -51,6 +51,7 @@ export default function UserProfilePage() {
         }
       } catch (error) {
         toast.error('Error loading profile');
+        console.error('Profile fetch error:', error);
       } finally {
         setLoading(false);
       }
@@ -82,6 +83,7 @@ export default function UserProfilePage() {
       }
     } catch (error) {
       toast.error('Error updating profile');
+      console.error('Profile update error:', error);
     } finally {
       setLoading(false);
     }

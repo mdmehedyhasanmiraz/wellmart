@@ -20,6 +20,9 @@ export default function TopProductsArchive() {
         .order('average_rating', { ascending: false })
         .order('review_count', { ascending: false })
         .limit(8);
+      if (error) {
+        console.error('Error fetching products:', error);
+      }
       setProducts(data || []);
       setLoading(false);
     };
