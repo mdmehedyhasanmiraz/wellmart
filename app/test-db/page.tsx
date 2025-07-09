@@ -30,6 +30,15 @@ export default function TestDbPage() {
   const [isLoading, setIsLoading] = useState(false);
   const supabase = createClient();
 
+  // Helper function to safely stringify data
+  const safeStringify = (data: unknown): string => {
+    try {
+      return JSON.stringify(data, null, 2);
+    } catch {
+      return String(data);
+    }
+  };
+
   const testDatabaseAccess = async () => {
     setIsLoading(true);
     const testResults: TestResults = {};
@@ -100,7 +109,7 @@ export default function TestDbPage() {
               <div className="border rounded-lg p-4">
                 <h2 className="text-lg font-semibold mb-2">Authentication Test</h2>
                 <pre className="bg-gray-100 p-3 rounded text-sm overflow-auto">
-                  {JSON.stringify(results.auth, null, 2)}
+                  {safeStringify(results.auth)}
                 </pre>
               </div>
 
@@ -109,7 +118,7 @@ export default function TestDbPage() {
                 <div className="border rounded-lg p-4">
                   <h2 className="text-lg font-semibold mb-2">User Query Test</h2>
                   <pre className="bg-gray-100 p-3 rounded text-sm overflow-auto">
-                    {JSON.stringify(results.userQuery, null, 2)}
+                    {safeStringify(results.userQuery)}
                   </pre>
                 </div>
               )}
@@ -119,7 +128,7 @@ export default function TestDbPage() {
                 <div className="border rounded-lg p-4">
                   <h2 className="text-lg font-semibold mb-2">All Users Query Test (RLS Test)</h2>
                   <pre className="bg-gray-100 p-3 rounded text-sm overflow-auto">
-                    {JSON.stringify(results.allUsersQuery, null, 2)}
+                    {safeStringify(results.allUsersQuery)}
                   </pre>
                 </div>
               )}
@@ -129,7 +138,7 @@ export default function TestDbPage() {
                 <div className="border rounded-lg p-4">
                   <h2 className="text-lg font-semibold mb-2">Update Query Test</h2>
                   <pre className="bg-gray-100 p-3 rounded text-sm overflow-auto">
-                    {JSON.stringify(results.updateQuery, null, 2)}
+                    {safeStringify(results.updateQuery)}
                   </pre>
                 </div>
               )}
