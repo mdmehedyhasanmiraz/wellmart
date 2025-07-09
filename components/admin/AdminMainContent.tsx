@@ -8,12 +8,14 @@ import { User } from '@supabase/supabase-js';
 interface AdminMainContentProps {
   children: React.ReactNode;
   user: User | null;
+  isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
 }
 
 export default function AdminMainContent({ 
   children, 
   user,
+  isSidebarOpen,
   setIsSidebarOpen 
 }: AdminMainContentProps) {
   const pathname = usePathname();
