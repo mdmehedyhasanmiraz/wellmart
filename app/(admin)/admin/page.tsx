@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import Link from 'next/link';
 import { 
   Package, 
   Users, 
@@ -9,8 +10,7 @@ import {
   Star,
   TrendingUp,
   DollarSign,
-  Bell,
-  Link
+  Bell
 } from 'lucide-react';
 
 interface DashboardStats {
