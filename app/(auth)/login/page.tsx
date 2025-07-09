@@ -261,7 +261,7 @@ function LoginForm() {
                   />
                 </div>
                 <p className="mt-2 text-sm text-gray-600">
-                  We've sent a 6-digit code to {email}
+                  We&apos;ve sent a 6-digit code to {email}
                 </p>
               </div>
 
