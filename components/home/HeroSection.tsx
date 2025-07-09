@@ -48,29 +48,55 @@ export default function HeroSection() {
 
   const fetchCategories = async () => {
     try {
-      const { data: categoriesData, error } = await supabase
+      // First, get all categories
+      const { data: allCategories, error: categoriesError } = await supabase
         .from('categories')
-        .select(`
-          id,
-          name,
-          slug,
-          icon,
-          subcategories:subcategories(
-            id,
-            name,
-            slug,
-            category_id
-          )
-        `)
-        .eq('is_active', true)
+        .select('id, name, slug, description, parent_id')
         .order('name');
 
-      if (error) {
-        console.error('Error fetching categories:', error);
+      if (categoriesError) {
+        console.error('Error fetching categories:', categoriesError);
         return;
       }
 
-      setCategories(categoriesData || []);
+      // Get all subcategories (categories with parent_id)
+      const { data: subcategories, error: subError } = await supabase
+        .from('categories')
+        .select('id, name, slug, description, category_id:parent_id')
+        .not('parent_id', 'is', null)
+        .order('name');
+
+      if (subError) {
+        console.error('Error fetching subcategories:', subError);
+        return;
+      }
+
+      // Group subcategories by parent
+      const subcategoriesByParent = subcategories?.reduce((acc, sub) => {
+        if (sub.category_id) {
+          if (!acc[sub.category_id]) {
+            acc[sub.category_id] = [];
+          }
+          acc[sub.category_id].push({
+            id: sub.id,
+            name: sub.name,
+            slug: sub.slug,
+            category_id: sub.category_id
+          });
+        }
+        return acc;
+      }, {} as Record<string, SubCategory[]>) || {};
+
+      // Build the final categories array
+      const processedCategories = allCategories?.map(category => ({
+        ...category,
+        subcategories: subcategoriesByParent[category.id] || []
+      })).filter(category => 
+        // Show categories that either have subcategories OR are not subcategories themselves
+        category.subcategories.length > 0 || !category.parent_id
+      ) || [];
+
+      setCategories(processedCategories);
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
@@ -146,49 +172,56 @@ export default function HeroSection() {
           {/* Sticky Category Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-              <div className="bg-lime-600 text-white px-6 py-4">
-                <h2 className="text-lg font-semibold flex items-center">
-                  <Package className="w-5 h-5 mr-2" />
-                  All Categories
-                </h2>
-              </div>
-              
               <div className="max-h-[500px] overflow-y-auto">
                 {categories.map((category) => (
                   <div key={category.id} className="border-b border-gray-100 last:border-b-0">
-                    <button
-                      onClick={() => toggleCategory(category.id)}
-                      className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors duration-200"
-                    >
-                      <div className="flex items-center">
-                        <Package className="w-4 h-4 text-gray-500 mr-3" />
-                        <span className="text-gray-700 font-medium">{category.name}</span>
-                      </div>
-                      {category.subcategories && category.subcategories.length > 0 && (
-                        <ChevronDown 
-                          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
-                            expandedCategories.includes(category.id) ? 'rotate-180' : ''
-                          }`}
-                        />
-                      )}
-                    </button>
-                    
-                    {/* Subcategories */}
-                    {expandedCategories.includes(category.id) && category.subcategories && (
-                      <div className="bg-gray-50 border-t border-gray-100">
-                        {category.subcategories.map((subcategory) => (
-                          <Link
-                            key={subcategory.id}
-                            href={`/shop?category=${subcategory.slug}`}
-                            className="block px-6 py-3 text-sm text-gray-600 hover:text-lime-600 hover:bg-lime-50 transition-colors duration-200"
-                          >
-                            <div className="flex items-center">
-                              <ChevronRight className="w-3 h-3 text-gray-400 mr-2" />
-                              {subcategory.name}
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
+                    {category.subcategories && category.subcategories.length > 0 ? (
+                      // Collapsible category with subcategories
+                      <>
+                        <button
+                          onClick={() => toggleCategory(category.id)}
+                          className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          <div className="flex items-center">
+                            <Package className="w-4 h-4 text-gray-500 mr-3" />
+                            <span className="text-gray-700 font-medium">{category.name}</span>
+                          </div>
+                          <ChevronDown 
+                            className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                              expandedCategories.includes(category.id) ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </button>
+                        
+                        {/* Subcategories */}
+                        {expandedCategories.includes(category.id) && (
+                          <div className="bg-gray-50 border-t border-gray-100">
+                            {category.subcategories.map((subcategory) => (
+                              <Link
+                                key={subcategory.id}
+                                href={`/shop?category=${subcategory.slug}`}
+                                className="block px-6 py-3 text-sm text-gray-600 hover:text-lime-600 hover:bg-lime-50 transition-colors duration-200"
+                              >
+                                <div className="flex items-center">
+                                  <ChevronRight className="w-3 h-3 text-gray-400 mr-2" />
+                                  {subcategory.name}
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      // Direct link category without subcategories
+                      <Link
+                        href={`/shop?category=${category.slug}`}
+                        className="w-full flex items-center px-6 py-4 text-left hover:bg-gray-50 transition-colors duration-200"
+                      >
+                        <div className="flex items-center">
+                          <Package className="w-4 h-4 text-gray-500 mr-3" />
+                          <span className="text-gray-700 font-medium">{category.name}</span>
+                        </div>
+                      </Link>
                     )}
                   </div>
                 ))}

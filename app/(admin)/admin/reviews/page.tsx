@@ -28,16 +28,13 @@ interface Review {
   created_at: string;
   product: {
     name: string;
-    image_url: string | null;
-  };
-  user: {
-    name: string;
-    email: string;
+    image_urls: string[] | null;
   };
 }
 
 export default function ReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [userDetails, setUserDetails] = useState<{[key: string]: {email: string, name?: string}}>({});
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -51,19 +48,37 @@ export default function ReviewsPage() {
     fetchReviews();
   }, [searchTerm, statusFilter, ratingFilter, sortBy, sortOrder]);
 
+  const fetchUserDetails = async (userIds: string[]) => {
+    try {
+      // For now, we'll just show user IDs
+      // In a production app, you'd want to create a server-side API endpoint
+      // to fetch user details securely
+      const userMap: {[key: string]: {email: string, name?: string}} = {};
+      userIds.forEach(userId => {
+        userMap[userId] = {
+          email: `User ${userId.slice(0, 8)}...`,
+          name: `User ${userId.slice(0, 8)}...`
+        };
+      });
+      
+      setUserDetails(userMap);
+    } catch (error) {
+      console.error('Error fetching user details:', error);
+    }
+  };
+
   const fetchReviews = async () => {
     try {
       let query = supabase
         .from('reviews')
         .select(`
           *,
-          product:products(name, image_url),
-          user:users(name, email)
+          product:products(name, image_urls)
         `)
         .order(sortBy, { ascending: sortOrder === 'asc' });
 
       if (searchTerm) {
-        query = query.or(`comment.ilike.%${searchTerm}%,product.name.ilike.%${searchTerm}%,user.name.ilike.%${searchTerm}%`);
+        query = query.or(`comment.ilike.%${searchTerm}%,product.name.ilike.%${searchTerm}%`);
       }
 
       if (statusFilter !== 'all') {
@@ -76,8 +91,18 @@ export default function ReviewsPage() {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
       setReviews(data || []);
+      
+      // Fetch user details for all reviews
+      if (data && data.length > 0) {
+        const userIds = [...new Set(data.map(review => review.user_id))];
+        await fetchUserDetails(userIds);
+      }
     } catch (error) {
       console.error('Error fetching reviews:', error);
       toast.error('Failed to load reviews');
@@ -263,9 +288,9 @@ export default function ReviewsPage() {
                 <div className="flex items-start space-x-4">
                   {/* Product Image */}
                   <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-                    {review.product.image_url ? (
+                    {review.product.image_urls && review.product.image_urls.length > 0 ? (
                       <img 
-                        src={review.product.image_url} 
+                        src={review.product.image_urls[0]} 
                         alt={review.product.name}
                         className="w-full h-full object-cover rounded-lg"
                       />
@@ -288,7 +313,9 @@ export default function ReviewsPage() {
                     <div className="flex items-center space-x-4 mb-3">
                       <div className="flex items-center">
                         <User className="w-4 h-4 text-gray-400 mr-1" />
-                        <span className="text-sm text-gray-600">{review.user.name}</span>
+                        <span className="text-sm text-gray-600">
+                          {userDetails[review.user_id]?.name || userDetails[review.user_id]?.email || 'Unknown User'}
+                        </span>
                       </div>
                       <div className="flex items-center">
                         <span className="text-sm text-gray-600">{formatDate(review.created_at)}</span>

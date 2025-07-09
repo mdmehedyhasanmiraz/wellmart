@@ -13,14 +13,12 @@ export interface Product {
   description: string;
   category_id: string | null;
   manufacturer_id: string | null;
-  brand_id: string | null;
   status: 'draft' | 'published';
   is_active: boolean;
   created_at: string;
   updated_at: string;
   category?: Category;
   manufacturer?: Manufacturer;
-  brand?: Manufacturer;
 }
 
 export interface Category {

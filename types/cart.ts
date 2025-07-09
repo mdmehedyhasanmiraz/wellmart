@@ -10,9 +10,10 @@ export interface CartItem {
     id: string;
     name: string;
     slug: string;
-    price: number;
-    image_url?: string;
-    stock_quantity: number;
+    price_regular: number;
+    price_offer: number | null;
+    image_urls: string[];
+    stock: number;
   };
 }
 

@@ -78,3 +78,25 @@ CREATE TRIGGER update_users_updated_at
 --   'admin@wellmart.com', 
 --   'admin'
 -- ); 
+
+-- Coupons table
+CREATE TABLE IF NOT EXISTS public.coupons (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    code TEXT NOT NULL UNIQUE,
+    discount_type TEXT NOT NULL CHECK (discount_type IN ('percent', 'fixed')),
+    discount_value NUMERIC(10,2) NOT NULL CHECK (discount_value > 0),
+    min_order NUMERIC(10,2),
+    max_uses INTEGER,
+    expires_at TIMESTAMP WITH TIME ZONE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- User Coupons table
+CREATE TABLE IF NOT EXISTS public.user_coupons (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    coupon_id UUID NOT NULL REFERENCES public.coupons(id) ON DELETE CASCADE,
+    applied_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(user_id, coupon_id)
+); 

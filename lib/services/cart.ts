@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/utils/supabase/client';
 import { CartItem, CartSummary, AddToCartRequest, UpdateCartItemRequest, CartFilters } from '@/types/cart';
 
 export class CartService {
@@ -18,9 +18,10 @@ export class CartService {
           id,
           name,
           slug,
-          price,
-          image_url,
-          stock_quantity
+          price_regular,
+          price_offer,
+          image_urls,
+          stock
         )
       `)
       .eq('user_id', userId)
@@ -33,7 +34,12 @@ export class CartService {
 
     const items = cartItems || [];
     const total_items = items.reduce((sum, item) => sum + item.quantity, 0);
-    const total_price = items.reduce((sum, item) => sum + (item.quantity * (item.product?.price || 0)), 0);
+    const total_price = items.reduce((sum, item) => {
+      const price = item.product?.price_offer != null && item.product?.price_offer !== 0
+        ? item.product.price_offer
+        : item.product?.price_regular || 0;
+      return sum + (item.quantity * price);
+    }, 0);
 
     // Ensure a plain object is returned
     return JSON.parse(JSON.stringify({

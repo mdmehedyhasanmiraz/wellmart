@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { 
   ArrowLeft, 
   Save, 
@@ -16,20 +17,53 @@ import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 
-export default function NewBannerPage() {
+export default function EditBannerPage() {
   const router = useRouter();
   const supabase = createClient();
+  const params = useParams();
+  const bannerId = params?.id as string;
   const [isLoading, setIsLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [initialImageUrl, setInitialImageUrl] = useState<string>('');
 
   const [formData, setFormData] = useState({
     title: '',
     subtitle: '',
-    position: 'main', // default to 'main' as per DB constraint
+    position: 'hero',
     link_url: '',
     is_active: true
   });
+
+  // Fetch banner data on mount
+  useEffect(() => {
+    const fetchBanner = async () => {
+      if (!bannerId) return;
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('banners')
+        .select('*')
+        .eq('id', bannerId)
+        .single();
+      if (error || !data) {
+        toast.error('Failed to load banner');
+        router.push('/admin/banners');
+        return;
+      }
+      setFormData({
+        title: data.title || '',
+        subtitle: data.subtitle || '',
+        position: data.position || 'hero',
+        link_url: data.link_url || '',
+        is_active: data.is_active ?? true
+      });
+      setImagePreview(data.image_url || '');
+      setInitialImageUrl(data.image_url || '');
+      setIsLoading(false);
+    };
+    fetchBanner();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bannerId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -82,21 +116,17 @@ export default function NewBannerPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
-      if (!imageFile) {
-        toast.error('Please select an image');
-        setIsLoading(false);
-        return;
+      let imageUrl = initialImageUrl;
+      if (imageFile) {
+        const uploaded = await uploadImage(imageFile);
+        if (!uploaded) {
+          toast.error('Failed to upload image');
+          setIsLoading(false);
+          return;
+        }
+        imageUrl = uploaded;
       }
-
-      const imageUrl = await uploadImage(imageFile);
-      if (!imageUrl) {
-        toast.error('Failed to upload image');
-        setIsLoading(false);
-        return;
-      }
-
       const bannerData = {
         title: formData.title,
         subtitle: formData.subtitle,
@@ -105,18 +135,16 @@ export default function NewBannerPage() {
         is_active: formData.is_active,
         image_url: imageUrl
       };
-
       const { error } = await supabase
         .from('banners')
-        .insert([bannerData]);
-
+        .update(bannerData)
+        .eq('id', bannerId);
       if (error) throw error;
-
-      toast.success('Banner created successfully');
+      toast.success('Banner updated successfully');
       router.push('/admin/banners');
     } catch (error) {
-      console.error('Error creating banner:', error);
-      toast.error('Failed to create banner');
+      console.error('Error updating banner:', error);
+      toast.error('Failed to update banner');
     } finally {
       setIsLoading(false);
     }
@@ -152,8 +180,8 @@ export default function NewBannerPage() {
             Back to Banners
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Add New Banner</h1>
-            <p className="text-gray-600">Create a new banner for your homepage</p>
+            <h1 className="text-2xl font-bold text-gray-900">Update Banner</h1>
+            <p className="text-gray-600">Edit your banner details</p>
           </div>
         </div>
       </div>
@@ -209,7 +237,7 @@ export default function NewBannerPage() {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-transparent"
                   >
-                    <option value="main">Main Banner</option>
+                    <option value="hero">Hero Banner</option>
                     <option value="card1">Card 1</option>
                     <option value="card2">Card 2</option>
                     <option value="card3">Card 3</option>
@@ -397,7 +425,7 @@ export default function NewBannerPage() {
                   ) : (
                     <>
                       <Save className="w-4 h-4 mr-2" />
-                      Create Banner
+                      Update Banner
                     </>
                   )}
                 </button>

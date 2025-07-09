@@ -8,13 +8,9 @@ import {
   Filter, 
   Edit, 
   Trash2, 
-  Eye, 
   Image as ImageIcon,
-  MoreHorizontal,
   ChevronDown,
   ChevronUp,
-  Calendar,
-  MapPin,
   EyeOff
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
@@ -23,7 +19,7 @@ import { toast } from 'react-hot-toast';
 interface Banner {
   id: string;
   title: string;
-  description: string;
+  subtitle: string;
   image_url: string;
   position: 'hero' | 'card1' | 'card2' | 'card3' | 'card4';
   is_active: boolean;
@@ -279,7 +275,7 @@ export default function BannersPage() {
                 </div>
                 
                 <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                  {banner.description}
+                  {banner.subtitle}
                 </p>
 
                 {banner.link_url && (

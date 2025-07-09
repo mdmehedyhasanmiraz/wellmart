@@ -3,7 +3,6 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import { CartProvider } from '@/contexts/CartContext';
-import WhatsAppButton from '@/components/WhatsAppButton';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -92,10 +91,9 @@ export default function RootLayout({
             }}
           />
           
-          <main className="flex-1 text-black">
+          <main className="flex-1 text-black bg-gray-50">
             {children}
           </main>
-          <WhatsAppButton />
         </CartProvider>
       </body>
     </html>

@@ -7,14 +7,15 @@ import {
   Settings, 
   BarChart3,
   FileText,
-  Star
+  Star,
+  Building2
 } from 'lucide-react';
 
 export const adminNavigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { name: 'Products', href: '/admin/products', icon: Package },
   { name: 'Categories', href: '/admin/categories', icon: Package },
-  { name: 'Manufacturers', href: '/admin/manufacturers', icon: Package },
+  { name: 'Companies', href: '/admin/companies', icon: Building2 },
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
   { name: 'Reviews', href: '/admin/reviews', icon: Star },
