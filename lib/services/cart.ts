@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { CartItem, CartSummary, AddToCartRequest } from '@/types/cart';
+import { CartItem, CartSummary, AddToCartRequest, GuestCartItem } from '@/types/cart';
 
 export class CartService {
   private async getSupabase() {
@@ -208,7 +208,7 @@ export class CartService {
   }
 
   // Merge guest cart with user cart
-  async mergeGuestCart(userId: string, guestCart: CartItem[]): Promise<void> {
+  async mergeGuestCart(userId: string, guestCart: GuestCartItem[]): Promise<void> {
     const supabase = await this.getSupabase();
     
     // Convert guest cart to JSONB format
