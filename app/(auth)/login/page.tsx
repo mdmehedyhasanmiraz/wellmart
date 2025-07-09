@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [showOtpInput, setShowOtpInput] = useState(false);
@@ -201,108 +201,102 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Email Error Message */}
-          {emailError && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">
-                    Email service unavailable
-                  </h3>
-                  <div className="mt-2 text-sm text-red-700">
-                    <p>Our email service is temporarily down. Please use Google sign-in instead.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Email OTP Form */}
+          {/* Email Sign In Form */}
           {!showOtpInput ? (
-            <form className="mt-8 space-y-6" onSubmit={handleEmailSignIn}>
+            <form onSubmit={handleEmailSignIn} className="space-y-6">
               <div>
-                <label htmlFor="email" className="sr-only">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                   Email address
                 </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Enter your email address"
-                />
-              </div>
-
-              <div>
-                <button
-                  type="submit"
-                  disabled={loading || emailError}
-                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                >
-                  {loading ? 'Sending OTP...' : 'Send OTP'}
-                </button>
-              </div>
-            </form>
-          ) : (
-            <form className="mt-8 space-y-6" onSubmit={handleOtpVerification}>
-              <div>
-                <label htmlFor="otp" className="sr-only">
-                  OTP
-                </label>
-                <input
-                  id="otp"
-                  name="otp"
-                  type="text"
-                  autoComplete="one-time-code"
-                  required
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Enter OTP from your email"
-                />
+                <div className="mt-1">
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={`appearance-none relative block w-full px-3 py-2 border ${
+                      emailError ? 'border-red-300' : 'border-gray-300'
+                    } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-lime-500 focus:border-lime-500 focus:z-10 sm:text-sm`}
+                    placeholder="Enter your email"
+                  />
+                </div>
+                {emailError && (
+                  <p className="mt-2 text-sm text-red-600">
+                    Email service unavailable. Please use Google sign-in.
+                  </p>
+                )}
               </div>
 
               <div>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-lime-600 hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 disabled:opacity-50"
+                >
+                  {loading ? 'Sending...' : 'Send OTP'}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleOtpVerification} className="space-y-6">
+              <div>
+                <label htmlFor="otp" className="block text-sm font-medium text-gray-700">
+                  Enter OTP
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="otp"
+                    name="otp"
+                    type="text"
+                    autoComplete="one-time-code"
+                    required
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-lime-500 focus:border-lime-500 focus:z-10 sm:text-sm"
+                    placeholder="Enter 6-digit OTP"
+                    maxLength={6}
+                  />
+                </div>
+                <p className="mt-2 text-sm text-gray-600">
+                  We've sent a 6-digit code to {email}
+                </p>
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setShowOtpInput(false)}
+                  className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-lime-600 hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 disabled:opacity-50"
                 >
                   {loading ? 'Verifying...' : 'Verify OTP'}
                 </button>
               </div>
-
-              <div className="text-center space-y-2">
-                <button
-                  type="button"
-                  onClick={() => setShowOtpInput(false)}
-                  className="text-sm text-indigo-600 hover:text-indigo-500"
-                >
-                  Back to email input
-                </button>
-                <p className="text-xs text-gray-500">
-                  OTP will expire in 30 minutes. Please check your email and verify promptly.
-                </p>
-              </div>
             </form>
           )}
-
-          <div className="text-center">
-            <p className="text-xs text-gray-500">
-              By continuing, you agree to our terms of service and privacy policy.
-            </p>
-          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-lime-600"></div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 } 
