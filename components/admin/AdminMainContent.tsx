@@ -7,7 +7,7 @@ import { User } from '@supabase/supabase-js';
 
 interface AdminMainContentProps {
   children: React.ReactNode;
-  user: User;
+  user: User | null;
   setIsSidebarOpen: (open: boolean) => void;
 }
 

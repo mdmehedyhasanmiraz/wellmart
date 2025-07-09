@@ -16,7 +16,7 @@ import { adminNavigation } from './adminNavigation';
 import { User } from '@supabase/supabase-js';
 
 interface AdminSidebarProps {
-  user: User;
+  user: User | null;
   userRole: string;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
