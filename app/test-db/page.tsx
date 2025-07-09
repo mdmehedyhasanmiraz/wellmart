@@ -106,12 +106,14 @@ export default function TestDbPage() {
           {results && (
             <div className="space-y-6">
               {/* Auth Test */}
-              <div className="border rounded-lg p-4">
-                <h2 className="text-lg font-semibold mb-2">Authentication Test</h2>
-                <pre className="bg-gray-100 p-3 rounded text-sm overflow-auto">
-                  {safeStringify(results.auth)}
-                </pre>
-              </div>
+              {results.auth && (
+                <div className="border rounded-lg p-4">
+                  <h2 className="text-lg font-semibold mb-2">Authentication Test</h2>
+                  <pre className="bg-gray-100 p-3 rounded text-sm overflow-auto">
+                    {safeStringify(results.auth)}
+                  </pre>
+                </div>
+              )}
 
               {/* User Query Test */}
               {results.userQuery && (
