@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import { CartProvider } from '@/contexts/CartContext';
+import ogImage from './opengraph-image.webp';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
     siteName: 'Wellmart',
     images: [
       {
-        url: '/og-image.jpg',
+        url: ogImage.src,
         width: 1200,
         height: 630,
         alt: 'Wellmart - Online Shopping',
@@ -39,7 +40,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Wellmart - Your Trusted Shopping Destination',
     description: 'Discover quality products at great prices. Shop the latest trends with secure payment and fast delivery.',
-    images: ['/og-image.jpg'],
+    images: [ogImage.src],
   },
   robots: {
     index: true,
@@ -52,9 +53,9 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  verification: {
-    google: 'your-google-verification-code',
-  },
+  // verification: {
+  //   google: 'your-google-verification-code',
+  // },
 };
 
 export default function RootLayout({
