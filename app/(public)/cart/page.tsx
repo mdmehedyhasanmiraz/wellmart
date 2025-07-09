@@ -88,7 +88,7 @@ export default function CartPage() {
               </div>
               <div className="flex-1 min-w-0 ml-4">
                     <h3 className="text-lg font-medium text-gray-900 truncate">{getProductName(item)}</h3>
-                    <p className="text-sm text-gray-500 mb-2">Price: ${getProductPrice(item).toFixed(2)}</p>
+                    <p className="text-sm text-gray-500 mb-2">Price: ৳{getProductPrice(item).toFixed(2)}</p>
                 <div className="flex items-center space-x-2">
                   <button
                         onClick={() => updateCartItem(getItemId(item), item.quantity - 1)}
@@ -112,9 +112,7 @@ export default function CartPage() {
                   </button>
                 </div>
               </div>
-              <div className="text-right font-semibold text-lg min-w-[80px]">
-                    ${getProductTotal(item).toFixed(2)}
-              </div>
+              <div className="text-right font-semibold text-lg min-w-[80px]">৳{getProductTotal(item).toFixed(2)}</div>
             </div>
           ))}
         </div>
@@ -125,7 +123,7 @@ export default function CartPage() {
               <h2 className="text-xl font-bold mb-4">Order Summary</h2>
               <div className="flex justify-between mb-2">
                 <span>Subtotal</span>
-                <span>${total.toFixed(2)}</span>
+                <span>৳{total.toFixed(2)}</span>
               </div>
               {/* Coupon UI */}
               <div className="my-4">
@@ -153,7 +151,7 @@ export default function CartPage() {
               </div>
               <div className="flex justify-between font-bold text-lg mt-6">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span className="font-bold text-lg mt-6">৳{total.toFixed(2)}</span>
               </div>
           <Link href="/cart/checkout" className="w-full mt-6 px-6 py-3 bg-lime-600 text-white rounded hover:bg-lime-700 text-lg font-semibold text-center block">Proceed to Checkout</Link>
         </div>

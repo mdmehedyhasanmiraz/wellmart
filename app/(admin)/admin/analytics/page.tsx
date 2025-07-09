@@ -8,39 +8,57 @@ import {
   ShoppingCart, 
   DollarSign, 
   Package,
-  Star,
   Calendar,
   BarChart3
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
+// Add interfaces for topProducts, recentOrders, and monthlySales
+interface TopProduct {
+  id: string;
+  name: string;
+  price_regular: number;
+  stock_quantity: number;
+  image_url?: string;
+}
+interface RecentOrder {
+  id: string;
+  total_amount: number;
+  status: string;
+  created_at: string;
+  user?: { name: string };
+}
+interface MonthlySale {
+  // Define fields if used, otherwise leave as an empty object
+}
+
 interface AnalyticsData {
-  totalRevenue: number;
+  totalSales: number;
   totalOrders: number;
   totalUsers: number;
   totalProducts: number;
   averageOrderValue: number;
-  revenueGrowth: number;
+  salesGrowth: number;
   orderGrowth: number;
   userGrowth: number;
-  topProducts: any[];
-  recentOrders: any[];
-  monthlyRevenue: any[];
+  topProducts: TopProduct[];
+  recentOrders: RecentOrder[];
+  monthlySales: MonthlySale[];
 }
 
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<AnalyticsData>({
-    totalRevenue: 0,
+    totalSales: 0,
     totalOrders: 0,
     totalUsers: 0,
     totalProducts: 0,
     averageOrderValue: 0,
-    revenueGrowth: 0,
+    salesGrowth: 0,
     orderGrowth: 0,
     userGrowth: 0,
     topProducts: [],
     recentOrders: [],
-    monthlyRevenue: []
+    monthlySales: []
   });
   const [isLoading, setIsLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30'); // days
@@ -57,7 +75,7 @@ export default function AnalyticsPage() {
         ordersResult,
         usersResult,
         productsResult,
-        revenueResult
+        salesResult
       ] = await Promise.all([
         supabase.from('orders').select('id, total_amount, created_at'),
         supabase.from('users').select('id, created_at'),
@@ -68,14 +86,14 @@ export default function AnalyticsPage() {
       const orders = ordersResult.data || [];
       const users = usersResult.data || [];
       const products = productsResult.data || [];
-      const revenue = revenueResult.data || [];
+      const sales = salesResult.data || [];
 
       // Calculate metrics
-      const totalRevenue = revenue.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+      const totalSales = sales.reduce((sum, order) => sum + (order.total_amount || 0), 0);
       const totalOrders = orders.length;
       const totalUsers = users.length;
       const totalProducts = products.length;
-      const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+      const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
       // Calculate growth (simplified - comparing current period vs previous period)
       const currentDate = new Date();
@@ -91,9 +109,9 @@ export default function AnalyticsPage() {
         new Date(order.created_at) < currentPeriodStart
       );
 
-      const currentPeriodRevenue = currentPeriodOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
-      const previousPeriodRevenue = previousPeriodOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
-      const revenueGrowth = previousPeriodRevenue > 0 ? ((currentPeriodRevenue - previousPeriodRevenue) / previousPeriodRevenue) * 100 : 0;
+      const currentPeriodSales = currentPeriodOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+      const previousPeriodSales = previousPeriodOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+      const salesGrowth = previousPeriodSales > 0 ? ((currentPeriodSales - previousPeriodSales) / previousPeriodSales) * 100 : 0;
 
       const orderGrowth = previousPeriodOrders.length > 0 ? 
         ((currentPeriodOrders.length - previousPeriodOrders.length) / previousPeriodOrders.length) * 100 : 0;
@@ -137,17 +155,17 @@ export default function AnalyticsPage() {
         .limit(10);
 
       setAnalytics({
-        totalRevenue,
+        totalSales,
         totalOrders,
         totalUsers,
         totalProducts,
         averageOrderValue,
-        revenueGrowth,
+        salesGrowth,
         orderGrowth,
         userGrowth,
         topProducts: topProducts || [],
         recentOrders: recentOrders || [],
-        monthlyRevenue: [] // Simplified for now
+        monthlySales: [] // Simplified for now
       });
     } catch (error) {
       console.error('Error fetching analytics:', error);
@@ -157,10 +175,7 @@ export default function AnalyticsPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    return `\u09F3${amount.toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const formatPercentage = (value: number) => {
@@ -208,18 +223,18 @@ export default function AnalyticsPage() {
               <DollarSign className="w-6 h-6 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(analytics.totalRevenue)}</p>
+              <p className="text-sm font-medium text-gray-600">Total Sales</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCurrency(analytics.totalSales)}</p>
             </div>
           </div>
           <div className="mt-4 flex items-center">
-            {analytics.revenueGrowth >= 0 ? (
+            {analytics.salesGrowth >= 0 ? (
               <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
             ) : (
               <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
             )}
-            <span className={`text-sm ${analytics.revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {formatPercentage(analytics.revenueGrowth)}
+            <span className={`text-sm ${analytics.salesGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatPercentage(analytics.salesGrowth)}
             </span>
           </div>
         </div>

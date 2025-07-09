@@ -8,7 +8,8 @@ import {
   ShoppingCart, 
   Star,
   TrendingUp,
-  DollarSign
+  DollarSign,
+  Bell
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -16,7 +17,7 @@ interface DashboardStats {
   totalUsers: number;
   totalOrders: number;
   totalReviews: number;
-  revenue: number;
+  sales: number;
   growth: number;
 }
 
@@ -26,14 +27,24 @@ export default function AdminDashboard() {
     totalUsers: 0,
     totalOrders: 0,
     totalReviews: 0,
-    revenue: 0,
+    sales: 0,
     growth: 0
   });
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
+  const [lowStockProducts, setLowStockProducts] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   useEffect(() => {
     fetchDashboardStats();
+    fetchLowStock();
+    fetchNotifications();
+    const interval = setInterval(() => {
+      fetchDashboardStats();
+      fetchLowStock();
+      fetchNotifications();
+    }, 30000); // 30s
+    return () => clearInterval(interval);
   }, []);
 
   const fetchDashboardStats = async () => {
@@ -51,7 +62,7 @@ export default function AdminDashboard() {
         totalUsers: usersResult.count || 0,
         totalOrders: ordersResult.count || 0,
         totalReviews: reviewsResult.count || 0,
-        revenue: 0, // You can calculate this from orders
+        sales: 0, // You can calculate this from orders
         growth: 12.5 // Mock growth percentage
       });
     } catch (error) {
@@ -61,50 +72,36 @@ export default function AdminDashboard() {
     }
   };
 
-  const statCards = [
-    {
-      title: 'Total Products',
-      value: stats.totalProducts,
-      icon: Package,
-      color: 'bg-blue-500',
-      textColor: 'text-blue-600'
-    },
-    {
-      title: 'Total Users',
-      value: stats.totalUsers,
-      icon: Users,
-      color: 'bg-green-500',
-      textColor: 'text-green-600'
-    },
-    {
-      title: 'Total Orders',
-      value: stats.totalOrders,
-      icon: ShoppingCart,
-      color: 'bg-purple-500',
-      textColor: 'text-purple-600'
-    },
-    {
-      title: 'Total Reviews',
-      value: stats.totalReviews,
-      icon: Star,
-      color: 'bg-yellow-500',
-      textColor: 'text-yellow-600'
-    },
-    {
-      title: 'Revenue',
-      value: `$${stats.revenue.toLocaleString()}`,
-      icon: DollarSign,
-      color: 'bg-emerald-500',
-      textColor: 'text-emerald-600'
-    },
-    {
-      title: 'Growth',
-      value: `${stats.growth}%`,
-      icon: TrendingUp,
-      color: 'bg-lime-500',
-      textColor: 'text-lime-600'
+  const fetchLowStock = async () => {
+    try {
+      const { data } = await supabase.from('products').select('id, name, stock').lt('stock', 6).order('stock');
+      setLowStockProducts(data || []);
+    } catch (e) {
+      setLowStockProducts([]);
     }
-  ];
+  };
+
+  const fetchNotifications = async () => {
+    // Example: fetch new orders, new users, low stock, etc.
+    const [orders, users, lowStock] = await Promise.all([
+      supabase.from('orders').select('id, created_at').order('created_at', { ascending: false }).limit(1),
+      supabase.from('users').select('id, created_at').order('created_at', { ascending: false }).limit(1),
+      supabase.from('products').select('id, name, stock').lt('stock', 6).order('stock').limit(1)
+    ]);
+    const notifs = [];
+    if (orders.data && orders.data.length > 0) notifs.push({ type: 'order', message: 'New order received', time: orders.data[0].created_at });
+    if (users.data && users.data.length > 0) notifs.push({ type: 'user', message: 'New user registered', time: users.data[0].created_at });
+    if (lowStock.data && lowStock.data.length > 0) notifs.push({ type: 'lowstock', message: `Low stock: ${lowStock.data[0].name}`, time: new Date().toISOString() });
+    setNotifications(notifs);
+  };
+
+  // Add formatCurrency and formatPercentage helpers from analytics page
+  const formatCurrency = (amount: number) => {
+    return `\u09F3${amount.toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+  const formatPercentage = (value: number) => {
+    return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
+  };
 
   if (isLoading) {
     return (
@@ -127,20 +124,92 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {statCards.map((stat, index) => (
-          <div key={index} className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className={`p-3 rounded-full ${stat.color} bg-opacity-10`}>
-                <stat.icon className={`w-6 h-6 ${stat.textColor}`} />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="flex items-center">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <DollarSign className="w-6 h-6 text-green-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Sales</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.sales)}</p>
             </div>
           </div>
-        ))}
+          <div className="mt-4 flex items-center">
+            <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
+            <span className="text-sm text-green-600">{formatPercentage(stats.growth)}</span>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="flex items-center">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <ShoppingCart className="w-6 h-6 text-blue-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Orders</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalOrders}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="flex items-center">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <Users className="w-6 h-6 text-purple-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Users</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="flex items-center">
+            <div className="p-2 bg-yellow-100 rounded-lg">
+              <Package className="w-6 h-6 text-yellow-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Products</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalProducts}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* After the stats grid, add a 2-column grid for Stock Alerts and Recent Activity */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        {/* Stock Alerts */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold text-yellow-700 mb-4 flex items-center">
+            <Package className="w-5 h-5 text-yellow-600 mr-2" />
+            <span className="font-semibold text-gray-900">Stock Alerts</span>
+          </h2>
+          {lowStockProducts.length === 0 ? (
+            <div className="text-gray-400 text-sm">No low stock products</div>
+          ) : (
+            <ul className="list-disc ml-5 text-yellow-700 text-sm">
+              {lowStockProducts.map(p => (
+                <li key={p.id}>{p.name} (Stock: {p.stock})</li>
+              ))}
+            </ul>
+          )}
+        </div>
+        {/* Recent Activity */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <Bell className="w-5 h-5 text-lime-600 mr-2" />
+            <span className="font-semibold text-gray-900">Notifications</span>
+          </h2>
+          <div className="space-y-4">
+            {notifications.length === 0 && <div className="text-gray-400 text-sm">No new notifications</div>}
+            {notifications.map((notif, i) => (
+              <div key={i} className="flex items-center p-3 bg-gray-50 rounded-lg">
+                <div className={`w-2 h-2 rounded-full mr-3 ${notif.type === 'order' ? 'bg-purple-400' : notif.type === 'user' ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
+                <span className="text-sm text-gray-600">{notif.message}</span>
+                <span className="ml-auto text-xs text-gray-400">{new Date(notif.time).toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Quick Actions */}
@@ -178,25 +247,23 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
-        <div className="space-y-4">
-          <div className="flex items-center p-3 bg-gray-50 rounded-lg">
-            <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-            <span className="text-sm text-gray-600">New user registered</span>
-            <span className="ml-auto text-xs text-gray-400">2 minutes ago</span>
-          </div>
-          <div className="flex items-center p-3 bg-gray-50 rounded-lg">
-            <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-            <span className="text-sm text-gray-600">New product added</span>
-            <span className="ml-auto text-xs text-gray-400">15 minutes ago</span>
-          </div>
-          <div className="flex items-center p-3 bg-gray-50 rounded-lg">
-            <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
-            <span className="text-sm text-gray-600">New order received</span>
-            <span className="ml-auto text-xs text-gray-400">1 hour ago</span>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+        {/* Top Products (placeholder) */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            {/* BarChart3 icon if imported */}
+            Top Products
+          </h3>
+          <div className="space-y-3 text-gray-500 text-sm">Coming soon: Top selling and low stock products will be shown here.</div>
+        </div>
+
+        {/* Recent Orders (placeholder) */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            {/* Calendar icon if imported */}
+            Recent Orders
+          </h3>
+          <div className="space-y-3 text-gray-500 text-sm">Coming soon: Recent orders will be shown here.</div>
         </div>
       </div>
     </div>

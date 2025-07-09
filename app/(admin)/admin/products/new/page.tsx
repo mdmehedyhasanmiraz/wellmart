@@ -16,6 +16,7 @@ import {
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
+import keyword_extractor from 'keyword-extractor';
 
 interface Category {
   id: string;
@@ -35,6 +36,8 @@ export default function NewProductPage() {
   const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [suggestedKeywords, setSuggestedKeywords] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -53,6 +56,31 @@ export default function NewProductPage() {
     fetchCategories();
     fetchManufacturers();
   }, []);
+
+  useEffect(() => {
+    if (!formData.name) {
+      setSuggestedKeywords([]);
+      return;
+    }
+    // Use keyword-extractor to get keywords from the product name
+    const extracted = keyword_extractor.extract(formData.name, {
+      language: 'english',
+      remove_digits: true,
+      return_changed_case: true,
+      remove_duplicates: true,
+    });
+    // Optionally, add some common suffixes for e-commerce
+    const suggestions = [
+      ...extracted,
+      ...extracted.map(word => `${word} buy`),
+      ...extracted.map(word => `${word} price`),
+      ...extracted.map(word => `${word} online`),
+      formData.name + ' price',
+      formData.name + ' online',
+      formData.name + ' buy',
+    ].filter((kw, i, arr) => kw.length > 2 && arr.indexOf(kw) === i && !keywords.includes(kw));
+    setSuggestedKeywords(suggestions.slice(0, 8));
+  }, [formData.name, keywords]);
 
   const fetchCategories = async () => {
     const { data } = await supabase.from('categories').select('id, name').order('name');
@@ -112,6 +140,13 @@ export default function NewProductPage() {
     }
   };
 
+  function addKeyword(kw: string) {
+    if (!keywords.includes(kw)) setKeywords([...keywords, kw]);
+  }
+  function removeKeyword(kw: string) {
+    setKeywords(keywords.filter(k => k !== kw));
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -139,6 +174,7 @@ export default function NewProductPage() {
         is_active: formData.is_active,
         sku: formData.sku || null,
         image_urls: imageUrl ? [imageUrl] : [],
+        keywords: keywords,
       };
 
       const { error } = await supabase
@@ -161,10 +197,10 @@ export default function NewProductPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-col space-x-4">
           <Link
             href="/admin/products"
-            className="flex items-center text-gray-600 hover:text-gray-900"
+            className="flex items-center text-gray-400 hover:text-lime-600"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Products
@@ -298,7 +334,7 @@ export default function NewProductPage() {
                     Regular Price *
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">৳</span>
                     <input
                       type="number"
                       name="price_regular"
@@ -318,7 +354,7 @@ export default function NewProductPage() {
                     Offer Price
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">৳</span>
                     <input
                       type="number"
                       name="price_offer"
@@ -424,6 +460,32 @@ export default function NewProductPage() {
                 <label className="ml-2 text-sm text-gray-700">
                   Active (visible to customers)
                 </label>
+              </div>
+            </div>
+
+            {/* Keywords */}
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <Hash className="w-5 h-5 mr-2" />
+                Keywords
+              </h2>
+              
+              <div className="mt-2">
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {suggestedKeywords.map(kw => (
+                    <button type="button" key={kw} onClick={() => addKeyword(kw)} className="px-3 py-1 bg-lime-100 text-lime-700 rounded-full text-xs hover:bg-lime-200 transition">
+                      {kw}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {keywords.map(kw => (
+                    <span key={kw} className="flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
+                      {kw}
+                      <button type="button" onClick={() => removeKeyword(kw)} className="ml-1 text-gray-400 hover:text-red-500">&times;</button>
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
 

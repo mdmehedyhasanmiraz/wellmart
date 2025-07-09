@@ -73,23 +73,6 @@ export default function ManufacturersPage() {
     }
   };
 
-  const handleToggleStatus = async (manufacturerId: string, currentStatus: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('manufacturers')
-        .update({ is_active: !currentStatus })
-        .eq('id', manufacturerId);
-
-      if (error) throw error;
-
-      toast.success(`Manufacturer ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
-      fetchManufacturers();
-    } catch (error) {
-      console.error('Error updating manufacturer status:', error);
-      toast.error('Failed to update manufacturer status');
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="animate-pulse">

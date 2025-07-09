@@ -53,10 +53,10 @@ export default function NewManufacturerPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-col space-x-4">
           <Link
             href="/admin/manufacturers"
-            className="flex items-center text-gray-600 hover:text-gray-900"
+            className="flex items-center text-gray-400 hover:text-lime-600"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Manufacturers

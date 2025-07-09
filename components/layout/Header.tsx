@@ -72,7 +72,7 @@ function CartPanelContent() {
             </div>
             <div className="flex-1 min-w-0 ml-4">
               <h3 className="text-base font-medium text-gray-900 truncate">{getProductName(item)}</h3>
-              <p className="text-sm text-gray-500 mb-1">Price: ${getProductPrice(item).toFixed(2)}</p>
+              <p className="text-sm text-gray-500 mb-1">Price: ৳{getProductPrice(item).toFixed(2)}</p>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => updateCartItem(getItemId(item), item.quantity - 1)}
@@ -96,14 +96,12 @@ function CartPanelContent() {
                 </button>
               </div>
             </div>
-            <div className="text-right font-semibold text-base min-w-[60px]">
-              ${getProductTotal(item).toFixed(2)}
-            </div>
+            <div className="text-right font-semibold text-base min-w-[60px]">৳{getProductTotal(item).toFixed(2)}</div>
           </div>
         ))}
       </div>
       <div className="p-4 border-t flex flex-col items-end">
-        <div className="text-lg font-bold mb-2">Total: ${total.toFixed(2)}</div>
+        <div className="text-lg font-bold mb-2">Total: ৳{total.toFixed(2)}</div>
         <button className="px-6 py-2 bg-lime-600 text-white rounded hover:bg-lime-700" onClick={() => alert('Checkout coming soon!')}>Checkout</button>
       </div>
     </div>
@@ -339,7 +337,7 @@ export default function Header() {
                               />
                               <div className="flex-1 min-w-0">
                                 <div className="truncate font-medium text-gray-900">{product.name}</div>
-                                <div className="text-sm text-gray-500">${(product.price_offer != null && product.price_offer !== 0 ? product.price_offer : product.price_regular).toFixed(2)}</div>
+                                <div className="text-sm text-gray-500">৳{(product.price_offer != null && product.price_offer !== 0 ? product.price_offer : product.price_regular).toFixed(2)}</div>
                               </div>
                             </Link>
                           ))
@@ -504,7 +502,7 @@ export default function Header() {
                           />
                           <div className="flex-1 min-w-0">
                             <div className="truncate font-medium text-gray-900">{product.name}</div>
-                            <div className="text-sm text-gray-500">${(product.price_offer != null && product.price_offer !== 0 ? product.price_offer : product.price_regular).toFixed(2)}</div>
+                            <div className="text-sm text-gray-500">৳{(product.price_offer != null && product.price_offer !== 0 ? product.price_offer : product.price_regular).toFixed(2)}</div>
                           </div>
                         </Link>
                       ))

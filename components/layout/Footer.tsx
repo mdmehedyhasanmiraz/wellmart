@@ -210,14 +210,7 @@ export default function Footer() {
             {/* Language/Currency Selector */}
             <div className="flex items-center space-x-4">
               <select className="bg-gray-800 border border-gray-700 text-gray-300 text-sm rounded px-2 py-1">
-                <option value="en">English</option>
-                <option value="es">Español</option>
-                <option value="fr">Français</option>
-              </select>
-              <select className="bg-gray-800 border border-gray-700 text-gray-300 text-sm rounded px-2 py-1">
-                <option value="usd">USD</option>
-                <option value="eur">EUR</option>
-                <option value="gbp">GBP</option>
+                <option value="bdt">BDT (৳)</option>
               </select>
             </div>
           </div>

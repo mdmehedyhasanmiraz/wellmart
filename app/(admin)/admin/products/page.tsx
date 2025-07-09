@@ -340,11 +340,11 @@ export default function ProductsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        ${product.price_regular.toFixed(2)}
+                        ৳{product.price_regular.toFixed(2)}
                       </div>
                       {product.price_offer && (
                         <div className="text-sm text-red-600">
-                          Offer: ${product.price_offer.toFixed(2)}
+                          Offer: ৳{product.price_offer.toFixed(2)}
                         </div>
                       )}
                     </td>
