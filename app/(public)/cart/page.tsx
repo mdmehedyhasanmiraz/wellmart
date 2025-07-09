@@ -45,7 +45,7 @@ export default function CartPage() {
   // Coupon state (UI only for now)
   const [coupon, setCoupon] = React.useState('');
   const [couponApplied, setCouponApplied] = React.useState(false);
-  const [couponError, setCouponError] = React.useState('');
+  const [couponError] = React.useState('');
 
   if (loading) {
     return (
@@ -59,7 +59,7 @@ export default function CartPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <h2 className="text-2xl font-bold mb-2">Your cart is empty</h2>
-        <p className="mb-4 text-gray-600">Looks like you haven't added any items yet.</p>
+        <p className="mb-4 text-gray-600">Looks like you haven&apos;t added any items yet.</p>
         <Link href="/shop" className="px-6 py-2 bg-lime-600 text-white rounded hover:bg-lime-700">Continue Shopping</Link>
       </div>
     );

@@ -2,24 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 // Define a type for the test results
 interface TestResults {
   auth?: {
-    user: any;
-    error: any;
+    user: User | null;
+    error: unknown;
   };
   userQuery?: {
-    data: any;
-    error: any;
+    data: unknown;
+    error: unknown;
   };
   allUsersQuery?: {
-    data: any;
-    error: any;
+    data: unknown;
+    error: unknown;
   };
   updateQuery?: {
-    data: any;
-    error: any;
+    data: unknown;
+    error: unknown;
   };
   generalError?: unknown;
 }

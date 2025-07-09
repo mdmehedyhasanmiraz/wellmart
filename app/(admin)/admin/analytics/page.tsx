@@ -26,7 +26,7 @@ interface RecentOrder {
   total_amount: number;
   status: string;
   created_at: string;
-  user?: { name: string };
+  user?: { name: string } | { name: string }[];
 }
 
 interface AnalyticsData {
@@ -40,7 +40,7 @@ interface AnalyticsData {
   userGrowth: number;
   topProducts: TopProduct[];
   recentOrders: RecentOrder[];
-  monthlySales: unknown[]; // Changed from MonthlySale[] to unknown[]
+  monthlySales: unknown[];
 }
 
 export default function AnalyticsPage() {
@@ -152,7 +152,7 @@ export default function AnalyticsPage() {
         .limit(10);
 
       // After fetching recentOrders, map user to a single object if it's an array
-      const normalizedRecentOrders = (recentOrders || []).map((order: any) => ({
+      const normalizedRecentOrders = (recentOrders || []).map((order: RecentOrder) => ({
         ...order,
         user: Array.isArray(order.user) ? order.user[0] : order.user
       }));
@@ -345,7 +345,7 @@ export default function AnalyticsPage() {
                     Order #{order.id.slice(0, 8)}...
                   </p>
                   <p className="text-xs text-gray-500">
-                    {order.user?.name} • {new Date(order.created_at).toLocaleDateString()}
+                    {(order.user as { name: string }).name} • {new Date(order.created_at).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="text-right">

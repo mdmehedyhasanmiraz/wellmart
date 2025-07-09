@@ -27,7 +27,7 @@ export default function LoginPage() {
       console.log('Sending OTP to:', email); // Debug log
       
       // Try to sign in first (existing user)
-      let { error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
           shouldCreateUser: false, // Try existing user first

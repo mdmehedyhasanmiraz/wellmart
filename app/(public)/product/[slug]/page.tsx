@@ -1,6 +1,4 @@
-'use client';
-
-import { notFound, useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import type { Product } from '@/types/product';
 import React, { useState, useEffect } from 'react';

@@ -6,7 +6,6 @@ import {
   Store,
   Shield,
 } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 
 interface SiteSettings {
@@ -92,7 +91,7 @@ export default function SettingsPage() {
       <div className="animate-pulse">
         <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
         <div className="space-y-4">
-          {[1, 2, 3, 4].map((i) => (
+          {[1, 2, 3, 4].map((i: number) => (
             <div key={i} className="bg-white p-6 rounded-lg shadow h-32"></div>
           ))}
         </div>
