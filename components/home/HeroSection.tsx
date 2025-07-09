@@ -154,7 +154,7 @@ export default function HeroSection() {
   }
 
   return (
-    <section className="bg-gray-50 py-8 mx-auto max-w-7xl">
+    <section className="bg-gray-50 py-8 mx-auto max-w-7xl px-3">
       <div className="mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sticky Category Sidebar */}
@@ -230,7 +230,7 @@ export default function HeroSection() {
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent">
+                    {/* <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent">
                       <div className="absolute bottom-6 left-6 text-white">
                         <h2 className="text-2xl lg:text-3xl font-bold mb-2">
                           {getMainBanner()?.title}
@@ -241,7 +241,7 @@ export default function HeroSection() {
                           </p>
                         )}
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 </Link>
               ) : (

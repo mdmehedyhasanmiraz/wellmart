@@ -2,6 +2,7 @@ import HeroSection from "@/components/home/HeroSection";
 import FeaturedProductsArchive from '@/components/home/FeaturedProductsArchive';
 import TopProductsArchive from '@/components/home/TopProductsArchive';
 import RecentProductsArchive from '@/components/home/RecentProductsArchive';
+import ogImage from '@/public/opengraph-image.webp';
 
 export const metadata = {
   title: "Wellmart",
@@ -10,13 +11,13 @@ export const metadata = {
   openGraph: {
     title: "Wellmart",
     description: "Your trusted online shop for all your medical needs.",
-    images: ["/logos/logo-wellmart.png"],
+    images: [ogImage.src],
   },
   twitter: {
     card: "summary_large_image",
     title: "Wellmart",
     description: "Your trusted online shop for all your medical needs.",
-    images: ["/logos/logo-wellmart.png"],
+    images: [ogImage.src],
   },
   icons: {
     icon: "/logos/logo-wellmart.png",
