@@ -1,3 +1,4 @@
+'use client';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import type { Product } from '@/types/product';
