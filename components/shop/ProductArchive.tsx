@@ -10,14 +10,12 @@ import { Grid, List, Loader2, Package } from 'lucide-react';
 interface ProductArchiveProps {
   initialFilters?: ProductFilters;
   onAddToCart?: (product: Product) => void;
-  onAddToWishlist?: (product: Product) => void;
   onViewDetails?: (product: Product) => void;
 }
 
 export default function ProductArchive({
   initialFilters = {},
   onAddToCart,
-  onAddToWishlist,
   onViewDetails
 }: ProductArchiveProps) {
   const [products, setProducts] = useState<Product[]>([]);
@@ -221,15 +219,14 @@ export default function ProductArchive({
               <>
                 <div className={`grid gap-6 ${
                   viewMode === 'grid' 
-                    ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
-                    : 'grid-cols-1'
+                    ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4' 
+                    : 'grid-cols-2'
                 }`}>
                   {products.map((product) => (
                     <ProductCard
                       key={product.id}
                       product={product}
                       onAddToCart={onAddToCart}
-                      onAddToWishlist={onAddToWishlist}
                       onViewDetails={onViewDetails}
                     />
                   ))}

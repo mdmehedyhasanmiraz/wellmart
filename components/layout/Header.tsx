@@ -266,7 +266,7 @@ export default function Header() {
     { name: 'Home', href: '/' },
     { name: 'Shop', href: '/shop' },
     { name: 'Categories', href: '/categories' },
-    { name: 'Deals', href: '/deals' },
+    { name: 'Deals', href: '/shop' },
     { name: 'About', href: '/about' },
     { name: 'Contact', href: '/contact' },
   ];
@@ -395,7 +395,7 @@ export default function Header() {
               {/* Account */}
               <div className="relative">
                 {user ? (
-                  <div className="relative group">
+                  <div className="relative group cursor-pointer">
                     <button className="flex items-center space-x-2 p-2 text-gray-700 hover:text-gray-900 rounded-lg hover:bg-gray-50">
                       {/* User Avatar */}
                       <div className="w-8 h-8 bg-lime-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
@@ -432,7 +432,7 @@ export default function Header() {
                     </div>
                   </div>
                 ) : (
-                  <Link href="/login" className="flex items-center space-x-1 p-2 text-gray-700 hover:text-gray-900">
+                  <Link href="/login" className="flex items-center space-x-1 p-2 text-gray-700 hover:text-gray-900 cursor-pointer">
                     <UserCheck className="h-6 w-6" />
                     <span className="hidden sm:block text-sm font-medium">Sign In</span>
                   </Link>
@@ -442,7 +442,7 @@ export default function Header() {
               {/* Cart */}
               <button
                 type="button"
-                className="relative p-2 text-gray-700 hover:text-gray-900"
+                className="relative p-2 text-gray-700 hover:text-gray-900 cursor-pointer"
                 onClick={() => setIsCartOpen(true)}
                 aria-label="Open cart"
               >
@@ -468,7 +468,7 @@ export default function Header() {
 
       {/* Bottom Menu - Desktop/Tablet */}
       <nav className="hidden md:block border-b border-gray-200 bg-white">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <ul className="flex space-x-2">
             {navigation.map((item) => {
               const isActive = typeof window !== 'undefined' && window.location.pathname === item.href;
@@ -484,6 +484,11 @@ export default function Header() {
               );
             })}
           </ul>
+          <div className="ml-auto pl-4 text-base font-bold text-gray-800 whitespace-nowrap">
+            <Link href="tel:01711997285" className="text-lime-600 hover:text-lime-700 transition-colors">
+              Call: 01711-997285
+            </Link>
+          </div>
         </div>
       </nav>
 

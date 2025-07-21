@@ -7,14 +7,12 @@ import { ShoppingCart, Heart, Eye } from 'lucide-react';
 interface ProductCardProps {
   product: Product;
   onAddToCart?: (product: Product) => void;
-  onAddToWishlist?: (product: Product) => void;
   onViewDetails?: (product: Product) => void;
 }
 
 export default function ProductCard({ 
   product, 
-  onAddToCart, 
-  onAddToWishlist, 
+  onAddToCart,  
   onViewDetails 
 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
@@ -30,7 +28,7 @@ export default function ProductCard({
 
   return (
     <div 
-      className="group relative bg-white rounded-xl transition-all duration-300 overflow-hidden border border-gray-100"
+      className="group relative bg-white rounded-xl transition-all duration-300 overflow-hidden border border-gray-200 shadow-xs"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -80,13 +78,6 @@ export default function ProductCard({
             title="View Details"
           >
             <Eye size={16} />
-          </button>
-          <button
-            onClick={() => onAddToWishlist?.(product)}
-            className="bg-white text-gray-800 p-2 rounded-full hover:bg-gray-50 transition-colors"
-            title="Add to Wishlist"
-          >
-            <Heart size={16} />
           </button>
         </div>
       </div>
@@ -139,7 +130,7 @@ export default function ProductCard({
         <button
           onClick={() => onAddToCart?.(product)}
           disabled={isOutOfStock}
-          className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-medium text-sm transition-all duration-200 ${
+          className={`w-full cursor-pointer flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-medium text-sm transition-all duration-200 ${
             isOutOfStock
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
               : 'bg-green-600 text-white hover:bg-green-700 active:scale-95'

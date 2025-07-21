@@ -241,10 +241,10 @@ export default function ProductPage({ params }: ProductPageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column - Product Images and Video */}
           <div className="space-y-4">
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden h-148 aspect-square">
               <div className="relative">
                 {/* Main Image */}
-                <div className="relative h-96 bg-gray-100 overflow-hidden group">
+                <div className="relative h-148 aspect-square bg-gray-100 overflow-hidden group">
                   {product.image_urls && product.image_urls.length > 0 ? (
                     <img
                       src={product.image_urls[currentImageIndex]}

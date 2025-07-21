@@ -15,7 +15,6 @@ export interface Product {
   description: string;
   category_id: string | null;
   manufacturer_id: string | null;
-  status: 'draft' | 'published';
   is_active: boolean;
   created_at: string;
   updated_at: string;
