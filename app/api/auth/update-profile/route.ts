@@ -16,6 +16,12 @@ export async function PUT(request: NextRequest) {
 
     const { name, phone, division, district, upazila, street } = await request.json();
 
+    if (!supabaseAdmin) {
+      return NextResponse.json({
+        success: false,
+        message: 'Database connection not available'
+      }, { status: 500 });
+    }
     // Update user in database
     const { error } = await supabaseAdmin
       .from('users')
