@@ -85,11 +85,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Database not available' }, { status: 500 });
       }
       // Try to find user by supabase id or email
-      let { data: dbUser, error: dbError } = await supabaseAdminLocal
+      let dbUser;
+      const { data: dbUserById, error: dbError } = await supabaseAdminLocal
         .from('users')
         .select('*')
         .eq('id', supaUser.id)
         .single();
+      dbUser = dbUserById;
       if (dbError || !dbUser) {
         // Try by email
         const { data: dbUserByEmail } = await supabaseAdminLocal
@@ -97,7 +99,7 @@ export async function POST(request: NextRequest) {
           .select('*')
           .eq('email', supaUser.email)
           .single();
-        dbUser = dbUserByEmail || dbUser;
+        dbUser = dbUserByEmail;
       }
       if (!dbUser) {
         // Create user in your users table
