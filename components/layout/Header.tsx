@@ -466,6 +466,27 @@ export default function Header() {
         </div>
       </div>
 
+      {/* Bottom Menu - Desktop/Tablet */}
+      <nav className="hidden md:block border-b border-gray-200 bg-white">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+          <ul className="flex space-x-2">
+            {navigation.map((item) => {
+              const isActive = typeof window !== 'undefined' && window.location.pathname === item.href;
+              return (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className={`inline-block px-4 py-3 text-sm font-medium rounded-t-md transition-colors duration-200 ${isActive ? 'bg-lime-50 text-lime-700 border-b-2 border-lime-600' : 'text-gray-700 hover:bg-gray-50 hover:text-lime-700'}`}
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </nav>
+
       {/* Mobile Search - Overlay */}
       {isSearchOpen && (
         <div className="md:hidden border-b border-gray-200 bg-white">

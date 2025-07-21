@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronDown, ChevronRight, Package } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { useRef } from 'react';
 
 interface Category {
   id: string;
@@ -28,7 +29,7 @@ interface Banner {
   image_url: string;
   link_url?: string;
   is_active: boolean;
-  position: 'main' | 'card1' | 'card2' | 'card3' | 'card4';
+  position: 'main' | 'card1' | 'card2' | 'card3' | 'card4' | 'hero';
 }
 
 export default function HeroSection() {
@@ -219,42 +220,8 @@ export default function HeroSection() {
 
           {/* Banner and Cards Section */}
           <div className="lg:col-span-3">
-            {/* Main Banner */}
-            <div className="mb-6">
-              {getMainBanner() ? (
-                <Link href={getMainBanner()?.link_url || '#'}>
-                  <div className="relative h-80 lg:h-96 rounded-xl overflow-hidden group">
-                    <Image
-                      src={getMainBanner()?.image_url || ''}
-                      alt={getMainBanner()?.title || 'Banner'}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    {/* <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent">
-                      <div className="absolute bottom-6 left-6 text-white">
-                        <h2 className="text-2xl lg:text-3xl font-bold mb-2">
-                          {getMainBanner()?.title}
-                        </h2>
-                        {getMainBanner()?.subtitle && (
-                          <p className="text-lg opacity-90">
-                            {getMainBanner()?.subtitle}
-                          </p>
-                        )}
-                      </div>
-                    </div> */}
-                  </div>
-                </Link>
-              ) : (
-                <div className="h-80 lg:h-96 bg-gradient-to-r from-lime-500 to-lime-600 rounded-xl flex items-center justify-center">
-                  <div className="text-white text-center">
-                    <Package className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                    <h2 className="text-2xl font-bold mb-2">Welcome to Wellmart</h2>
-                    <p className="text-lg opacity-90">Your trusted health partner</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
+            {/* Hero Slider */}
+            <HeroSlider banners={banners.filter(b => b.position === 'hero' && b.is_active)} />
             {/* Feature Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {getCardBanners().map((banner) => (
@@ -298,5 +265,79 @@ export default function HeroSection() {
         </div>
       </div>
     </section>
+  );
+} 
+
+// --- HeroSlider component ---
+type HeroSliderProps = { banners: Banner[] };
+function HeroSlider({ banners }: HeroSliderProps) {
+  const [current, setCurrent] = useState(0);
+  const count = banners.length;
+  if (count === 0) {
+    return (
+      <div className="h-[200px] md:h-[320px] lg:h-[384px] bg-gradient-to-r from-lime-500 to-lime-600 rounded-xl flex items-center justify-center mb-6">
+        <div className="text-white text-center">
+          <Package className="w-16 h-16 mx-auto mb-4 opacity-50" />
+          <h2 className="text-2xl font-bold mb-2">Welcome to Wellmart</h2>
+          <p className="text-lg opacity-90">Your trusted health partner</p>
+        </div>
+      </div>
+    );
+  }
+  const goTo = (idx: number) => setCurrent((idx + count) % count);
+  return (
+    <div className="relative mb-6 w-full aspect-[3/1] rounded-xl overflow-hidden">
+      {banners.map((banner, idx) => (
+        <a
+          key={banner.id}
+          href={banner.link_url || '#'}
+          className={`absolute inset-0 transition-opacity duration-700 ${idx === current ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+          tabIndex={idx === current ? 0 : -1}
+        >
+          <img
+            src={banner.image_url}
+            alt={banner.title}
+            className="w-full h-full object-cover"
+            style={{ aspectRatio: '3/1', width: '100%', height: '100%' }}
+          />
+          <div className="absolute bottom-6 left-6 text-white drop-shadow-lg">
+            <h2 className="text-2xl lg:text-3xl font-bold mb-2">{banner.title}</h2>
+            {banner.subtitle && <p className="text-lg opacity-90">{banner.subtitle}</p>}
+          </div>
+        </a>
+      ))}
+      {/* Arrows */}
+      {count > 1 && (
+        <>
+          <button
+            onClick={() => goTo(current - 1)}
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 z-20"
+            aria-label="Previous slide"
+          >
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <button
+            onClick={() => goTo(current + 1)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 z-20"
+            aria-label="Next slide"
+          >
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </>
+      )}
+      {/* Dots */}
+      {count > 1 && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+          {banners.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => goTo(idx)}
+              className={`w-3 h-3 rounded-full ${idx === current ? 'bg-lime-500' : 'bg-white/60'} border border-white`}
+              aria-label={`Go to slide ${idx + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 } 

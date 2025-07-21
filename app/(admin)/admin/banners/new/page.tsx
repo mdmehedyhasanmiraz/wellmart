@@ -20,8 +20,8 @@ export default function NewBannerPage() {
   const router = useRouter();
   const supabase = createClient();
   const [isLoading, setIsLoading] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>('');
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -40,20 +40,25 @@ export default function NewBannerPage() {
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
+    const files = Array.from(e.target.files || []);
+    setImageFiles(files);
+    const previews: string[] = [];
+    files.forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        previews.push(reader.result as string);
+        if (previews.length === files.length) {
+          setImagePreviews([...previews]);
+        }
       };
       reader.readAsDataURL(file);
-    }
+    });
+    if (files.length === 0) setImagePreviews([]);
   };
 
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview('');
+  const removeImage = (index: number) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const uploadImage = async (file: File): Promise<string | null> => {
@@ -82,38 +87,65 @@ export default function NewBannerPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
-      if (!imageFile) {
-        toast.error('Please select an image');
-        setIsLoading(false);
-        return;
+      if (formData.position === 'hero') {
+        if (imageFiles.length === 0) {
+          toast.error('Please select at least one image');
+          setIsLoading(false);
+          return;
+        }
+        // Upload all images and create a banner for each
+        let sortOrder = 1;
+        for (const file of imageFiles) {
+          const imageUrl = await uploadImage(file);
+          if (!imageUrl) {
+            toast.error('Failed to upload image');
+            setIsLoading(false);
+            return;
+          }
+          const bannerData = {
+            title: formData.title,
+            subtitle: formData.subtitle,
+            position: 'hero',
+            link_url: formData.link_url || null,
+            is_active: formData.is_active,
+            image_url: imageUrl,
+            sort_order: sortOrder++
+          };
+          const { error } = await supabase
+            .from('banners')
+            .insert([bannerData]);
+          if (error) throw error;
+        }
+        toast.success('Hero banners created successfully');
+        router.push('/admin/banners');
+      } else {
+        if (imageFiles.length === 0) {
+          toast.error('Please select an image');
+          setIsLoading(false);
+          return;
+        }
+        const imageUrl = await uploadImage(imageFiles[0]);
+        if (!imageUrl) {
+          toast.error('Failed to upload image');
+          setIsLoading(false);
+          return;
+        }
+        const bannerData = {
+          title: formData.title,
+          subtitle: formData.subtitle,
+          position: formData.position,
+          link_url: formData.link_url || null,
+          is_active: formData.is_active,
+          image_url: imageUrl
+        };
+        const { error } = await supabase
+          .from('banners')
+          .insert([bannerData]);
+        if (error) throw error;
+        toast.success('Banner created successfully');
+        router.push('/admin/banners');
       }
-
-      const imageUrl = await uploadImage(imageFile);
-      if (!imageUrl) {
-        toast.error('Failed to upload image');
-        setIsLoading(false);
-        return;
-      }
-
-      const bannerData = {
-        title: formData.title,
-        subtitle: formData.subtitle,
-        position: formData.position,
-        link_url: formData.link_url || null,
-        is_active: formData.is_active,
-        image_url: imageUrl
-      };
-
-      const { error } = await supabase
-        .from('banners')
-        .insert([bannerData]);
-
-      if (error) throw error;
-
-      toast.success('Banner created successfully');
-      router.push('/admin/banners');
     } catch (error) {
       console.error('Error creating banner:', error);
       toast.error('Failed to create banner');
@@ -252,26 +284,69 @@ export default function NewBannerPage() {
                 Banner Image
               </h2>
               
-              {imagePreview ? (
+              {formData.position === 'hero' ? (
+                <div className="space-y-4">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600 mb-2">Upload one or more hero images</p>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageChange}
+                      className="hidden"
+                      id="image-upload"
+                      required={imageFiles.length === 0}
+                    />
+                    <label
+                      htmlFor="image-upload"
+                      className="bg-lime-600 text-white px-4 py-2 rounded-lg hover:bg-lime-700 transition-colors cursor-pointer"
+                    >
+                      Choose Files
+                    </label>
+                  </div>
+                  {imagePreviews.length > 0 && (
+                    <div className="grid grid-cols-2 gap-4">
+                      {imagePreviews.map((preview, idx) => (
+                        <div key={idx} className="relative">
+                          <img
+                            src={preview}
+                            alt={`Preview ${idx + 1}`}
+                            className="w-full h-48 object-cover rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(idx)}
+                            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="text-sm text-gray-600">
+                    <p><strong>Recommended size:</strong> 1200×400px</p>
+                  </div>
+                </div>
+              ) : imagePreviews.length > 0 ? (
                 <div className="space-y-4">
                   <div className="relative">
                     <img
-                      src={imagePreview}
+                      src={imagePreviews[0]}
                       alt="Preview"
                       className="w-full h-48 object-cover rounded-lg"
                     />
                     <button
                       type="button"
-                      onClick={removeImage}
+                      onClick={() => removeImage(0)}
                       className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                   <div className="text-sm text-gray-600">
-                    <p><strong>Recommended sizes:</strong></p>
-                    <p>Hero: 1200×400px</p>
-                    <p>Cards: 300×200px</p>
+                    <p><strong>Recommended size:</strong> 300×200px</p>
                   </div>
                 </div>
               ) : (
@@ -285,7 +360,7 @@ export default function NewBannerPage() {
                       onChange={handleImageChange}
                       className="hidden"
                       id="image-upload"
-                      required
+                      required={imageFiles.length === 0}
                     />
                     <label
                       htmlFor="image-upload"
@@ -295,9 +370,7 @@ export default function NewBannerPage() {
                     </label>
                   </div>
                   <div className="text-sm text-gray-600">
-                    <p><strong>Recommended sizes:</strong></p>
-                    <p>Hero: 1200×400px</p>
-                    <p>Cards: 300×200px</p>
+                    <p><strong>Recommended size:</strong> 300×200px</p>
                   </div>
                 </div>
               )}
