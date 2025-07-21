@@ -158,7 +158,7 @@ export default function HeroSection() {
       <div className="mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sticky Category Sidebar */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 hidden lg:block">
             <div className="sticky top-24 bg-white rounded-xl border border-gray-200 overflow-hidden">
               <div className="max-h-[500px] overflow-y-auto">
                 {categories.map((category) => (

@@ -4,14 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminMainContent from '@/components/admin/AdminMainContent';
-
-interface User {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  role: string;
-}
+import type { User } from '@supabase/supabase-js';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -60,13 +53,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <AdminSidebar 
-        user={user as any}
+        user={user as User | null}
         userRole={user?.role || ''}
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
       />
       <AdminMainContent 
-        user={user as any}
+        user={user as User | null}
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
       >
