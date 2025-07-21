@@ -14,6 +14,12 @@ export async function GET(request: NextRequest) {
       }, { status: 401 });
     }
 
+    if (!supabaseAdmin) {
+      return NextResponse.json({
+        success: false,
+        message: 'Database connection not available'
+      }, { status: 500 });
+    }
     // Get user orders from database
     const { data: orders, error } = await supabaseAdmin
       .from('user_orders')
