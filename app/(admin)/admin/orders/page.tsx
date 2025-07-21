@@ -520,7 +520,7 @@ export default function OrdersPage() {
                         value={selectedOrder.status}
                         onChange={(e) => {
                           handleStatusChange(selectedOrder.id, e.target.value);
-                          setSelectedOrder({ ...selectedOrder, status: e.target.value as any });
+                          setSelectedOrder({ ...selectedOrder, status: e.target.value as Order["status"] });
                         }}
                         className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border-0 focus:ring-2 focus:ring-lime-500 ${getStatusBadge(selectedOrder.status).color}`}
                       >

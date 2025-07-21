@@ -152,10 +152,10 @@ export default function AnalyticsPage() {
         .limit(10);
 
       // Transform recent orders to match interface
-      const normalizedRecentOrders = (recentOrders || []).map((order: any) => ({
+      const normalizedRecentOrders = (recentOrders || []).map((order) => ({
         ...order,
-        user: { name: order.billing_name }
-      }));
+        user: { name: (order as { billing_name: string }).billing_name || '' }
+      })) as RecentOrder[];
 
       setAnalytics({
         totalSales,

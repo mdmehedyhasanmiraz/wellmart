@@ -11,7 +11,7 @@ function LoginForm() {
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
+  // const searchParams = useSearchParams();
   // const next = searchParams.get('next') || '/dashboard';
   const { syncWithSupabase, syncError } = useSupabaseSync();
 

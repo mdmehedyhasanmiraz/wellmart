@@ -129,7 +129,7 @@ export default function CheckoutPage() {
       // Process cart items to include proper price information
       const processedCartItems = items.map((item: CartItem | GuestCartItem) => {
         let price = 0;
-        let product = item.product as Product;
+        const product = item.product as Product;
         
         if (cart) {
           // User cart - use price_offer if available, otherwise price_regular

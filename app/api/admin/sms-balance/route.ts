@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { smsService } from '@/lib/services/sms';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 
