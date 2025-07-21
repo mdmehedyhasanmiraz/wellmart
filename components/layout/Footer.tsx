@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { FacebookIcon, InstagramIcon, MailIcon } from 'lucide-react';
+import { FacebookIcon, MailIcon } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -36,7 +36,7 @@ export default function Footer() {
     {
       title: 'Contact',
       links: [
-        { name: 'WhatsApp', href: 'https://wa.me/8801234567890' },
+        { name: 'WhatsApp', href: 'https://wa.me/8801711997285' },
         { name: 'Email', href: 'mailto:info@wellmart.com.bd' },
       ]
     }

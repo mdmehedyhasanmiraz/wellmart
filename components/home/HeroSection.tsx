@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronDown, ChevronRight, Package } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
-import { useRef } from 'react';
 
 interface Category {
   id: string;
@@ -129,7 +128,6 @@ export default function HeroSection() {
     );
   };
 
-  const getMainBanner = () => banners.find(b => b.position === 'main');
   const getCardBanners = () => banners.filter(b => b.position.startsWith('card'));
 
   if (isLoading) {
