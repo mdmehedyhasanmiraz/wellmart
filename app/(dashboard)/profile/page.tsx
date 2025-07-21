@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { User, Edit, Save, X } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
-import { supabaseAuthService } from '@/lib/services/supabaseAuth';
+// import { supabaseAuthService } from '@/lib/services/supabaseAuth';
 
 interface User {
   id: string;
@@ -31,7 +31,7 @@ export default function UserProfilePage() {
     upazila: '',
     street: '',
   });
-  const [otpSent, setOtpSent] = useState(false);
+  // const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [awaitingOtp, setAwaitingOtp] = useState(false);
   const [isSupabaseSessionReady, setIsSupabaseSessionReady] = useState(false);
@@ -115,7 +115,7 @@ export default function UserProfilePage() {
             setSaving(false);
             return;
           }
-          setOtpSent(true);
+          // setOtpSent(true);
           setAwaitingOtp(true);
           setIsSupabaseSessionReady(false);
           toast.success('OTP sent to your phone. Please enter it to continue.');
@@ -175,14 +175,14 @@ export default function UserProfilePage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const { data, error } = await supabase.auth.verifyOtp({ phone: user?.phone || '', token: otp, type: 'sms' });
+      const { error } = await supabase.auth.verifyOtp({ phone: user?.phone || '', token: otp, type: 'sms' });
       if (error) {
         toast.error('Invalid OTP. Please try again.');
         setSaving(false);
         return;
       }
       setAwaitingOtp(false);
-      setOtpSent(false);
+      // setOtpSent(false);
       setOtp('');
       // Re-check for Supabase session
       const { data: supaUser } = await supabase.auth.getUser();
@@ -203,19 +203,20 @@ export default function UserProfilePage() {
       }
     } catch (err) {
       toast.error('Failed to verify OTP.');
+      console.error('OTP verify error:', err);
     } finally {
       setSaving(false);
     }
   };
 
   // Helper to format phone to E.164
-  function toE164(phone: string): string {
-    if (!phone) return '';
-    if (phone.startsWith('+')) return phone;
-    if (phone.startsWith('880')) return '+' + phone;
-    if (phone.startsWith('0')) return '+88' + phone;
-    return phone;
-  }
+  // function toE164(phone: string): string {
+  //   if (!phone) return '';
+  //   if (phone.startsWith('+')) return phone;
+  //   if (phone.startsWith('880')) return '+' + phone;
+  //   if (phone.startsWith('0')) return '+88' + phone;
+  //   return phone;
+  // }
 
   // Remove Google linking handler and OTP logic
   // const handleLinkGoogle = async () => {

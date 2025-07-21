@@ -77,6 +77,7 @@ function LoginForm() {
       await supabase.auth.signInWithOAuth({ provider: 'google' });
     } catch (error) {
       toast.error('Google sign-in failed');
+      console.error('Google sign-in failed', error);
     } finally {
       setLoading(false);
     }

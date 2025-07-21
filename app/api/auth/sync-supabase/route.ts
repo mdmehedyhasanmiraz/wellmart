@@ -92,17 +92,16 @@ export async function POST(request: NextRequest) {
         .single();
       if (dbError || !dbUser) {
         // Try by email
-        const { data: dbUserByEmail, error: dbErrorByEmail } = await supabaseAdminLocal
+        const { data: dbUserByEmail } = await supabaseAdminLocal
           .from('users')
           .select('*')
           .eq('email', supaUser.email)
           .single();
-        dbUser = dbUserByEmail;
+        dbUser = dbUserByEmail || dbUser;
       }
       if (!dbUser) {
         // Create user in your users table
-        const { data: newDbUser, error: insertError } = await supabaseAdminLocal
-          .from('users')
+        const { data: newDbUser } = await supabaseAdminLocal.from('users')
           .insert([{
             id: supaUser.id,
             name: supaUser.user_metadata?.name || supaUser.email?.split('@')[0] || 'User',
@@ -144,9 +143,10 @@ export async function POST(request: NextRequest) {
       { status: 401 }
     );
   } catch (error) {
+    console.error('Sync Supabase error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    );
+    );  
   }
 } 

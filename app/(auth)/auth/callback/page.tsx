@@ -11,6 +11,8 @@ export default function OAuthCallback() {
     const handleOAuth = async () => {
       const supabase = createClient();
       const { data, error } = await supabase.auth.getUser();
+      console.log(data);
+      console.log(error);
 
       if (data?.user) {
         // Optionally: sync user to your DB here via API call
