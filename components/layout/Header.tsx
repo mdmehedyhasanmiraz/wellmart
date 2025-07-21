@@ -3,16 +3,22 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import { useCart } from '@/contexts/CartContext';
 import { Search, User, ShoppingCart, Menu, ChevronDown, LogOut, Package, UserCheck } from 'lucide-react';
 import type { CartItem, GuestCartItem } from '@/types/cart';
 import type { Product, Category } from '@/types/product';
 import Image from 'next/image';
-import type { User as AuthUser } from '@supabase/supabase-js';
 
-function CartPanelContent() {
+interface User {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  role: string;
+}
+
+function CartPanelContent({ setIsCartOpen }: { setIsCartOpen: (open: boolean) => void }) {
   const { cart, guestCart, loading, updateCartItem, removeFromCart } = useCart();
   const isGuest = !cart;
   const items = isGuest ? guestCart.items : cart?.items || [];
@@ -103,7 +109,13 @@ function CartPanelContent() {
       </div>
       <div className="p-4 border-t flex flex-col items-end">
         <div className="text-lg font-bold mb-2">Total: ৳{total.toFixed(2)}</div>
-        <button className="px-6 py-2 bg-lime-600 text-white rounded hover:bg-lime-700" onClick={() => alert('Checkout coming soon!')}>Checkout</button>
+        <Link 
+          href="/cart/checkout" 
+          className="px-6 py-2 bg-lime-600 text-white rounded hover:bg-lime-700 text-center transition-colors"
+          onClick={() => setIsCartOpen(false)}
+        >
+          Checkout
+        </Link>
       </div>
     </div>
   );
@@ -112,13 +124,12 @@ function CartPanelContent() {
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
   const { getCartCount } = useCart();
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -129,32 +140,21 @@ export default function Header() {
     checkUser();
   }, []);
 
-  // Fetch categories from Supabase and build tree
+  // Fetch categories from API
   useEffect(() => {
     async function fetchCategories() {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name', { ascending: true });
-      if (!error && data) {
-        // Build tree
-        const map: { [id: string]: Category & { children: Category[] } } = {};
-        data.forEach((cat: Category) => {
-          map[cat.id] = { ...cat, children: [] };
-        });
-        const tree: Category[] = [];
-        Object.values(map).forEach(cat => {
-          if (cat.parent_id && map[cat.parent_id]) {
-            map[cat.parent_id].children.push(cat);
-          } else {
-            tree.push(cat);
-          }
-        });
-        setCategories(tree);
+      try {
+        const response = await fetch('/api/categories');
+        const result = await response.json();
+        if (result.success) {
+          setCategories(result.categories || []);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
       }
     }
     fetchCategories();
-  }, [supabase]);
+  }, []);
 
   // Recursive render for dropdown
   function renderCategoryDropdown(categories: Category[], level = 0): React.ReactNode[] {
@@ -187,24 +187,24 @@ export default function Header() {
     }
     setSearchLoading(true);
     const handler = setTimeout(async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('id, name, slug, price_regular, price_offer, image_urls')
-        .ilike('name', `%${searchQuery.trim()}%`)
-        .eq('is_active', true)
-        .eq('status', 'published')
-        .limit(8);
-      if (!error && data) {
-        setSearchResults(data as unknown as Product[]);
-        setShowDropdown(true);
-      } else {
+      try {
+        const response = await fetch(`/api/products/search?q=${encodeURIComponent(searchQuery.trim())}&limit=8`);
+        const result = await response.json();
+        if (result.success) {
+          setSearchResults(result.products || []);
+          setShowDropdown(true);
+        } else {
+          setSearchResults([]);
+          setShowDropdown(false);
+        }
+      } catch (error) {
         setSearchResults([]);
         setShowDropdown(false);
       }
       setSearchLoading(false);
     }, 300);
     return () => clearTimeout(handler);
-  }, [searchQuery, supabase]);
+  }, [searchQuery]);
 
   // Close category dropdown when clicking outside
   useEffect(() => {
@@ -222,15 +222,29 @@ export default function Header() {
   }, []);
 
   const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setUser(user);
+    try {
+      const response = await fetch('/api/auth/me');
+      const result = await response.json();
+      if (result.success) {
+        setUser(result.user);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      setUser(null);
+    }
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    router.push('/');
-    toast.success('Signed out successfully');
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setUser(null);
+      router.push('/');
+      toast.success('Signed out successfully');
+    } catch (error) {
+      console.error('Logout error:', error);
+      router.push('/');
+    }
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -254,6 +268,16 @@ export default function Header() {
     { name: 'About', href: '/about' },
     { name: 'Contact', href: '/contact' },
   ];
+
+  // Generate user initials for avatar
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
@@ -370,10 +394,13 @@ export default function Header() {
               <div className="relative">
                 {user ? (
                   <div className="relative group">
-                    <button className="flex items-center space-x-1 p-2 text-gray-700 hover:text-gray-900">
-                      <User className="h-6 w-6" />
+                    <button className="flex items-center space-x-2 p-2 text-gray-700 hover:text-gray-900 rounded-lg hover:bg-gray-50">
+                      {/* User Avatar */}
+                      <div className="w-8 h-8 bg-lime-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                        {getUserInitials(user.name)}
+                      </div>
                       <span className="hidden sm:block text-sm font-medium">
-                        {user.user_metadata?.name || user.email?.split('@')[0] || 'Account'}
+                        {user.name}
                       </span>
                       <ChevronDown className="h-4 w-4" />
                     </button>
@@ -516,78 +543,56 @@ export default function Header() {
         </div>
       )}
 
-      {/* Cart Side Panel */}
-      {isCartOpen && (
-        <div className="fixed inset-0 z-50 flex">
-          {/* Overlay */}
-          <div className="fixed inset-0 backdrop-blur-md transition-opacity" onClick={() => setIsCartOpen(false)} />
-          {/* Drawer */}
-          <div className="relative ml-auto w-full max-w-md h-full bg-white shadow-xl flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-lg font-bold">Your Cart</h2>
-              <button onClick={() => setIsCartOpen(false)} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
-            </div>
-            <CartPanelContent />
-          </div>
-        </div>
-      )}
-
-      {/* Navigation Menu */}
-      <nav className="bg-white border-b border-gray-200">
-        {/* Desktop Navigation */}
-        <div className="hidden md:block">
-          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-12">
-              <div className="flex space-x-8">
-                {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="text-gray-700 hover:text-lime-600 px-3 py-2 text-sm font-medium transition-colors"
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden bg-white border-t border-gray-200">
-            <div className="px-2 pt-2 pb-3 space-y-1">
+      {/* Mobile Menu */}
+      {isMenuOpen && (
+        <div className="md:hidden border-b border-gray-200 bg-white">
+          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <nav className="space-y-2">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="text-gray-700 hover:text-lime-600 block px-3 py-2 text-base font-medium"
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.name}
                 </Link>
               ))}
-            </div>
+            </nav>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Mobile Horizontal Scrollable Navigation */}
-        {/* <div className="md:hidden border-t border-gray-100">
-          <div className="overflow-x-auto">
-            <div className="flex space-x-6 px-4 py-2 min-w-max">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="text-gray-700 hover:text-lime-600 px-2 py-1 text-sm font-medium transition-colors whitespace-nowrap border-b-2 border-transparent hover:border-lime-500"
-                >
-                  {item.name}
-                </Link>
-              ))}
+      {/* Cart Panel */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setIsCartOpen(false)} />
+            <div className="fixed inset-y-0 right-0 pl-10 max-w-full flex">
+              <div className="w-screen max-w-md">
+                <div className="h-full flex flex-col bg-white shadow-xl">
+                  <div className="flex-1 py-6 overflow-y-auto px-4 sm:px-6">
+                    <div className="flex items-start justify-between">
+                      <h2 className="text-lg font-medium text-gray-900">Shopping cart</h2>
+                      <button
+                        type="button"
+                        className="-mr-2 p-2 text-gray-400 hover:text-gray-500"
+                        onClick={() => setIsCartOpen(false)}
+                      >
+                        <span className="sr-only">Close panel</span>
+                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <CartPanelContent setIsCartOpen={setIsCartOpen} />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div> */}
-      </nav>
+        </div>
+      )}
     </header>
   );
 } 

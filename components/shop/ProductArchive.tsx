@@ -56,23 +56,56 @@ export default function ProductArchive({
     const fetchProducts = async () => {
       setIsLoading(true);
       try {
-        // TEMP: Remove all filters and joins for debugging
-        const query = supabase
+        // Build the query with proper filters
+        let query = supabase
           .from('products')
           .select('*', { count: 'exact' })
-          .eq('status', 'published')
           .eq('is_active', true)
           .order('created_at', { ascending: false });
 
-        // Uncomment below to re-add filters/joins after debugging
-        // .eq('status', 'published')
-        // .eq('is_active', true)
-        // ... other filters ...
+        // Apply status filter - show both published and draft products for now
+        // You can change this to only show published products when ready
+        query = query.in('status', ['published', 'draft']);
 
-        // // Apply pagination
-        // const from = (currentPage - 1) * ITEMS_PER_PAGE;
-        // const to = from + ITEMS_PER_PAGE - 1;
-        // query = query.range(from, to);
+        // Apply search filter
+        if (filters.search) {
+          query = query.ilike('name', `%${filters.search}%`);
+        }
+
+        // Apply category filter
+        if (filters.category_id) {
+          query = query.eq('category_id', filters.category_id);
+        }
+
+        // Apply manufacturer filter
+        if (filters.manufacturer_id) {
+          query = query.eq('manufacturer_id', filters.manufacturer_id);
+        }
+
+        // Apply price filters
+        if (filters.min_price) {
+          query = query.gte('price_regular', filters.min_price);
+        }
+        if (filters.max_price) {
+          query = query.lte('price_regular', filters.max_price);
+        }
+
+        // Apply stock filter
+        if (filters.in_stock) {
+          query = query.gt('stock', 0);
+        }
+
+        // Apply sorting
+        if (filters.sort_by) {
+          query = query.order(filters.sort_by, { 
+            ascending: filters.sort_order === 'asc' 
+          });
+        }
+
+        // Apply pagination
+        const from = (currentPage - 1) * ITEMS_PER_PAGE;
+        const to = from + ITEMS_PER_PAGE - 1;
+        query = query.range(from, to);
 
         const { data, error, count } = await query;
         console.log('Products:', data, 'Error:', error, 'Count:', count);

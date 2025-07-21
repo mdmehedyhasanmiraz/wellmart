@@ -26,6 +26,14 @@ interface Manufacturer {
   name: string;
 }
 
+interface User {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  role: string;
+}
+
 export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
@@ -36,6 +44,7 @@ export default function EditProductPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [user, setUser] = useState<User | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -43,7 +52,9 @@ export default function EditProductPage() {
     description: "",
     price_regular: "",
     price_offer: "",
+    price_purchase: "",
     stock: "",
+    pack_size: "",
     category_id: "",
     manufacturer_id: "",
     is_active: true,
@@ -54,8 +65,21 @@ export default function EditProductPage() {
     fetchCategories();
     fetchManufacturers();
     fetchProduct();
+    fetchUser();
     // eslint-disable-next-line
   }, []);
+
+  const fetchUser = async () => {
+    try {
+      const response = await fetch('/api/auth/me');
+      const result = await response.json();
+      if (result.success && result.user) {
+        setUser(result.user);
+      }
+    } catch (error) {
+      setUser(null);
+    }
+  };
 
   const fetchCategories = async () => {
     const { data } = await supabase.from("categories").select("id, name").order("name");
@@ -85,7 +109,9 @@ export default function EditProductPage() {
       description: data.description || "",
       price_regular: data.price_regular?.toString() || "",
       price_offer: data.price_offer?.toString() || "",
+      price_purchase: data.price_purchase?.toString() || "",
       stock: data.stock?.toString() || "",
+      pack_size: data.pack_size || "",
       category_id: data.category_id || "",
       manufacturer_id: data.manufacturer_id || "",
       is_active: data.is_active,
@@ -165,7 +191,7 @@ export default function EditProductPage() {
         ? [...existingImages, newImageUrl]
         : existingImages;
       const { id } = params as { id: string };
-      const updateData = {
+      const updateData: any = {
         name: formData.name,
         slug: formData.slug,
         description: formData.description,
@@ -177,7 +203,11 @@ export default function EditProductPage() {
         is_active: formData.is_active,
         sku: formData.sku || null,
         image_urls,
+        pack_size: formData.pack_size,
       };
+      if (user?.role === "admin") {
+        updateData.price_purchase = formData.price_purchase ? parseFloat(formData.price_purchase) : null;
+      }
       const { error } = await supabase
         .from("products")
         .update(updateData)
@@ -197,17 +227,17 @@ export default function EditProductPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-col space-x-4">
           <Link
             href="/admin/products"
-            className="flex items-center text-gray-600 hover:text-gray-900"
+            className="flex items-center text-gray-400 hover:text-lime-600"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Products
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Edit Product</h1>
-            <p className="text-gray-600">Update product details</p>
+            <h1 className="text-2xl font-bold text-gray-900">Add New Product</h1>
+            <p className="text-gray-600">Create a new product for your catalog</p>
           </div>
         </div>
       </div>
@@ -248,6 +278,19 @@ export default function EditProductPage() {
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-transparent"
                     placeholder="Enter product slug (e.g. product-name)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Pack Size
+                  </label>
+                  <input
+                    type="text"
+                    name="pack_size"
+                    value={formData.pack_size}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-transparent"
+                    placeholder="e.g. 500g, 1L, 10pcs"
                   />
                 </div>
               </div>
@@ -321,12 +364,30 @@ export default function EditProductPage() {
                   />
                 </div>
               </div>
+              {/* Show price_purchase only for admin */}
+              {user?.role === "admin" && (
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Purchase Price (Admin Only)
+                  </label>
+                  <input
+                    type="number"
+                    name="price_purchase"
+                    value={formData.price_purchase}
+                    onChange={handleInputChange}
+                    min="0"
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-transparent"
+                    placeholder="0.00"
+                  />
+                </div>
+              )}
             </div>
-            {/* Category & Manufacturer */}
+            {/* Category & Company */}
             <div className="bg-white p-6 rounded-lg shadow">
               <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <Hash className="w-5 h-5 mr-2" />
-                Category & Manufacturer
+                Category & Company
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -349,7 +410,7 @@ export default function EditProductPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Manufacturer
+                    Company
                   </label>
                   <select
                     name="manufacturer_id"
@@ -357,7 +418,7 @@ export default function EditProductPage() {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-transparent"
                   >
-                    <option value="">Select manufacturer</option>
+                    <option value="">Select company</option>
                     {manufacturers.map((man) => (
                       <option key={man.id} value={man.id}>
                         {man.name}

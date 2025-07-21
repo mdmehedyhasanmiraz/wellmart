@@ -13,6 +13,7 @@ import {
   Bell
 } from 'lucide-react';
 
+
 interface DashboardStats {
   totalProducts: number;
   totalUsers: number;
@@ -61,20 +62,28 @@ export default function AdminDashboard() {
 
   const fetchDashboardStats = async () => {
     try {
-      // Fetch basic stats (you can expand this based on your actual tables)
+      // Fetch basic stats from correct tables
       const [productsResult, usersResult, ordersResult, reviewsResult] = await Promise.all([
         supabase.from('products').select('*', { count: 'exact', head: true }),
         supabase.from('users').select('*', { count: 'exact', head: true }),
-        supabase.from('orders').select('*', { count: 'exact', head: true }),
+        supabase.from('user_orders').select('*', { count: 'exact', head: true }),
         supabase.from('reviews').select('*', { count: 'exact', head: true })
       ]);
+
+      // Calculate total sales from user_orders
+      const { data: salesData } = await supabase
+        .from('user_orders')
+        .select('total')
+        .eq('status', 'delivered');
+
+      const totalSales = salesData?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
 
       setStats({
         totalProducts: productsResult.count || 0,
         totalUsers: usersResult.count || 0,
         totalOrders: ordersResult.count || 0,
         totalReviews: reviewsResult.count || 0,
-        sales: 0, // You can calculate this from orders
+        sales: totalSales,
         growth: 12.5 // Mock growth percentage
       });
     } catch (error) {
@@ -97,7 +106,7 @@ export default function AdminDashboard() {
   const fetchNotifications = async () => {
     // Example: fetch new orders, new users, low stock, etc.
     const [orders, users, lowStock] = await Promise.all([
-      supabase.from('orders').select('id, created_at').order('created_at', { ascending: false }).limit(1),
+      supabase.from('user_orders').select('id, created_at').order('created_at', { ascending: false }).limit(1),
       supabase.from('users').select('id, created_at').order('created_at', { ascending: false }).limit(1),
       supabase.from('products').select('id, name, stock').lt('stock', 6).order('stock').limit(1)
     ]);
@@ -260,7 +269,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Top Products (placeholder) */}
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">

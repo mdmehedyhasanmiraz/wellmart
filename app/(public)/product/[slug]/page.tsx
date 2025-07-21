@@ -16,7 +16,6 @@ interface ProductPageProps {
 
 export default function ProductPage({ params }: ProductPageProps) {
   const resolvedParams = React.use(params);
-  console.log('🔍 Debug: Resolved params:', resolvedParams);
   
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -32,20 +31,15 @@ export default function ProductPage({ params }: ProductPageProps) {
 
   useEffect(() => {
     const fetchProductAndReviews = async () => {
-      console.log('🔍 Debug: Starting to fetch product with slug:', resolvedParams.slug);
-      
       try {
-        // First, let's check if the product exists without filters
-        const { data: allProducts, error: allProductsError } = await supabase
-          .from('products')
-          .select('id, name, slug, is_active, status')
-          .eq('slug', resolvedParams.slug);
+        let finalProduct = null;
 
-        console.log('🔍 Debug: All products with this slug:', allProducts);
-        console.log('🔍 Debug: All products error:', allProductsError);
+        // Fetch product with more flexible filtering - try different status combinations
+        let productData = null;
+        let productError = null;
 
-        // Now fetch with filters
-        const { data: productData, error: productError } = await supabase
+        // First try: active and published
+        const { data: publishedProduct, error: publishedError } = await supabase
           .from('products')
           .select(`
             *,
@@ -57,54 +51,89 @@ export default function ProductPage({ params }: ProductPageProps) {
           .eq('status', 'published')
           .single();
 
-        console.log('🔍 Debug: Filtered product data:', productData);
-        console.log('🔍 Debug: Product error:', productError);
+        if (publishedProduct) {
+          productData = publishedProduct;
+        } else {
+          // Second try: active products regardless of status
+          const { data: activeProduct, error: activeError } = await supabase
+            .from('products')
+            .select(`
+              *,
+              category:categories(name, slug),
+              manufacturer:manufacturers!products_manufacturer_id_fkey(name)
+            `)
+            .eq('slug', resolvedParams.slug)
+            .eq('is_active', true)
+            .single();
 
-        if (productError) {
-          console.error('🔍 Debug: Product error details:', productError);
+          if (activeProduct) {
+            productData = activeProduct;
+          } else {
+            // Third try: any product with this slug
+            const { data: anyProduct, error: anyError } = await supabase
+              .from('products')
+              .select(`
+                *,
+                category:categories(name, slug),
+                manufacturer:manufacturers!products_manufacturer_id_fkey(name)
+              `)
+              .eq('slug', resolvedParams.slug)
+              .single();
+
+            if (anyProduct) {
+              productData = anyProduct;
+            } else {
+              productError = anyError || activeError || publishedError;
+            }
+          }
         }
 
         if (productError || !productData) {
-          console.log('🔍 Debug: No product found or error occurred');
+          console.error('Product fetch error:', productError);
           setProduct(null);
           setLoading(false);
           return;
         }
 
-        console.log('🔍 Debug: Product found successfully:', productData);
-        setProduct(productData as unknown as Product);
+        finalProduct = productData;
+
+        setProduct(finalProduct as unknown as Product);
 
         // Fetch approved reviews
         const { data: reviewsData, error: reviewsError } = await supabase
           .from('reviews')
           .select('*')
-          .eq('product_id', productData.id)
+          .eq('product_id', finalProduct.id)
           .eq('status', 'approved')
           .order('created_at', { ascending: false });
-
-        console.log('🔍 Debug: Reviews data:', reviewsData);
-        console.log('🔍 Debug: Reviews error:', reviewsError);
 
         if (!reviewsError && reviewsData) {
           setReviews(reviewsData as unknown as Review[]);
         }
 
         // Check if user has already reviewed this product
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: userReviewData } = await supabase
-            .from('reviews')
-            .select('*')
-            .eq('product_id', productData.id)
-            .eq('user_id', user.id)
-            .single();
+        try {
+          const response = await fetch('/api/auth/me');
+          const result = await response.json();
           
-          if (userReviewData) {
-            setUserReview(userReviewData as unknown as Review);
+          if (result.success) {
+            const { data: userReviewData } = await supabase
+              .from('reviews')
+              .select('*')
+              .eq('product_id', finalProduct.id)
+              .eq('user_id', result.user.id)
+              .single();
+            
+            if (userReviewData) {
+              setUserReview(userReviewData as unknown as Review);
+            }
           }
+        } catch (error) {
+          console.error('Error checking user review:', error);
         }
       } catch (error) {
-        console.error('🔍 Debug: Error fetching product:', error);
+        console.error('Error fetching product:', error);
+        setProduct(null);
       } finally {
         setLoading(false);
       }
@@ -112,8 +141,6 @@ export default function ProductPage({ params }: ProductPageProps) {
 
     fetchProductAndReviews();
   }, [resolvedParams.slug, supabase]);
-
-  console.log('🔍 Debug: Component render state - loading:', loading, 'product:', product ? 'exists' : 'null');
 
   if (loading) {
     return (
@@ -127,7 +154,6 @@ export default function ProductPage({ params }: ProductPageProps) {
   }
 
   if (!product) {
-    console.log('🔍 Debug: No product found, calling notFound()');
     notFound();
     return null;
   }
@@ -166,6 +192,21 @@ export default function ProductPage({ params }: ProductPageProps) {
     }
   };
 
+  // Function to convert YouTube URL to embed URL
+  const getYouTubeEmbedUrl = (url: string): string => {
+    if (!url) return '';
+    
+    // Handle different YouTube URL formats
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    
+    if (match && match[2].length === 11) {
+      return `https://www.youtube.com/embed/${match[2]}`;
+    }
+    
+    return url; // Return original URL if no match
+  };
+
   // Define a type for tab values
   type TabType = 'description' | 'reviews' | 'details';
 
@@ -198,7 +239,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Product Images */}
+          {/* Left Column - Product Images and Video */}
           <div className="space-y-4">
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="relative">
@@ -257,6 +298,25 @@ export default function ProductPage({ params }: ProductPageProps) {
                 )}
               </div>
             </div>
+
+            {/* YouTube Video */}
+            {product.video && (
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900">Product Video</h3>
+                </div>
+                <div className="relative pb-[56.25%] h-0">
+                  <iframe
+                    src={getYouTubeEmbedUrl(product.video)}
+                    title={`${product.name} Video`}
+                    className="absolute top-0 left-0 w-full h-full"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right Column - Product Details */}

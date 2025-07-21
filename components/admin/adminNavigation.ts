@@ -8,7 +8,9 @@ import {
   BarChart3,
   FileText,
   Star,
-  Building2
+  Building2,
+  FolderOpen,
+  Ticket
 } from 'lucide-react';
 
 export const adminNavigation = [
@@ -20,6 +22,8 @@ export const adminNavigation = [
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
   { name: 'Reviews', href: '/admin/reviews', icon: Star },
   { name: 'Banners', href: '/admin/banners', icon: Image },
+  { name: 'Media', href: '/admin/media', icon: FolderOpen },
+  { name: 'Coupons', href: '/admin/coupons', icon: Ticket },
   { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { name: 'Reports', href: '/admin/reports', icon: FileText },
   { name: 'Settings', href: '/admin/settings', icon: Settings },

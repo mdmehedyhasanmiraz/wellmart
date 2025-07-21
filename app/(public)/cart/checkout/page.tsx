@@ -1,45 +1,18 @@
-/**
-SQL for user_orders table:
-
-CREATE TABLE IF NOT EXISTS public.user_orders (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id UUID REFERENCES auth.users(id),
-    cart_items JSONB NOT NULL,
-    total NUMERIC(10,2) NOT NULL,
-    payment_method TEXT NOT NULL CHECK (payment_method IN ('bkash', 'nagad', 'bank')),
-    billing_name TEXT NOT NULL,
-    billing_phone TEXT NOT NULL,
-    billing_email TEXT,
-    billing_address TEXT NOT NULL,
-    billing_city TEXT NOT NULL,
-    billing_district TEXT NOT NULL,
-    billing_country TEXT NOT NULL,
-    billing_postal TEXT NOT NULL,
-    shipping_name TEXT NOT NULL,
-    shipping_phone TEXT NOT NULL,
-    shipping_email,
-    shipping_address TEXT NOT NULL,
-    shipping_city TEXT NOT NULL,
-    shipping_district TEXT NOT NULL,
-    shipping_country TEXT NOT NULL,
-    shipping_postal TEXT NOT NULL,
-    notes TEXT,
-    status TEXT NOT NULL DEFAULT 'pending',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-*/
-
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useRouter } from 'next/navigation';
 import { ShoppingCart } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import BkashPaymentButton from '@/components/payment/BkashPaymentButton';
 import type { CartItem, GuestCartItem } from '@/types/cart';
+import { bankDetails } from '@/lib/config/bankDetails';
+import { CartService } from '@/lib/services/cart';
 
 const paymentMethods = [
   { id: 'bkash', label: 'bKash Payment' },
-  { id: 'nagad', label: 'Nagad Payment' },
+  // { id: 'nagad', label: 'Nagad Payment' },
   { id: 'bank', label: 'Bank Transfer' },
 ];
 
@@ -83,6 +56,8 @@ export default function CheckoutPage() {
   const total = isGuest ? guestCart.total_price : cart?.total_price || 0;
   const router = useRouter();
 
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [payment, setPayment] = useState('bkash');
   const [billing, setBilling] = useState({
     name: '',
@@ -106,6 +81,31 @@ export default function CheckoutPage() {
   });
   const [sameShipping, setSameShipping] = useState(true);
   const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    async function loadUser() {
+      setLoading(true);
+      
+      try {
+        const response = await fetch('/api/auth/me');
+        const result = await response.json();
+        
+        if (result.success) {
+          setUser(result.user);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Error checking user:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadUser();
+  }, []);
 
   const handleBillingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setBilling({ ...billing, [e.target.name]: e.target.value });
@@ -114,13 +114,134 @@ export default function CheckoutPage() {
     setShipping({ ...shipping, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In a real app, validate and save order, then redirect
-    if (payment === 'bkash') router.push('/cart/payment/bkash');
-    else if (payment === 'nagad') router.push('/cart/payment/nagad');
-    else router.push('/cart/payment/bank');
+  const createOrder = async (paymentMethod: string, paymentStatus: string = 'pending') => {
+    setIsSubmitting(true);
+    
+    try {
+      // Process cart items to include proper price information
+      const processedCartItems = items.map((item: any) => {
+        let price = 0;
+        let product = item.product;
+        
+        if (cart) {
+          // User cart - use price_offer if available, otherwise price_regular
+          price = product?.price_offer || product?.price_regular || 0;
+        } else {
+          // Guest cart - use price
+          price = product?.price || 0;
+        }
+        
+        return {
+          product_id: item.product_id,
+          quantity: item.quantity,
+          price: price,
+          product: {
+            id: product?.id,
+            name: product?.name,
+            image_url: product?.image_url || product?.image_urls?.[0],
+            sku: product?.sku
+          }
+        };
+      });
+
+      const orderData = {
+        user_id: user?.id || null,
+        cart_items: processedCartItems,
+        total: total,
+        payment_method: paymentMethod,
+        payment_status: paymentStatus,
+        billing_name: billing.name,
+        billing_phone: billing.phone,
+        billing_email: billing.email,
+        billing_address: billing.address,
+        billing_city: billing.city,
+        billing_district: billing.district,
+        billing_country: billing.country,
+        billing_postal: billing.postal,
+        shipping_name: sameShipping ? billing.name : shipping.name,
+        shipping_phone: sameShipping ? billing.phone : shipping.phone,
+        shipping_email: sameShipping ? billing.email : shipping.email,
+        shipping_address: sameShipping ? billing.address : shipping.address,
+        shipping_city: sameShipping ? billing.city : shipping.city,
+        shipping_district: sameShipping ? billing.district : shipping.district,
+        shipping_country: sameShipping ? billing.country : shipping.country,
+        shipping_postal: sameShipping ? billing.postal : shipping.postal,
+        notes: notes,
+        status: 'pending'
+      };
+
+      const response = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success('Order placed successfully!');
+        // Clear cart after successful order
+        if (cart) {
+          // Clear user cart
+          const cartService = new CartService();
+          await cartService.clearUserCart(user!.id);
+        } else {
+          // Clear guest cart
+          localStorage.removeItem('guestCart');
+        }
+        
+        // Redirect to order confirmation page
+        router.push(`/orders/${result.order.id}`);
+      } else {
+        toast.error(result.error || 'Failed to place order');
+      }
+    } catch (error) {
+      console.error('Error creating order:', error);
+      toast.error('Failed to place order. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate required fields
+    if (!billing.name || !billing.phone || !billing.address || !billing.city || !billing.country || !billing.district || !billing.postal) {
+      toast.error('Please fill in all required billing fields');
+      return;
+    }
+
+    if (!sameShipping && (!shipping.name || !shipping.phone || !shipping.address || !shipping.city || !shipping.country || !shipping.district || !shipping.postal)) {
+      toast.error('Please fill in all required shipping fields');
+      return;
+    }
+
+    // Handle different payment methods
+    if (payment === 'bank') {
+      await createOrder('bank', 'pending');
+    } else if (payment === 'nagad') {
+      toast.error('Nagad payment is not available yet. Please select another payment method.');
+    } else {
+      // For other payment methods, redirect to payment pages
+      router.push(`/cart/payment/${payment}`);
+    }
+  };
+
+  // Check if form is valid for bKash payment
+  const isFormValid = billing.name && billing.phone && billing.address && billing.city && billing.country && billing.district && billing.postal &&
+    (sameShipping || (shipping.name && shipping.phone && shipping.address && shipping.city && shipping.country && shipping.district && shipping.postal));
+
+  if (loading) {
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading...</p>
+      </div>
+    </div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-10">
@@ -394,12 +515,126 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            <button
-              type="submit"
-              className="w-full bg-lime-600 hover:bg-lime-700 text-white font-semibold rounded-lg py-3 text-lg shadow transition-colors"
-            >
-              Proceed to Payment
-            </button>
+            {payment === 'bkash' ? (
+              <div>
+                {!user ? (
+                  <div className="p-4 bg-yellow-100 border-l-4 border-yellow-400 text-yellow-700 rounded-lg">
+                    <p className="text-center">Please log in to proceed with bKash payment.</p>
+                    <button
+                      onClick={() => router.push('/login?next=' + encodeURIComponent(window.location.pathname))}
+                      className="mt-3 w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold rounded-lg py-2 transition-colors"
+                    >
+                      Log In
+                    </button>
+                  </div>
+                ) : (
+                  <BkashPaymentButton
+                    amount={total}
+                    user_id={user.id}
+                    email={billing.email || user.email || ''}
+                    name={billing.name}
+                    phone={billing.phone}
+                    purpose="order"
+                    disabled={!isFormValid}
+                  />
+                )}
+              </div>
+            ) : payment === 'bank' ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center">
+                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                    </svg>
+                    Bank Transfer Details
+                  </h3>
+                                     <div className="space-y-3 text-sm">
+                     <div className="flex justify-between items-center">
+                       <span className="font-medium text-gray-700">Bank Name:</span>
+                       <span className="text-gray-900">{bankDetails.bankName}</span>
+                     </div>
+                     <div className="flex justify-between items-center">
+                       <span className="font-medium text-gray-700">Account Name:</span>
+                       <span className="text-gray-900">{bankDetails.accountName}</span>
+                     </div>
+                     <div className="flex justify-between items-center">
+                       <span className="font-medium text-gray-700">Account Number:</span>
+                       <span className="text-gray-900 font-mono">{bankDetails.accountNumber}</span>
+                     </div>
+                     <div className="flex justify-between items-center">
+                       <span className="font-medium text-gray-700">Branch:</span>
+                       <span className="text-gray-900">{bankDetails.branch}</span>
+                     </div>
+                     <div className="flex justify-between items-center">
+                       <span className="font-medium text-gray-700">Routing Number:</span>
+                       <span className="text-gray-900 font-mono">{bankDetails.routingNumber}</span>
+                     </div>
+                     {bankDetails.swiftCode && (
+                       <div className="flex justify-between items-center">
+                         <span className="font-medium text-gray-700">SWIFT Code:</span>
+                         <span className="text-gray-900 font-mono">{bankDetails.swiftCode}</span>
+                       </div>
+                     )}
+                     <div className="flex justify-between items-center">
+                       <span className="font-medium text-gray-700">Amount to Transfer:</span>
+                       <span className="text-lg font-bold text-lime-600">৳{total.toFixed(2)}</span>
+                     </div>
+                   </div>
+                </div>
+                
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <h4 className="font-semibold text-yellow-800 mb-2 flex items-center">
+                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    Important Instructions
+                  </h4>
+                                     <ul className="text-sm text-yellow-700 space-y-1">
+                     {bankDetails.instructions.map((instruction, index) => (
+                       <li key={index}>• {instruction.replace('{amount}', `৳${total.toFixed(2)}`)}</li>
+                     ))}
+                   </ul>
+                </div>
+
+                                 <button
+                   type="submit"
+                   disabled={isSubmitting}
+                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg py-3 text-lg shadow transition-colors flex items-center justify-center"
+                 >
+                   {isSubmitting ? (
+                     <>
+                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                       Placing Order...
+                     </>
+                   ) : (
+                     'Place Order with Bank Transfer'
+                   )}
+                 </button>
+              </div>
+            ) : payment === 'nagad' ? (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-green-900 mb-3 flex items-center">
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                  </svg>
+                  Nagad Payment
+                </h3>
+                <p className="text-green-700 mb-4">Nagad payment integration coming soon. Please select another payment method.</p>
+                <button
+                  type="submit"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg py-3 text-lg shadow transition-colors"
+                >
+                  Proceed to Payment
+                </button>
+              </div>
+            ) : (
+              <button
+                type="submit"
+                className="w-full bg-lime-600 hover:bg-lime-700 text-white font-semibold rounded-lg py-3 text-lg shadow transition-colors"
+              >
+                Proceed to Payment
+              </button>
+            )}
           </form>
         </div>
       </div>

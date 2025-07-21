@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import { CartSummary, GuestCart, CartContextType } from '@/types/cart';
 import { CartService } from '@/lib/services/cart';
+import { getItemTotal } from '@/utils/priceUtils';
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -37,9 +38,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setUser(user);
-    setLoading(false);
+    try {
+      const response = await fetch('/api/auth/me');
+      const result = await response.json();
+      
+      if (result.success) {
+        setUser(result.user);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Error checking user:', error);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const loadUserCart = async () => {
@@ -99,7 +112,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           const newGuestCart = {
             items: updatedItems,
             total_items: updatedItems.reduce((sum, item) => sum + item.quantity, 0),
-            total_price: updatedItems.reduce((sum, item) => sum + (item.quantity * item.product.price), 0),
+            total_price: updatedItems.reduce((sum, item) => sum + getItemTotal(item), 0),
             item_count: updatedItems.length
           };
           
@@ -124,7 +137,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           const newGuestCart = {
             items: newItems,
             total_items: newItems.reduce((sum, item) => sum + item.quantity, 0),
-            total_price: newItems.reduce((sum, item) => sum + (item.quantity * item.product.price), 0),
+            total_price: newItems.reduce((sum, item) => sum + getItemTotal(item), 0),
             item_count: newItems.length
           };
           
@@ -157,7 +170,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const newGuestCart = {
           items: updatedItems,
           total_items: updatedItems.reduce((sum, item) => sum + item.quantity, 0),
-          total_price: updatedItems.reduce((sum, item) => sum + (item.quantity * item.product.price), 0),
+          total_price: updatedItems.reduce((sum, item) => sum + getItemTotal(item), 0),
           item_count: updatedItems.length
         };
         
@@ -184,7 +197,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const newGuestCart = {
           items: updatedItems,
           total_items: updatedItems.reduce((sum, item) => sum + item.quantity, 0),
-          total_price: updatedItems.reduce((sum, item) => sum + (item.quantity * item.product.price), 0),
+          total_price: updatedItems.reduce((sum, item) => sum + getItemTotal(item), 0),
           item_count: updatedItems.length
         };
         

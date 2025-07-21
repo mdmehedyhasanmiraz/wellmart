@@ -10,6 +10,7 @@ export interface Product {
   price_offer: number | null;
   stock: number;
   image_urls: string[];
+  video: string | null;
   description: string;
   category_id: string | null;
   manufacturer_id: string | null;

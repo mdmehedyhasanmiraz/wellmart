@@ -17,13 +17,13 @@ import { createClient } from '@/utils/supabase/client';
 interface TopProduct {
   id: string;
   name: string;
-  price_regular: number;
-  stock_quantity: number;
+  price: number;
+  stock: number;
   image_url?: string;
 }
 interface RecentOrder {
   id: string;
-  total_amount: number;
+  total: number;
   status: string;
   created_at: string;
   user?: { name: string } | { name: string }[];
@@ -67,17 +67,17 @@ export default function AnalyticsPage() {
 
   const fetchAnalytics = async () => {
     try {
-      // Fetch basic stats
+      // Fetch basic stats from correct tables
       const [
         ordersResult,
         usersResult,
         productsResult,
         salesResult
       ] = await Promise.all([
-        supabase.from('orders').select('id, total_amount, created_at'),
+        supabase.from('user_orders').select('id, total, created_at'),
         supabase.from('users').select('id, created_at'),
         supabase.from('products').select('id').eq('is_active', true),
-        supabase.from('orders').select('total_amount').eq('status', 'delivered')
+        supabase.from('user_orders').select('total').eq('status', 'delivered')
       ]);
 
       const orders = ordersResult.data || [];
@@ -86,7 +86,7 @@ export default function AnalyticsPage() {
       const sales = salesResult.data || [];
 
       // Calculate metrics
-      const totalSales = sales.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+      const totalSales = sales.reduce((sum, order) => sum + (order.total || 0), 0);
       const totalOrders = orders.length;
       const totalUsers = users.length;
       const totalProducts = products.length;
@@ -106,8 +106,8 @@ export default function AnalyticsPage() {
         new Date(order.created_at) < currentPeriodStart
       );
 
-      const currentPeriodSales = currentPeriodOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
-      const previousPeriodSales = previousPeriodOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+      const currentPeriodSales = currentPeriodOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+      const previousPeriodSales = previousPeriodOrders.reduce((sum, order) => sum + (order.total || 0), 0);
       const salesGrowth = previousPeriodSales > 0 ? ((currentPeriodSales - previousPeriodSales) / previousPeriodSales) * 100 : 0;
 
       const orderGrowth = previousPeriodOrders.length > 0 ? 
@@ -130,31 +130,31 @@ export default function AnalyticsPage() {
         .select(`
           id,
           name,
-          price_regular,
-          stock_quantity,
+          price,
+          stock,
           image_url
         `)
         .eq('is_active', true)
-        .order('stock_quantity', { ascending: false })
+        .order('stock', { ascending: false })
         .limit(5);
 
       // Fetch recent orders
       const { data: recentOrders } = await supabase
-        .from('orders')
+        .from('user_orders')
         .select(`
           id,
-          total_amount,
+          total,
           status,
           created_at,
-          user:users(name)
+          billing_name
         `)
         .order('created_at', { ascending: false })
         .limit(10);
 
-      // After fetching recentOrders, map user to a single object if it's an array
-      const normalizedRecentOrders = (recentOrders || []).map((order: RecentOrder) => ({
+      // Transform recent orders to match interface
+      const normalizedRecentOrders = (recentOrders || []).map((order: any) => ({
         ...order,
-        user: Array.isArray(order.user) ? order.user[0] : order.user
+        user: { name: order.billing_name }
       }));
 
       setAnalytics({
@@ -323,7 +323,7 @@ export default function AnalyticsPage() {
                     {product.name}
                   </p>
                   <p className="text-xs text-gray-500">
-                    Stock: {product.stock_quantity} | Price: {formatCurrency(product.price_regular)}
+                    Stock: {product.stock} | Price: {formatCurrency(product.price)}
                   </p>
                 </div>
               </div>
@@ -350,7 +350,7 @@ export default function AnalyticsPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-900">
-                    {formatCurrency(order.total_amount)}
+                    {formatCurrency(order.total)}
                   </p>
                   <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                     order.status === 'delivered' ? 'bg-green-100 text-green-800' :
