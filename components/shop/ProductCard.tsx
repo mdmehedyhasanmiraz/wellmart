@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Product } from '@/types/product';
-import { ShoppingCart, Heart, Eye } from 'lucide-react';
+import { ShoppingCart, Eye } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;

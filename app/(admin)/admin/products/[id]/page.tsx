@@ -156,6 +156,7 @@ export default function EditProductPage() {
       setCategories(data || []);
     } catch (error) {
       toast.error('Failed to load categories');
+      console.log(error);
     }
   };
 
@@ -169,6 +170,7 @@ export default function EditProductPage() {
       setManufacturers(data || []);
     } catch (error) {
       toast.error('Failed to load manufacturers');
+      console.log(error);
     }
   };
 
@@ -236,6 +238,7 @@ export default function EditProductPage() {
               }
               return { url: signedData.signedUrl, name: file.name, path: filePath };
             } catch (error) {
+              console.log(error);
               const { data: { publicUrl } } = supabase.storage
                 .from('images')
                 .getPublicUrl(filePath);
@@ -246,6 +249,7 @@ export default function EditProductPage() {
       setBucketImages(imageUrls);
     } catch (error) {
       toast.error('Failed to load images from bucket');
+      console.log(error);
     } finally {
       setLoadingImages(false);
     }
@@ -261,6 +265,7 @@ export default function EditProductPage() {
       const response = await fetch(url, { method: 'HEAD' });
       return response.ok;
     } catch (error) {
+      console.log(error);
       return false;
     }
   };
@@ -279,6 +284,7 @@ export default function EditProductPage() {
         .getPublicUrl(filePath);
       return publicUrl;
     } catch (error) {
+      console.log(error);
       return null;
     }
   };
@@ -335,6 +341,7 @@ export default function EditProductPage() {
       toast.success('Product updated successfully');
       router.push('/admin/products');
     } catch (error) {
+      console.log(error);
       toast.error('Failed to update product');
     } finally {
       setIsLoading(false);

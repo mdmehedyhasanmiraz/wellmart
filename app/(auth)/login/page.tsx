@@ -72,7 +72,7 @@ function LoginForm() {
   // Modern segmented OTP input handler
   const handleOtpChange = (value: string, idx: number) => {
     if (!/^[0-9]?$/.test(value)) return;
-    let newOtp = otp.split('');
+    const newOtp = otp.split('');
     newOtp[idx] = value;
     setOtp(newOtp.join('').slice(0, 6));
     if (value && idx < 5) {
