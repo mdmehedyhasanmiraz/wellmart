@@ -69,7 +69,7 @@ export default function Footer() {
             <div className="flex items-center mb-4">
               <Image src="/logos/logo-wellmart.png" alt="Wellmart" width={150} height={150} />
             </div>
-            <p className="text-gray-600 mb-6 leading-relaxed">
+            <p className="text-gray-500 text-sm mb-6 leading-relaxed">
               Your trusted destination for quality products. We&apos;re committed to providing exceptional 
               customer service and a seamless shopping experience.
             </p>
