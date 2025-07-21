@@ -105,22 +105,13 @@ export default function ProductCard({
           </p>
         )}
 
-        {/* Dosage Form & Pack Size */}
-        <div className="flex gap-2 mb-3">
-          {product.dosage_form && (
-            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-              {product.dosage_form}
-            </span>
-          )}
-        </div>
-
         {/* Price */}
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-lg font-bold text-gray-900">
+          <span className="text-sm font-bold text-gray-900">
             ৳{currentPrice.toFixed(2)}
           </span>
           {hasDiscount && (
-            <span className="text-sm text-gray-500 line-through">
+            <span className="text-xs text-gray-500 line-through">
               ৳{product.price_regular.toFixed(2)}
             </span>
           )}
@@ -130,10 +121,10 @@ export default function ProductCard({
         <button
           onClick={() => onAddToCart?.(product)}
           disabled={isOutOfStock}
-          className={`w-full cursor-pointer flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-medium text-sm transition-all duration-200 ${
+          className={`w-full cursor-pointer flex items-center justify-center gap-2 py-1 px-4 rounded-md font-medium text-sm transition-all duration-200 ${
             isOutOfStock
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-green-600 text-white hover:bg-green-700 active:scale-95'
+              : 'bg-lime-100 text-green-700 hover:bg-green-700 hover:text-white active:scale-95'
           }`}
         >
           <ShoppingCart size={16} />
