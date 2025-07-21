@@ -14,6 +14,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    if (!supabaseAdmin) {
+      return NextResponse.json({
+        success: false,
+        error: 'Database connection not available'
+      }, { status: 500 });
+    }
     // Get user details from database
     const { data: user, error: dbError } = await supabaseAdmin
       .from('users')
