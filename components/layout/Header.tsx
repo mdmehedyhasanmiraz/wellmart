@@ -200,6 +200,7 @@ export default function Header() {
       } catch (error) {
         setSearchResults([]);
         setShowDropdown(false);
+        console.log(error);
       }
       setSearchLoading(false);
     }, 300);
@@ -232,6 +233,7 @@ export default function Header() {
       }
     } catch (error) {
       setUser(null);
+      console.log(error);
     }
   };
 

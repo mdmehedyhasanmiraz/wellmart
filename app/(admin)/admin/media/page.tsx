@@ -15,6 +15,13 @@ import {
   FolderOpen,
   Image as ImageIcon
 } from 'lucide-react';
+import type { FileObject as SupabaseFileObject } from '@supabase/storage-js';
+
+// Extend FileObject to include folder and fullPath for local use
+interface FileObjectWithExtras extends SupabaseFileObject {
+  folder?: string;
+  fullPath?: string;
+}
 
 interface MediaFile {
   url: string;
@@ -31,7 +38,7 @@ export default function MediaPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  // const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -42,7 +49,7 @@ export default function MediaPage() {
     setLoading(true);
     try {
       // Check if bucket exists
-      const { data: bucketData, error: bucketError } = await supabase.storage
+      const { error: bucketError } = await supabase.storage
         .from('images')
         .list('', { limit: 1 });
 
@@ -69,7 +76,7 @@ export default function MediaPage() {
       console.log('Root data:', rootData);
 
       // Collect all files from all folders
-      let allFiles: any[] = [];
+      let allFiles: FileObjectWithExtras[] = [];
 
       // Add files from root directory
       if (rootData) {

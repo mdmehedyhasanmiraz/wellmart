@@ -1,5 +1,4 @@
 import jwt from 'jsonwebtoken';
-import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
@@ -60,6 +59,7 @@ export class AuthService {
       // We'll do proper verification in API routes
       return true;
     } catch (error) {
+      console.log(error);
       return false;
     }
   }

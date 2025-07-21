@@ -12,8 +12,15 @@ import {
 import { toast } from 'react-hot-toast';
 import { userNavigation } from './userNavigation';
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+}
+
 interface UserSidebarProps {
-  user: any;
+  user: User;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
 }

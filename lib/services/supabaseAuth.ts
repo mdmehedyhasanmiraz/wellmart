@@ -1,5 +1,4 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { createClient } from '@supabase/supabase-js';
 
 export interface SupabaseAuthService {
   // Sync custom JWT session with Supabase using phone number

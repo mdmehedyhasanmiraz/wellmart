@@ -15,6 +15,7 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
+import { Product } from "@/types/product";
 
 interface Category {
   id: string;
@@ -78,6 +79,7 @@ export default function EditProductPage() {
       }
     } catch (error) {
       setUser(null);
+      console.log(error);
     }
   };
 
@@ -191,7 +193,7 @@ export default function EditProductPage() {
         ? [...existingImages, newImageUrl]
         : existingImages;
       const { id } = params as { id: string };
-      const updateData: any = {
+      const updateData: Partial<Product> = {
         name: formData.name,
         slug: formData.slug,
         description: formData.description,
@@ -201,7 +203,7 @@ export default function EditProductPage() {
         category_id: formData.category_id || null,
         manufacturer_id: formData.manufacturer_id || null,
         is_active: formData.is_active,
-        sku: formData.sku || null,
+        sku: formData.sku || "",
         image_urls,
         pack_size: formData.pack_size,
       };

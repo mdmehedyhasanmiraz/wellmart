@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { Category } from '@/types/product';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     if (!supabaseAdmin) {
       return NextResponse.json(
@@ -24,12 +25,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Build tree structure
-    const map: { [id: string]: any & { children: any[] } } = {};
-    data.forEach((cat: any) => {
+    const map: { [id: string]: Category & { children: Category[] } } = {};
+    data.forEach((cat: Category) => {
       map[cat.id] = { ...cat, children: [] };
     });
     
-    const tree: any[] = [];
+    const tree: Category[] = [];
     Object.values(map).forEach(cat => {
       if (cat.parent_id && map[cat.parent_id]) {
         map[cat.parent_id].children.push(cat);

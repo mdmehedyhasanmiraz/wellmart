@@ -5,6 +5,14 @@ import { Search, Package, Clock, CheckCircle, Truck, AlertCircle } from 'lucide-
 import { toast } from 'react-hot-toast';
 import { getItemTotal, formatCurrency } from '@/utils/priceUtils';
 
+interface CartItem {
+  product?: {
+    name?: string;
+    image_url?: string;
+  };
+  quantity: number;
+}
+
 interface Order {
   id: string;
   created_at: string;
@@ -14,7 +22,7 @@ interface Order {
   payment_method: string;
   billing_name: string;
   billing_phone: string;
-  cart_items: any[];
+  cart_items: CartItem[];
   notes?: string;
 }
 
@@ -74,21 +82,6 @@ export default function TrackOrderPage() {
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'processing':
-        return 'bg-blue-100 text-blue-800';
-      case 'shipped':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
   };
 
   return (
@@ -238,13 +231,13 @@ export default function TrackOrderPage() {
           <div className="bg-white rounded-lg shadow-sm p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Items</h2>
             <div className="space-y-4">
-              {order.cart_items.map((item: any, index: number) => (
+              {order.cart_items.map((item: CartItem, index: number) => (
                 <div key={index} className="flex items-center border-b last:border-b-0 pb-4">
                   <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                     {item.product?.image_url ? (
                       <img 
                         src={item.product.image_url} 
-                        alt={item.product.name} 
+                        alt={item.product.name || 'Product'} 
                         className="object-cover w-full h-full" 
                       />
                     ) : (
@@ -294,7 +287,7 @@ export default function TrackOrderPage() {
           <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Order Not Found</h3>
           <p className="text-gray-600 mb-4">
-            We couldn't find an order with the ID you provided. Please check the order ID and try again.
+            We couldn&apos;t find an order with the ID you provided. Please check the order ID and try again.
           </p>
           <div className="text-sm text-gray-500">
             <p>• Make sure you entered the correct order ID</p>

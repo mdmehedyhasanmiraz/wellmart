@@ -1,6 +1,13 @@
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { PaymentRecord } from "@/types/payment";
 
+type OrderUpdateFields = {
+  payment_status?: string;
+  bkash_payment_id?: string;
+  bkash_url?: string;
+  payment_amount?: number;
+};
+
 export async function createPaymentRecord(data: {
   user_id: string;
   order_id?: string;
@@ -122,7 +129,7 @@ export async function updatePaymentRecord(
     }
 
     // Map PaymentRecord fields to user_orders fields
-    const orderUpdates: any = {};
+    const orderUpdates: OrderUpdateFields = {};
     
     if (updates.status) {
       orderUpdates.payment_status = updates.status;

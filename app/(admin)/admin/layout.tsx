@@ -43,6 +43,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       setUser(result.user);
     } catch (error) {
       router.push('/login');
+      console.log(error);
     } finally {
       setIsLoading(false);
     }
@@ -59,13 +60,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <AdminSidebar 
-        user={user}
-        userRole={user?.role}
+        user={user as any}
+        userRole={user?.role || ''}
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
       />
       <AdminMainContent 
-        user={user}
+        user={user as any}
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
       >

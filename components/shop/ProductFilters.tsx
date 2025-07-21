@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { ProductFilters, Category, Manufacturer } from '@/types/product';
-import { Search, Filter, X, ChevronDown } from 'lucide-react';
+import { Search, Filter, X } from 'lucide-react';
 
 interface ProductFiltersProps {
   filters: ProductFilters;

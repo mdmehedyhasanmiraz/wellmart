@@ -25,6 +25,7 @@ export default function AuthRedirect({ children }: AuthRedirectProps) {
         }
       } catch (error) {
         console.log('🔍 User not logged in');
+        console.log(error);
         setLoading(false);
       }
     };

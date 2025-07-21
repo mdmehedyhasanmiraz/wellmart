@@ -21,6 +21,28 @@ import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import { getItemPrice, getItemTotal, formatCurrency as formatCurrencyUtil } from '@/utils/priceUtils';
 
+interface CartItem {
+  product_id: string;
+  quantity: number;
+  price: number;
+  product: {
+    name: string;
+    image_url?: string;
+    sku?: string;
+  };
+}
+
+// interface OrderItem {
+//   id: string;
+//   product_id: string;
+//   quantity: number;
+//   price: number;
+//   product: {
+//     name: string;
+//     image_url: string | null;
+//   };
+// }
+
 interface Order {
   id: string;
   user_id: string;
@@ -51,35 +73,13 @@ interface Order {
   shipping_district: string;
   shipping_country: string;
   shipping_postal?: string;
-  cart_items: any[];
+  cart_items: CartItem[];
   notes?: string;
   created_at: string;
   user: {
     name: string;
     email: string;
     phone: string;
-  };
-}
-
-interface CartItem {
-  product_id: string;
-  quantity: number;
-  price: number;
-  product: {
-    name: string;
-    image_url?: string;
-    sku?: string;
-  };
-}
-
-interface OrderItem {
-  id: string;
-  product_id: string;
-  quantity: number;
-  price: number;
-  product: {
-    name: string;
-    image_url: string | null;
   };
 }
 
@@ -132,7 +132,7 @@ export default function OrdersPage() {
       }
       
       // Transform the data to match our interface
-      const transformedOrders = (data || []).map((order: any) => ({
+      const transformedOrders = (data || []).map((order: Order) => ({
         ...order,
         user: {
           name: order.billing_name,
@@ -653,7 +653,7 @@ export default function OrdersPage() {
                 </h3>
                 {selectedOrder.cart_items && selectedOrder.cart_items.length > 0 ? (
                   <div className="space-y-3">
-                    {selectedOrder.cart_items.map((item: any, index: number) => (
+                    {selectedOrder.cart_items.map((item: CartItem, index: number) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border">
                         <div className="flex items-center space-x-3">
                           {item.product?.image_url && (

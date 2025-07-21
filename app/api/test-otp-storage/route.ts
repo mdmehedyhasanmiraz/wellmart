@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Access the global OTP storage
-    const otpStorage = (global as any).otpStorage;
+    const otpStorage = (global as { otpStorage: Map<string, { otp: string; expiresAt: Date }> }).otpStorage;
     
     if (!otpStorage) {
       return NextResponse.json({
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const storageData = Array.from(otpStorage.entries()).map((entry: any) => {
+    const storageData = Array.from(otpStorage.entries()).map((entry: [string, { otp: string; expiresAt: Date }]) => {
       const [phone, data] = entry;
       return {
         phone,

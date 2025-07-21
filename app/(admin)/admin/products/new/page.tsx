@@ -17,6 +17,7 @@ import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import keyword_extractor from 'keyword-extractor';
+import { Product } from '@/types/product';
 
 interface Category {
   id: string;
@@ -83,6 +84,7 @@ export default function NewProductPage() {
       }
     } catch (error) {
       setUser(null);
+      console.log(error);
     }
   };
 
@@ -172,7 +174,7 @@ export default function NewProductPage() {
     setLoadingImages(true);
     try {
       // First, let's check if the bucket exists and is accessible
-      const { data: bucketData, error: bucketError } = await supabase.storage
+      const { error: bucketError } = await supabase.storage
         .from('images')
         .list('', { limit: 1 });
 
@@ -330,7 +332,7 @@ export default function NewProductPage() {
       // Combine uploaded images with selected bucket images
       const allImageUrls = [...uploadedImageUrls, ...imagePreviews.filter(url => !url.startsWith('data:'))];
 
-      const productData: any = {
+      const productData: Partial<Product> = {
         name: formData.name,
         slug: formData.slug,
         description: formData.description,
@@ -341,9 +343,9 @@ export default function NewProductPage() {
         category_id: formData.category_id || null,
         manufacturer_id: formData.manufacturer_id || null,
         is_active: formData.is_active,
-        sku: formData.sku || null,
+        sku: formData.sku || "",
         image_urls: allImageUrls,
-        keywords: keywords,
+        // keywords: keywords,
         video: formData.video,
       };
       if (user?.role === 'admin') {

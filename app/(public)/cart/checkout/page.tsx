@@ -9,6 +9,7 @@ import BkashPaymentButton from '@/components/payment/BkashPaymentButton';
 import type { CartItem, GuestCartItem } from '@/types/cart';
 import { bankDetails } from '@/lib/config/bankDetails';
 import { CartService } from '@/lib/services/cart';
+import { Product } from '@/types/product';
 
 const paymentMethods = [
   { id: 'bkash', label: 'bKash Payment' },
@@ -56,7 +57,14 @@ export default function CheckoutPage() {
   const total = isGuest ? guestCart.total_price : cart?.total_price || 0;
   const router = useRouter();
 
-  const [user, setUser] = useState<any>(null);
+  interface User {
+    id: string;
+    name: string;
+    phone: string;
+    email: string;
+  }
+
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [payment, setPayment] = useState('bkash');
   const [billing, setBilling] = useState({
@@ -119,16 +127,16 @@ export default function CheckoutPage() {
     
     try {
       // Process cart items to include proper price information
-      const processedCartItems = items.map((item: any) => {
+      const processedCartItems = items.map((item: CartItem | GuestCartItem) => {
         let price = 0;
-        let product = item.product;
+        let product = item.product as Product;
         
         if (cart) {
           // User cart - use price_offer if available, otherwise price_regular
           price = product?.price_offer || product?.price_regular || 0;
         } else {
           // Guest cart - use price
-          price = product?.price || 0;
+          price = product?.price_offer || product?.price_regular || 0;
         }
         
         return {
@@ -138,8 +146,20 @@ export default function CheckoutPage() {
           product: {
             id: product?.id,
             name: product?.name,
-            image_url: product?.image_url || product?.image_urls?.[0],
-            sku: product?.sku
+            image_url: product?.image_urls?.[0],
+            sku: product?.sku,
+            price_offer: product?.price_offer,
+            price_regular: product?.price_regular,
+            price: product?.price_offer || product?.price_regular || 0,
+            stock: product?.stock || 0,
+            description: product?.description || '',
+            category_id: product?.category_id || '',
+            manufacturer_id: product?.manufacturer_id || '',
+            is_active: product?.is_active || false,
+            created_at: product?.created_at || '',
+            updated_at: product?.updated_at || '',
+            category: product?.category || null,
+            manufacturer: product?.manufacturer || null,
           }
         };
       });

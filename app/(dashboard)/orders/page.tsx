@@ -4,6 +4,13 @@ import { toast } from 'react-hot-toast';
 import { Package, Calendar, DollarSign, Eye, Search } from 'lucide-react';
 import Link from 'next/link';
 
+interface CartItem {
+  product?: {
+    name?: string;
+  };
+  quantity: number;
+}
+
 interface Order {
   id: string;
   created_at: string;
@@ -11,7 +18,7 @@ interface Order {
   status: string;
   payment_status: string;
   payment_method: string;
-  cart_items: any[];
+  cart_items: CartItem[];
 }
 
 export default function UserOrdersPage() {
@@ -225,7 +232,7 @@ export default function UserOrdersPage() {
                           Items: {order.cart_items.length} product{order.cart_items.length !== 1 ? 's' : ''}
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          {order.cart_items.slice(0, 3).map((item: any, index: number) => (
+                          {order.cart_items.slice(0, 3).map((item: CartItem, index: number) => (
                             <span key={index} className="text-xs bg-gray-100 px-2 py-1 rounded">
                               {item.product?.name || 'Product'} (x{item.quantity})
                             </span>

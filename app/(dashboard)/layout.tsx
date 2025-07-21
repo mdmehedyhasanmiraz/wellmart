@@ -39,6 +39,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       setUser(result.user);
     } catch (error) {
       router.push('/login');
+      console.log(error);
     } finally {
       setIsLoading(false);
     }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { smsService } from '@/lib/services/sms';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Check if user is authenticated and is admin
     const supabase = await createRouteHandlerClient();

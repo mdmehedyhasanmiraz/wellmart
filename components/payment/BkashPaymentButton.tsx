@@ -28,7 +28,6 @@ export default function BkashPaymentButton({
   disabled = false
 }: BkashPaymentButtonProps) {
   const [paying, setPaying] = useState(false);
-  const router = useRouter();
 
   const startPayment = async () => {
     if (disabled) {

@@ -4,9 +4,16 @@ import { Menu } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { userNavigation } from './userNavigation';
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+}
+
 interface UserMainContentProps {
   children: React.ReactNode;
-  user: any;
+  user: User;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
 }

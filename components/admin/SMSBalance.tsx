@@ -3,11 +3,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
-interface SMSBalanceData {
-  balance: string;
-  message: string;
-}
-
 export default function SMSBalance() {
   const [balance, setBalance] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

@@ -12,8 +12,8 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') || '/dashboard';
-  const { syncWithSupabase, isSyncing, syncError } = useSupabaseSync();
+  // const next = searchParams.get('next') || '/dashboard';
+  const { syncWithSupabase, syncError } = useSupabaseSync();
 
   // Check if user is already logged in
   useEffect(() => {
@@ -28,6 +28,7 @@ function LoginForm() {
         }
       } catch (error) {
         console.log('🔍 User not logged in');
+        console.log(error);
       }
     };
 

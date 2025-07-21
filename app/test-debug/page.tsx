@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 
 export default function TestDebugPage() {
-  const [authStatus, setAuthStatus] = useState<any>(null);
+  const [authStatus, setAuthStatus] = useState<{ error?: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -16,7 +16,7 @@ export default function TestDebugPage() {
       const result = await response.json();
       setAuthStatus(result);
     } catch (error) {
-      setAuthStatus({ error: error.message });
+      setAuthStatus({ error: (error as Error).message });
     } finally {
       setLoading(false);
     }
@@ -73,11 +73,11 @@ export default function TestDebugPage() {
       <div className="mb-4">
         <h2 className="text-lg font-semibold">Instructions:</h2>
         <ol className="list-decimal list-inside space-y-2">
-          <li>Click "Test Send OTP" to send an OTP to your phone</li>
+          <li>Click &quot;Test Send OTP&quot; to send an OTP to your phone</li>
           <li>Check the console for the OTP code</li>
           <li>Go to the login page and enter the OTP</li>
           <li>Check if you get redirected to dashboard</li>
-          <li>Come back here and click "Refresh Auth Status"</li>
+          <li>Come back here and click &quot;Refresh Auth Status&quot;</li>
         </ol>
       </div>
 
@@ -87,7 +87,7 @@ export default function TestDebugPage() {
           <li>Open browser developer tools (F12)</li>
           <li>Go to Console tab</li>
           <li>Go to Application/Storage tab → Cookies</li>
-          <li>Look for "wellmart_session" cookie</li>
+          <li>Look for &quot;wellmart_session&quot; cookie</li>
           <li>Try the login flow and watch console logs</li>
         </ol>
       </div>

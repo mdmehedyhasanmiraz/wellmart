@@ -7,6 +7,14 @@ import { CheckCircle, Clock, Building2, ShoppingBag } from 'lucide-react';
 import { bankDetails } from '@/lib/config/bankDetails';
 import { getItemTotal, formatCurrency } from '@/utils/priceUtils';
 
+interface CartItem {
+  product?: {
+    name?: string;
+    image_url?: string;
+  };
+  quantity: number;
+}
+
 interface Order {
   id: string;
   total: number;
@@ -16,7 +24,7 @@ interface Order {
   billing_name: string;
   billing_phone: string;
   billing_email?: string;
-  cart_items: any[];
+  cart_items: CartItem[];
   notes?: string;
   created_at: string;
 }
@@ -75,7 +83,7 @@ export default function OrderConfirmationPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Order Not Found</h1>
-          <p className="text-gray-600">The order you're looking for doesn't exist.</p>
+          <p className="text-gray-600">The order you&apos;re looking for doesn&apos;t exist.</p>
         </div>
       </div>
     );
@@ -211,13 +219,13 @@ export default function OrderConfirmationPage() {
         <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Items</h2>
           <div className="space-y-4">
-            {order.cart_items.map((item: any, index: number) => (
+            {order.cart_items.map((item: CartItem, index: number) => (
               <div key={index} className="flex items-center border-b last:border-b-0 pb-4">
                 <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                   {item.product?.image_url ? (
                     <img 
                       src={item.product.image_url} 
-                      alt={item.product.name} 
+                      alt={item.product.name || 'Product'} 
                       className="object-cover w-full h-full" 
                     />
                   ) : (

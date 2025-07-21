@@ -6,7 +6,6 @@ import {
   Package, 
   Clock, 
   CheckCircle, 
-  TrendingUp,
   DollarSign,
   Calendar,
   Search,
@@ -132,7 +131,7 @@ export default function UserDashboardPage() {
           Welcome back, {user?.name}! 👋
         </h1>
         <p className="text-gray-600">
-          Here's what's happening with your orders and account.
+          Here&apos;s what&apos;s happening with your orders and account.
         </p>
       </div>
 

@@ -8,6 +8,7 @@ export interface Product {
   sku: string;
   price_regular: number;
   price_offer: number | null;
+  price_purchase?: number | null;
   stock: number;
   image_urls: string[];
   video: string | null;
