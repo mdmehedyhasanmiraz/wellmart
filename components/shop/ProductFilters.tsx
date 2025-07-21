@@ -19,7 +19,6 @@ export default function ProductFilters({
   manufacturers,
   isLoading = false
 }: ProductFiltersProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [localFilters, setLocalFilters] = useState<ProductFilters>(filters);
 
   useEffect(() => {
@@ -64,22 +63,12 @@ export default function ProductFilters({
                 Clear
               </button>
             )}
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <ChevronDown 
-                size={20} 
-                className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-              />
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Filter Content */}
-      {isExpanded && (
-        <div className="p-4 space-y-6">
+      {/* Filter Content (always visible) */}
+      <div className="p-4 space-y-6">
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -204,8 +193,7 @@ export default function ProductFilters({
               </select>
             </div>
           </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 } 

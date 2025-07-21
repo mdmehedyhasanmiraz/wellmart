@@ -159,7 +159,7 @@ export default function HeroSection() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sticky Category Sidebar */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="sticky top-24 bg-white rounded-xl border border-gray-200 overflow-hidden">
               <div className="max-h-[500px] overflow-y-auto">
                 {categories.map((category) => (
                   <div key={category.id} className="border-b border-gray-100 last:border-b-0">
@@ -223,7 +223,7 @@ export default function HeroSection() {
             <div className="mb-6">
               {getMainBanner() ? (
                 <Link href={getMainBanner()?.link_url || '#'}>
-                  <div className="relative h-80 lg:h-96 rounded-xl overflow-hidden shadow-lg group">
+                  <div className="relative h-80 lg:h-96 rounded-xl overflow-hidden group">
                     <Image
                       src={getMainBanner()?.image_url || ''}
                       alt={getMainBanner()?.title || 'Banner'}
@@ -259,7 +259,7 @@ export default function HeroSection() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {getCardBanners().map((banner) => (
                 <Link key={banner.id} href={banner.link_url || '#'}>
-                  <div className="relative h-32 rounded-xl overflow-hidden shadow-md group cursor-pointer">
+                  <div className="relative h-32 rounded-xl overflow-hidden group cursor-pointer">
                     <Image
                       src={banner.image_url}
                       alt={banner.title}

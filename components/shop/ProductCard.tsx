@@ -30,7 +30,7 @@ export default function ProductCard({
 
   return (
     <div 
-      className="group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100"
+      className="group relative bg-white rounded-xl transition-all duration-300 overflow-hidden border border-gray-100"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -71,19 +71,19 @@ export default function ProductCard({
         )}
 
         {/* Quick Action Buttons */}
-        <div className={`absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center gap-2 ${
+        <div className={`absolute inset-0 transition-all duration-300 flex items-center justify-center gap-2 ${
           isHovered ? 'opacity-100' : 'opacity-0'
         }`}>
           <button
             onClick={() => onViewDetails?.(product)}
-            className="bg-white text-gray-800 p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
+            className="bg-white text-gray-800 p-2 rounded-full hover:bg-gray-50 transition-colors"
             title="View Details"
           >
             <Eye size={16} />
           </button>
           <button
             onClick={() => onAddToWishlist?.(product)}
-            className="bg-white text-gray-800 p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
+            className="bg-white text-gray-800 p-2 rounded-full hover:bg-gray-50 transition-colors"
             title="Add to Wishlist"
           >
             <Heart size={16} />
@@ -101,8 +101,10 @@ export default function ProductCard({
         )}
 
         {/* Product Name */}
-        <h3 className="font-semibold text-gray-900 text-sm mb-2 line-clamp-2 hover:text-blue-600 transition-colors cursor-pointer">
-          {product.name}
+        <h3 className="font-semibold text-gray-900 text-sm mb-2 line-clamp-2">
+          <a href={`/product/${product.slug}`} className="hover:text-blue-600 transition-colors cursor-pointer">
+            {product.name}
+          </a>
         </h3>
 
         {/* Generic Name */}
@@ -117,11 +119,6 @@ export default function ProductCard({
           {product.dosage_form && (
             <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
               {product.dosage_form}
-            </span>
-          )}
-          {product.pack_size && (
-            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-              {product.pack_size}
             </span>
           )}
         </div>
