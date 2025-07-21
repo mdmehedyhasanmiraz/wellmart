@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, Suspense, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useSupabaseSync } from '@/hooks/useSupabaseSync';
 

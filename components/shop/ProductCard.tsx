@@ -95,14 +95,14 @@ export default function ProductCard({
       <div className="p-4">
         {/* Category */}
         {product.category && (
-          <div className="text-xs text-blue-600 font-medium mb-1">
+          <div className="text-xs text-green-600 font-medium mb-1">
             {product.category.name}
           </div>
         )}
 
         {/* Product Name */}
         <h3 className="font-semibold text-gray-900 text-sm mb-2 line-clamp-2">
-          <a href={`/product/${product.slug}`} className="hover:text-blue-600 transition-colors cursor-pointer">
+          <a href={`/product/${product.slug}`} className="hover:text-green-600 transition-colors cursor-pointer">
             {product.name}
           </a>
         </h3>
@@ -135,20 +135,6 @@ export default function ProductCard({
           )}
         </div>
 
-        {/* Stock Status */}
-        <div className="flex items-center justify-between mb-3">
-          <span className={`text-xs font-medium ${
-            isOutOfStock ? 'text-red-600' : 'text-green-600'
-          }`}>
-            {isOutOfStock ? 'Out of Stock' : `${product.stock} in stock`}
-          </span>
-          {product.manufacturer && (
-            <span className="text-xs text-gray-500">
-              {product.manufacturer.name}
-            </span>
-          )}
-        </div>
-
         {/* Add to Cart Button */}
         <button
           onClick={() => onAddToCart?.(product)}
@@ -156,7 +142,7 @@ export default function ProductCard({
           className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-medium text-sm transition-all duration-200 ${
             isOutOfStock
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
+              : 'bg-green-600 text-white hover:bg-green-700 active:scale-95'
           }`}
         >
           <ShoppingCart size={16} />

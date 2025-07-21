@@ -29,7 +29,7 @@ export default function RecentProductsArchive() {
   }, []);
 
   return (
-    <section className="py-12 mx-auto max-w-7xl">
+    <section className="py-12 mx-auto max-w-7xl px-3">
       <h2 className="text-2xl font-bold mb-6">Recently Added Products</h2>
       {loading ? (
         <div className="flex justify-center py-8">Loading...</div>
