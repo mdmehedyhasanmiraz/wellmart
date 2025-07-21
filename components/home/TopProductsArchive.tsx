@@ -42,7 +42,7 @@ export default function TopProductsArchive() {
           <div className="mt-4 text-lg font-medium text-gray-900">No products found</div>
         </div>
       ) : (
-        <div className="grid grid-cols-6 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} onAddToCart={() => addToCart(product.id, 1)} />
           ))}
