@@ -9,12 +9,12 @@ export interface BankDetails {
 }
 
 export const bankDetails: BankDetails = {
-  bankName: "Sonali Bank",
-  accountName: "Wellmart BD",
-  accountNumber: "1234567890",
-  branch: "Dhaka Main Branch",
-  routingNumber: "200270116",
-  swiftCode: "BSONBDDH",
+  bankName: "Southeast Bank PLC.",
+  accountName: "Md. Murad Molla",
+  accountNumber: "20503320100194716",
+  branch: "Mogbazar, Dhaka",
+  routingNumber: "205270248",
+  swiftCode: "SEBDBDDH",
   instructions: [
     "Please transfer the exact amount shown",
     "Use your order ID as payment reference",

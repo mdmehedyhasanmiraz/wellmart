@@ -5,7 +5,8 @@ export async function POST() {
   try {
     const response = NextResponse.json({
       success: true,
-      message: 'Logged out successfully'
+      message: 'Logged out successfully',
+      supabaseSignOut: true // Tell client to also sign out from Supabase
     });
 
     // Clear session cookie

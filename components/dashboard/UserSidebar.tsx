@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { userNavigation } from './userNavigation';
+import { supabaseAuthService } from '@/lib/services/supabaseAuth';
 
 interface User {
   id: string;
@@ -36,6 +37,7 @@ export default function UserSidebar({
   const handleSignOut = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
+      await supabaseAuthService.signOutFromSupabase();
       router.push('/login');
       toast.success('Signed out successfully');
     } catch (error) {

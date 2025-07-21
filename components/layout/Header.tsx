@@ -9,6 +9,7 @@ import { Search, User, ShoppingCart, Menu, ChevronDown, LogOut, Package, UserChe
 import type { CartItem, GuestCartItem } from '@/types/cart';
 import type { Product, Category } from '@/types/product';
 import Image from 'next/image';
+import { supabaseAuthService } from '@/lib/services/supabaseAuth';
 
 interface User {
   id: string;
@@ -240,6 +241,7 @@ export default function Header() {
   const handleSignOut = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
+      await supabaseAuthService.signOutFromSupabase();
       setUser(null);
       router.push('/');
       toast.success('Signed out successfully');

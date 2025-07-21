@@ -39,7 +39,7 @@ export default function UserMainContent({
             <Menu className="w-6 h-6" />
           </button>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex space-x-4">
             <h1 className="text-lg font-semibold text-gray-900">
               {currentPage?.name || 'Dashboard'}
             </h1>

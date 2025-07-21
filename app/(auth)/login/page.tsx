@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useSupabaseSync } from '@/hooks/useSupabaseSync';
+import { createClient } from '@/utils/supabase/client';
 
 function LoginForm() {
   const [phone, setPhone] = useState('');
@@ -16,6 +17,7 @@ function LoginForm() {
   // const searchParams = useSearchParams();
   // const next = searchParams.get('next') || '/dashboard';
   const { syncWithSupabase, syncError } = useSupabaseSync();
+  const supabase = createClient();
 
   // Check if user is already logged in
   useEffect(() => {
@@ -64,6 +66,17 @@ function LoginForm() {
     } catch (error) {
       console.error('Phone OTP error:', error);
       toast.error('Failed to send OTP. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      await supabase.auth.signInWithOAuth({ provider: 'google' });
+    } catch (error) {
+      toast.error('Google sign-in failed');
     } finally {
       setLoading(false);
     }
@@ -158,6 +171,16 @@ function LoginForm() {
           </p>
         </div>
         <div className="mt-8 space-y-6">
+          {/* Google Sign-In Button */}
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 rounded-xl bg-white text-gray-700 font-semibold shadow-sm hover:bg-gray-50 transition-colors mb-4"
+          >
+            <img src="/logos/logo-google.svg" alt="Google" className="w-5 h-5" />
+            Continue with Google
+          </button>
           {/* Phone Sign In Form */}
           {!showOtpInput && (
             <form onSubmit={handlePhoneSignIn} className="space-y-6">
