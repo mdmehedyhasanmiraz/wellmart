@@ -23,6 +23,6 @@ export const adminNavigation = [
   { name: 'Banners', href: '/admin/banners', icon: Image },
   { name: 'Media', href: '/admin/media', icon: FolderOpen },
   { name: 'Coupons', href: '/admin/coupons', icon: Ticket },
-  { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 }
+  { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { name: 'Users', href: '/admin/users', icon: Users },
 ]; 
