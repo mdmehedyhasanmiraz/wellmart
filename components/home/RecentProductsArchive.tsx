@@ -32,7 +32,7 @@ export default function RecentProductsArchive() {
   }, []);
 
   return (
-    <section className="py-12 mx-auto max-w-7xl px-3">
+    <section className="py-12 mx-auto max-w-full px-3">
       <h2 className="text-2xl font-bold mb-6">Recently Added Products</h2>
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="animate-spin text-blue-600" size={32} /></div>

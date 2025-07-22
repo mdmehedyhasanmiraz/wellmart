@@ -236,6 +236,24 @@ export default function OrdersPage() {
     setSelectedOrder(null);
   };
 
+  // Add order delete handler
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) return;
+    try {
+      const { error } = await supabase
+        .from('user_orders')
+        .delete()
+        .eq('id', orderId);
+      if (error) throw error;
+      toast.success('Order deleted successfully');
+      fetchOrders();
+      closeOrderDetails();
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      toast.error('Failed to delete order');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="animate-pulse">
@@ -435,6 +453,13 @@ export default function OrdersPage() {
                         title="View Details"
                       >
                         <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteOrder(order.id)}
+                        className="ml-2 text-red-600 hover:text-red-900 transition-colors"
+                        title="Delete Order"
+                      >
+                        <X className="w-4 h-4" />
                       </button>
                     </td>
                   </tr>
@@ -708,6 +733,12 @@ export default function OrdersPage() {
                 className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 Close
+              </button>
+              <button
+                onClick={() => handleDeleteOrder(selectedOrder.id)}
+                className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete Order
               </button>
             </div>
           </div>

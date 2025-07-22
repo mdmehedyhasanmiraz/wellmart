@@ -133,7 +133,7 @@ export default function HeroSection() {
   if (isLoading) {
     return (
       <div className="min-h-[600px] bg-gray-100 animate-pulse">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             <div className="lg:col-span-1">
               <div className="h-96 bg-gray-200 rounded-lg"></div>
@@ -153,7 +153,7 @@ export default function HeroSection() {
   }
 
   return (
-    <section className="bg-gray-50 py-8 mx-auto max-w-7xl px-3">
+    <section className="bg-gray-50 py-8 mx-auto max-w-full px-3">
       <div className="mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sticky Category Sidebar */}

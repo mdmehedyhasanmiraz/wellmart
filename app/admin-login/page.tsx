@@ -35,7 +35,10 @@ export default function AdminLoginPage() {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      await supabase.auth.signInWithOAuth({ provider: 'google' });
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/admin-login/callback` }
+      });
     } catch (error) {
       toast.error('Google sign-in failed');
       console.error('Google sign-in failed', error);
