@@ -20,10 +20,11 @@ interface Banner {
   id: string;
   title: string;
   subtitle: string;
-  image_url: string;
+  image_urls: string[];
+  link_url: string | null;
   position: 'hero' | 'card1' | 'card2' | 'card3' | 'card4';
   is_active: boolean;
-  link_url: string | null;
+  sort_order?: number;
   created_at: string;
   updated_at: string;
 }
@@ -243,17 +244,28 @@ export default function BannersPage() {
 
       {/* Banners Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {banners.map((banner) => {
+        {banners.map((banner: Banner) => {
           const positionLabel = getPositionLabel(banner.position);
+          const imageUrls: string[] = Array.isArray(banner.image_urls) ? banner.image_urls : (banner.image_urls ? [banner.image_urls as unknown as string] : []);
           return (
             <div key={banner.id} className="bg-white rounded-lg shadow overflow-hidden">
-              {/* Banner Image */}
-              <div className="relative h-48 bg-gray-200">
-                <img
-                  src={banner.image_url}
-                  alt={banner.title}
-                  className="w-full h-full object-cover"
-                />
+              {/* Banner Images */}
+              <div className="relative h-48 bg-gray-200 flex overflow-x-auto gap-2 p-2">
+                {imageUrls.length > 0 ? (
+                  imageUrls.map((img: string, idx: number) => (
+                    <img
+                      key={idx}
+                      src={img}
+                      alt={banner.title}
+                      className="h-full object-cover rounded-lg"
+                      style={{ minWidth: '180px', maxWidth: '240px' }}
+                    />
+                  ))
+                ) : (
+                  <div className="flex-1 flex items-center justify-center text-gray-400">
+                    <ImageIcon className="w-12 h-12" />
+                  </div>
+                )}
                 {!banner.is_active && (
                   <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                     <EyeOff className="w-8 h-8 text-white" />

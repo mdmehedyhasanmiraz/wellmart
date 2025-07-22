@@ -25,7 +25,7 @@ interface Banner {
   id: string;
   title: string;
   subtitle?: string;
-  image_url: string;
+  image_urls: string[];
   link_url?: string;
   is_active: boolean;
   position: 'main' | 'card1' | 'card2' | 'card3' | 'card4' | 'hero';
@@ -226,7 +226,7 @@ export default function HeroSection() {
                 <Link key={banner.id} href={banner.link_url || '#'}>
                   <div className="relative h-32 rounded-xl overflow-hidden group cursor-pointer">
                     <Image
-                      src={banner.image_url}
+                      src={Array.isArray(banner.image_urls) && banner.image_urls.length > 0 ? banner.image_urls[0] : ''}
                       alt={banner.title}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -269,7 +269,8 @@ export default function HeroSection() {
 // --- HeroSlider component ---
 type HeroSliderProps = { banners: Banner[] };
 function HeroSlider({ banners }: HeroSliderProps) {
-  const [current, setCurrent] = useState(0);
+  const [currentBanner, setCurrentBanner] = useState(0);
+  const [currentImage, setCurrentImage] = useState(0);
   const count = banners.length;
   if (count === 0) {
     return (
@@ -282,56 +283,76 @@ function HeroSlider({ banners }: HeroSliderProps) {
       </div>
     );
   }
-  const goTo = (idx: number) => setCurrent((idx + count) % count);
+  const goToBanner = (idx: number) => {
+    setCurrentBanner((idx + count) % count);
+    setCurrentImage(0);
+  };
+  const banner = banners[currentBanner];
+  const images = Array.isArray(banner.image_urls) ? banner.image_urls : [];
   return (
     <div className="relative mb-6 w-full aspect-[3/1] rounded-xl overflow-hidden">
-      {banners.map((banner, idx) => (
-        <a
-          key={banner.id}
-          href={banner.link_url || '#'}
-          className={`absolute inset-0 transition-opacity duration-700 ${idx === current ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
-          tabIndex={idx === current ? 0 : -1}
-        >
-          <img
-            src={banner.image_url}
-            alt={banner.title}
-            className="w-full h-full object-cover"
-            style={{ aspectRatio: '3/1', width: '100%', height: '100%' }}
-          />
-          <div className="absolute bottom-6 left-6 text-white drop-shadow-lg">
-            <h2 className="text-2xl lg:text-3xl font-bold mb-2">{banner.title}</h2>
-            {banner.subtitle && <p className="text-lg opacity-90">{banner.subtitle}</p>}
-          </div>
-        </a>
-      ))}
-      {/* Arrows */}
+      {images.length > 0 ? (
+        images.map((img, idx) => (
+          <a
+            key={idx}
+            href={banner.link_url || '#'}
+            className={`absolute inset-0 transition-opacity duration-700 ${idx === currentImage ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+            tabIndex={idx === currentImage ? 0 : -1}
+          >
+            <img
+              src={img}
+              alt={banner.title}
+              className="w-full h-full object-cover"
+              style={{ aspectRatio: '3/1', width: '100%', height: '100%' }}
+            />
+            <div className="absolute bottom-6 left-6 text-white drop-shadow-lg">
+              <h2 className="text-2xl lg:text-3xl font-bold mb-2">{banner.title}</h2>
+              {banner.subtitle && <p className="text-lg opacity-90">{banner.subtitle}</p>}
+            </div>
+          </a>
+        ))
+      ) : null}
+      {/* Arrows for banners */}
       {count > 1 && (
         <>
           <button
-            onClick={() => goTo(current - 1)}
+            onClick={() => goToBanner(currentBanner - 1)}
             className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 z-20"
-            aria-label="Previous slide"
+            aria-label="Previous banner"
           >
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" /></svg>
           </button>
           <button
-            onClick={() => goTo(current + 1)}
+            onClick={() => goToBanner(currentBanner + 1)}
             className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 z-20"
-            aria-label="Next slide"
+            aria-label="Next banner"
           >
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg>
           </button>
         </>
       )}
-      {/* Dots */}
+      {/* Dots for banners */}
       {count > 1 && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-20">
           {banners.map((_, idx) => (
             <button
               key={idx}
-              onClick={() => goTo(idx)}
-              className={`w-3 h-3 rounded-full ${idx === current ? 'bg-lime-500' : 'bg-white/60'} border border-white`}
-              aria-label={`Go to slide ${idx + 1}`}
+              onClick={() => goToBanner(idx)}
+              className={`w-3 h-3 rounded-full ${idx === currentBanner ? 'bg-lime-500' : 'bg-white/60'} border border-white`}
+              aria-label={`Go to banner ${idx + 1}`}
+            />
+          ))}
+        </div>
+      )}
+      {/* Dots for images in current banner */}
+      {images.length > 1 && (
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+          {images.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentImage(idx)}
+              className={`w-2.5 h-2.5 rounded-full ${idx === currentImage ? 'bg-lime-500' : 'bg-white/60'} border border-white`}
+              aria-label={`Go to image ${idx + 1}`}
             />
           ))}
         </div>

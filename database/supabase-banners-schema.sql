@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS public.banners (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     subtitle TEXT,
-    image_url TEXT NOT NULL,
+    image_urls TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
     link_url TEXT,
     position VARCHAR(50) NOT NULL CHECK (position IN ('main', 'card1', 'card2', 'card3', 'card4')),
     is_active BOOLEAN DEFAULT true,
@@ -72,7 +72,7 @@ BEGIN
         b.id,
         b.title,
         b.subtitle,
-        b.image_url,
+        b.image_urls[1], -- Assuming the first image is the main one for display
         b.link_url,
         b.position,
         b.is_active,
@@ -101,7 +101,7 @@ BEGIN
         b.id,
         b.title,
         b.subtitle,
-        b.image_url,
+        b.image_urls[1], -- Assuming the first image is the main one for display
         b.link_url,
         b.position,
         b.sort_order
@@ -112,12 +112,12 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Insert sample banners (you can modify these URLs to match your actual images)
-INSERT INTO public.banners (title, subtitle, image_url, link_url, position, sort_order) VALUES
-('Health & Wellness', 'Discover our premium health products', 'https://your-project.supabase.co/storage/v1/object/public/images/banners/main-banner.jpg', '/shop?category=vitamins', 'main', 1),
-('Medicines', 'Quality medicines for all', 'https://your-project.supabase.co/storage/v1/object/public/images/banners/card1.jpg', '/shop?category=medicines', 'card1', 1),
-('Personal Care', 'Take care of yourself', 'https://your-project.supabase.co/storage/v1/object/public/images/banners/card2.jpg', '/shop?category=personal-care', 'card2', 1),
-('Baby Care', 'Safe products for your little ones', 'https://your-project.supabase.co/storage/v1/object/public/images/banners/card3.jpg', '/shop?category=baby-care', 'card3', 1),
-('Health Devices', 'Monitor your health', 'https://your-project.supabase.co/storage/v1/object/public/images/banners/card4.jpg', '/shop?category=health-devices', 'card4', 1)
+INSERT INTO public.banners (title, subtitle, image_urls, link_url, position, sort_order) VALUES
+('Health & Wellness', 'Discover our premium health products', ARRAY['https://your-project.supabase.co/storage/v1/object/public/images/banners/main-banner.jpg'], '/shop?category=vitamins', 'main', 1),
+('Medicines', 'Quality medicines for all', ARRAY['https://your-project.supabase.co/storage/v1/object/public/images/banners/card1.jpg'], '/shop?category=medicines', 'card1', 1),
+('Personal Care', 'Take care of yourself', ARRAY['https://your-project.supabase.co/storage/v1/object/public/images/banners/card2.jpg'], '/shop?category=personal-care', 'card2', 1),
+('Baby Care', 'Safe products for your little ones', ARRAY['https://your-project.supabase.co/storage/v1/object/public/images/banners/card3.jpg'], '/shop?category=baby-care', 'card3', 1),
+('Health Devices', 'Monitor your health', ARRAY['https://your-project.supabase.co/storage/v1/object/public/images/banners/card4.jpg'], '/shop?category=health-devices', 'card4', 1)
 ON CONFLICT DO NOTHING; 
 
 -- Coupons table
@@ -141,3 +141,14 @@ CREATE TABLE IF NOT EXISTS public.user_coupons (
     applied_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     UNIQUE(user_id, coupon_id)
 ); 
+
+-- Migration: Change image_url to image_urls (array)
+ALTER TABLE public.banners
+  ADD COLUMN IF NOT EXISTS image_urls TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];
+
+UPDATE public.banners
+  SET image_urls = ARRAY[image_url]
+  WHERE image_url IS NOT NULL AND (image_urls IS NULL OR array_length(image_urls, 1) = 0);
+
+ALTER TABLE public.banners
+  DROP COLUMN IF EXISTS image_url; 

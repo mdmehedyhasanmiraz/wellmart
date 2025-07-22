@@ -15,6 +15,7 @@ import {
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
+import { useEffect } from 'react';
 
 export default function NewBannerPage() {
   const router = useRouter();
@@ -22,6 +23,9 @@ export default function NewBannerPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [showImageSelector, setShowImageSelector] = useState(false);
+  const [bucketImages, setBucketImages] = useState<Array<{url: string, name: string, path: string}>>([]);
+  const [loadingImages, setLoadingImages] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -84,18 +88,63 @@ export default function NewBannerPage() {
     }
   };
 
+  // Fetch images from bucket
+  const fetchBucketImages = async () => {
+    setLoadingImages(true);
+    try {
+      const { error: bucketError } = await supabase.storage
+        .from('images')
+        .list('banners', { limit: 100, offset: 0 });
+      if (bucketError) {
+        toast.error('Cannot access banners bucket.');
+        setLoadingImages(false);
+        return;
+      }
+      const { data, error } = await supabase.storage
+        .from('images')
+        .list('banners', { limit: 100, offset: 0 });
+      if (error) {
+        toast.error('Failed to load images from bucket');
+        setLoadingImages(false);
+        return;
+      }
+      if (!data || data.length === 0) {
+        toast.success('No images found in the banners folder.');
+        setBucketImages([]);
+        setLoadingImages(false);
+        return;
+      }
+      const imageUrls = await Promise.all(
+        data
+          .filter(file => file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i))
+          .map(async (file) => {
+            const filePath = `banners/${file.name}`;
+            const { data: { publicUrl } } = supabase.storage
+              .from('images')
+              .getPublicUrl(filePath);
+            return { url: publicUrl, name: file.name, path: filePath };
+          })
+      );
+      setBucketImages(imageUrls);
+    } catch (error) {
+      toast.error('Failed to load images from bucket');
+    } finally {
+      setLoadingImages(false);
+    }
+  };
+  const selectImageFromBucket = (imageUrl: string) => {
+    setImagePreviews([imageUrl]);
+    setImageFiles([]);
+    setShowImageSelector(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      if (formData.position === 'hero') {
-        if (imageFiles.length === 0) {
-          toast.error('Please select at least one image');
-          setIsLoading(false);
-          return;
-        }
-        // Upload all images and create a banner for each
-        let sortOrder = 1;
+      let allImageUrls: string[] = [];
+      // Upload all image files if any
+      if (imageFiles.length > 0) {
         for (const file of imageFiles) {
           const imageUrl = await uploadImage(file);
           if (!imageUrl) {
@@ -103,49 +152,33 @@ export default function NewBannerPage() {
             setIsLoading(false);
             return;
           }
-          const bannerData = {
-            title: formData.title,
-            subtitle: formData.subtitle,
-            position: 'hero',
-            link_url: formData.link_url || null,
-            is_active: formData.is_active,
-            image_url: imageUrl,
-            sort_order: sortOrder++
-          };
-          const { error } = await supabase
-            .from('banners')
-            .insert([bannerData]);
-          if (error) throw error;
+          allImageUrls.push(imageUrl);
         }
-        toast.success('Hero banners created successfully');
-        router.push('/admin/banners');
-      } else {
-        if (imageFiles.length === 0) {
-          toast.error('Please select an image');
-          setIsLoading(false);
-          return;
-        }
-        const imageUrl = await uploadImage(imageFiles[0]);
-        if (!imageUrl) {
-          toast.error('Failed to upload image');
-          setIsLoading(false);
-          return;
-        }
-        const bannerData = {
-          title: formData.title,
-          subtitle: formData.subtitle,
-          position: formData.position,
-          link_url: formData.link_url || null,
-          is_active: formData.is_active,
-          image_url: imageUrl
-        };
-        const { error } = await supabase
-          .from('banners')
-          .insert([bannerData]);
-        if (error) throw error;
-        toast.success('Banner created successfully');
-        router.push('/admin/banners');
       }
+      // Add selected previews that are URLs (not data:)
+      allImageUrls = [
+        ...allImageUrls,
+        ...imagePreviews.filter(url => !url.startsWith('data:'))
+      ];
+      if (allImageUrls.length === 0) {
+        toast.error('Please select or upload at least one image');
+        setIsLoading(false);
+        return;
+      }
+      const bannerData = {
+        title: formData.title,
+        subtitle: formData.subtitle,
+        position: formData.position,
+        link_url: formData.link_url || null,
+        is_active: formData.is_active,
+        image_urls: allImageUrls
+      };
+      const { error } = await supabase
+        .from('banners')
+        .insert([bannerData]);
+      if (error) throw error;
+      toast.success('Banner created successfully');
+      router.push('/admin/banners');
     } catch (error) {
       console.error('Error creating banner:', error);
       toast.error('Failed to create banner');
@@ -283,97 +316,116 @@ export default function NewBannerPage() {
                 <ImageIcon className="w-5 h-5 mr-2" />
                 Banner Image
               </h2>
-              
-              {formData.position === 'hero' ? (
-                <div className="space-y-4">
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 mb-2">Upload one or more hero images</p>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImageChange}
-                      className="hidden"
-                      id="image-upload"
-                      required={imageFiles.length === 0}
-                    />
-                    <label
-                      htmlFor="image-upload"
-                      className="bg-lime-600 text-white px-4 py-2 rounded-lg hover:bg-lime-700 transition-colors cursor-pointer"
-                    >
-                      Choose Files
-                    </label>
-                  </div>
-                  {imagePreviews.length > 0 && (
-                    <div className="grid grid-cols-2 gap-4">
-                      {imagePreviews.map((preview, idx) => (
-                        <div key={idx} className="relative">
-                          <img
-                            src={preview}
-                            alt={`Preview ${idx + 1}`}
-                            className="w-full h-48 object-cover rounded-lg"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeImage(idx)}
-                            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
+              {/* Upload/Select buttons */}
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-600 mb-2">Upload or select a banner image</p>
+                <div className="flex gap-2 justify-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                    id="image-upload"
+                    multiple={formData.position === 'hero'}
+                  />
+                  <label
+                    htmlFor="image-upload"
+                    className="bg-lime-600 text-white px-4 py-2 rounded-lg hover:bg-lime-700 transition-colors cursor-pointer"
+                  >
+                    Upload New
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => { fetchBucketImages(); setShowImageSelector(true); }}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Select Existing
+                  </button>
+                </div>
+              </div>
+              {/* Image Selector Modal */}
+              {showImageSelector && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                    <div className="flex justify-between items-center mb-6">
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-800">Select Images from Bucket</h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Found {bucketImages.length} images • Click to select
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowImageSelector(false)}
+                        className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+                      >
+                        ✕
+                      </button>
                     </div>
-                  )}
-                  <div className="text-sm text-gray-600">
-                    <p><strong>Recommended size:</strong> 1200×400px</p>
-                  </div>
-                </div>
-              ) : imagePreviews.length > 0 ? (
-                <div className="space-y-4">
-                  <div className="relative">
-                    <img
-                      src={imagePreviews[0]}
-                      alt="Preview"
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(0)}
-                      className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    <p><strong>Recommended size:</strong> 300×200px</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 mb-2">Upload banner image</p>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="hidden"
-                      id="image-upload"
-                      required={imageFiles.length === 0}
-                    />
-                    <label
-                      htmlFor="image-upload"
-                      className="bg-lime-600 text-white px-4 py-2 rounded-lg hover:bg-lime-700 transition-colors cursor-pointer"
-                    >
-                      Choose File
-                    </label>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    <p><strong>Recommended size:</strong> 300×200px</p>
+                    {loadingImages ? (
+                      <div className="text-center py-12">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-600 mx-auto"></div>
+                        <p className="mt-4 text-gray-600 text-lg">Loading images from bucket...</p>
+                      </div>
+                    ) : bucketImages.length === 0 ? (
+                      <div className="text-center py-12">
+                        <div className="text-gray-400 text-6xl mb-4">📁</div>
+                        <p className="text-gray-500 text-lg">No images found in bucket</p>
+                        <p className="text-gray-400 text-sm mt-2">Upload some images first to see them here</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {bucketImages.map((image, index) => (
+                          <div
+                            key={index}
+                            className="group border-2 border-gray-200 rounded-lg overflow-hidden cursor-pointer hover:border-lime-500 hover:shadow-lg transition-all duration-200 bg-white"
+                            onClick={() => selectImageFromBucket(image.url)}
+                          >
+                            <img
+                              src={image.url}
+                              alt={`Image ${index + 1}`}
+                              className="w-full h-32 object-cover"
+                            />
+                            <div className="p-2 text-xs text-gray-700 truncate">{image.name}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="mt-6 pt-4 border-t border-gray-200 flex justify-end">
+                      <button
+                        onClick={() => setShowImageSelector(false)}
+                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                      >
+                        Close
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
+              {/* Previews remain unchanged */}
+              {imagePreviews.length > 0 && (
+                <div className="grid grid-cols-2 gap-4">
+                  {imagePreviews.map((preview, idx) => (
+                    <div key={idx} className="relative">
+                      <img
+                        src={preview}
+                        alt={`Preview ${idx + 1}`}
+                        className="w-full h-48 object-cover rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(idx)}
+                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="text-sm text-gray-600">
+                <p><strong>Recommended size:</strong> 1200×400px</p>
+              </div>
             </div>
 
             {/* Position Preview */}

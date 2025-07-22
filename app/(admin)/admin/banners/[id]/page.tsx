@@ -23,9 +23,12 @@ export default function EditBannerPage() {
   const params = useParams();
   const bannerId = params?.id as string;
   const [isLoading, setIsLoading] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>('');
-  const [initialImageUrl, setInitialImageUrl] = useState<string>('');
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [initialImageUrls, setInitialImageUrls] = useState<string[]>([]);
+  const [showImageSelector, setShowImageSelector] = useState(false);
+  const [bucketImages, setBucketImages] = useState<Array<{url: string, name: string, path: string}>>([]);
+  const [loadingImages, setLoadingImages] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -57,13 +60,63 @@ export default function EditBannerPage() {
         link_url: data.link_url || '',
         is_active: data.is_active ?? true
       });
-      setImagePreview(data.image_url || '');
-      setInitialImageUrl(data.image_url || '');
+      setImagePreviews(data.image_urls || []);
+      setInitialImageUrls(data.image_urls || []);
       setIsLoading(false);
     };
     fetchBanner();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bannerId]);
+
+  // Fetch images from bucket
+  const fetchBucketImages = async () => {
+    setLoadingImages(true);
+    try {
+      const { error: bucketError } = await supabase.storage
+        .from('images')
+        .list('banners', { limit: 100, offset: 0 });
+      if (bucketError) {
+        toast.error('Cannot access banners bucket.');
+        setLoadingImages(false);
+        return;
+      }
+      const { data, error } = await supabase.storage
+        .from('images')
+        .list('banners', { limit: 100, offset: 0 });
+      if (error) {
+        toast.error('Failed to load images from bucket');
+        setLoadingImages(false);
+        return;
+      }
+      if (!data || data.length === 0) {
+        toast.success('No images found in the banners folder.');
+        setBucketImages([]);
+        setLoadingImages(false);
+        return;
+      }
+      const imageUrls = await Promise.all(
+        data
+          .filter(file => file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i))
+          .map(async (file) => {
+            const filePath = `banners/${file.name}`;
+            const { data: { publicUrl } } = supabase.storage
+              .from('images')
+              .getPublicUrl(filePath);
+            return { url: publicUrl, name: file.name, path: filePath };
+          })
+      );
+      setBucketImages(imageUrls);
+    } catch (error) {
+      toast.error('Failed to load images from bucket');
+    } finally {
+      setLoadingImages(false);
+    }
+  };
+  const selectImageFromBucket = (imageUrl: string) => {
+    setImagePreviews(prev => [...prev, imageUrl]);
+    setImageFiles([]);
+    setShowImageSelector(false);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -76,18 +129,18 @@ export default function EditBannerPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setImageFile(file);
+      setImageFiles(prev => [...prev, file]);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        setImagePreviews(prev => [...prev, reader.result as string]);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview('');
+  const removeImage = (index: number) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const uploadImage = async (file: File): Promise<string | null> => {
@@ -117,15 +170,28 @@ export default function EditBannerPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      let imageUrl = initialImageUrl;
-      if (imageFile) {
-        const uploaded = await uploadImage(imageFile);
-        if (!uploaded) {
-          toast.error('Failed to upload image');
-          setIsLoading(false);
-          return;
+      let allImageUrls: string[] = [];
+      // Upload all image files if any
+      if (imageFiles.length > 0) {
+        for (const file of imageFiles) {
+          const imageUrl = await uploadImage(file);
+          if (!imageUrl) {
+            toast.error('Failed to upload image');
+            setIsLoading(false);
+            return;
+          }
+          allImageUrls.push(imageUrl);
         }
-        imageUrl = uploaded;
+      }
+      // Add selected previews that are URLs (not data:)
+      allImageUrls = [
+        ...allImageUrls,
+        ...imagePreviews.filter(url => !url.startsWith('data:'))
+      ];
+      if (allImageUrls.length === 0) {
+        toast.error('Please select or upload at least one image');
+        setIsLoading(false);
+        return;
       }
       const bannerData = {
         title: formData.title,
@@ -133,7 +199,7 @@ export default function EditBannerPage() {
         position: formData.position,
         link_url: formData.link_url || null,
         is_active: formData.is_active,
-        image_url: imageUrl
+        image_urls: allImageUrls
       };
       const { error } = await supabase
         .from('banners')
@@ -279,28 +345,110 @@ export default function EditBannerPage() {
                 <ImageIcon className="w-5 h-5 mr-2" />
                 Banner Image
               </h2>
-              
-              {imagePreview ? (
-                <div className="space-y-4">
-                  <div className="relative">
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                    <button
-                      type="button"
-                      onClick={removeImage}
-                      className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+              {/* Upload/Select buttons */}
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-600 mb-2">Upload or select a banner image</p>
+                <div className="flex gap-2 justify-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                    id="image-upload"
+                  />
+                  <label
+                    htmlFor="image-upload"
+                    className="bg-lime-600 text-white px-4 py-2 rounded-lg hover:bg-lime-700 transition-colors cursor-pointer"
+                  >
+                    Upload New
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => { fetchBucketImages(); setShowImageSelector(true); }}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Select Existing
+                  </button>
+                </div>
+              </div>
+              {/* Image Selector Modal */}
+              {showImageSelector && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                    <div className="flex justify-between items-center mb-6">
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-800">Select Images from Bucket</h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Found {bucketImages.length} images • Click to select
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowImageSelector(false)}
+                        className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {loadingImages ? (
+                      <div className="text-center py-12">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-600 mx-auto"></div>
+                        <p className="mt-4 text-gray-600 text-lg">Loading images from bucket...</p>
+                      </div>
+                    ) : bucketImages.length === 0 ? (
+                      <div className="text-center py-12">
+                        <div className="text-gray-400 text-6xl mb-4">📁</div>
+                        <p className="text-gray-500 text-lg">No images found in bucket</p>
+                        <p className="text-gray-400 text-sm mt-2">Upload some images first to see them here</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {bucketImages.map((image, index) => (
+                          <div
+                            key={index}
+                            className="group border-2 border-gray-200 rounded-lg overflow-hidden cursor-pointer hover:border-lime-500 hover:shadow-lg transition-all duration-200 bg-white"
+                            onClick={() => selectImageFromBucket(image.url)}
+                          >
+                            <img
+                              src={image.url}
+                              alt={`Image ${index + 1}`}
+                              className="w-full h-32 object-cover"
+                            />
+                            <div className="p-2 text-xs text-gray-700 truncate">{image.name}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="mt-6 pt-4 border-t border-gray-200 flex justify-end">
+                      <button
+                        onClick={() => setShowImageSelector(false)}
+                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                      >
+                        Close
+                      </button>
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-600">
-                    <p><strong>Recommended sizes:</strong></p>
-                    <p>Hero: 1200×400px</p>
-                    <p>Cards: 300×200px</p>
-                  </div>
+                </div>
+              )}
+              {/* Previews remain unchanged */}
+              {imagePreviews.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {imagePreviews.map((imageUrl, index) => (
+                    <div key={index} className="relative">
+                      <img
+                        src={imageUrl}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="space-y-4">
