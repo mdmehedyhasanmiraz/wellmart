@@ -14,6 +14,7 @@ import {
 import { toast } from 'react-hot-toast';
 import { adminNavigation } from './adminNavigation';
 import { User } from '@supabase/supabase-js';
+import { supabaseAuthService } from '@/lib/services/supabaseAuth';
 
 interface AdminSidebarProps {
   user: User | null;
@@ -33,9 +34,19 @@ export default function AdminSidebar({
   const supabase = createClient();
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
-    toast.success('Signed out successfully');
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      if (supabaseAuthService && supabaseAuthService.signOutFromSupabase) {
+        await supabaseAuthService.signOutFromSupabase();
+      } else {
+        await supabase.auth.signOut();
+      }
+      router.push('/');
+      toast.success('Signed out successfully');
+    } catch (error) {
+      console.error('Logout error:', error);
+      router.push('/');
+    }
   };
 
   return (
