@@ -32,6 +32,17 @@ export default function AdminLoginPage() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      await supabase.auth.signInWithOAuth({ provider: 'google' });
+    } catch (error) {
+      toast.error('Google sign-in failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-lime-50 to-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white/90 shadow-xl rounded-2xl p-8 border border-gray-100">
@@ -43,6 +54,16 @@ export default function AdminLoginPage() {
             Sign in with your admin email and password
           </p>
         </div>
+        {/* Google Sign-In Button */}
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 rounded-xl bg-white text-gray-700 font-semibold shadow-sm hover:bg-gray-50 transition-colors mb-4"
+        >
+          <img src="/logos/google.svg" alt="Google" className="w-5 h-5" />
+          Continue with Google
+        </button>
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">

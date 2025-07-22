@@ -18,6 +18,7 @@ interface User {
   name: string;
   email: string;
   phone: string;
+  role?: string; // Add role property
 }
 
 interface UserSidebarProps {
@@ -116,6 +117,13 @@ export default function UserSidebar({
               );
             })}
           </div>
+          {user?.role === 'admin' && (
+            <div className="mt-6 px-3 pb-4">
+              <Link href="/admin" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+                Admin Dashboard
+              </Link>
+            </div>
+          )}
         </nav>
 
         {/* Sign out button */}

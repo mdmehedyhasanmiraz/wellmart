@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 
-export default function AdminSetPasswordPage() {
+function AdminSetPasswordContent() {
   const supabase = createClient();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -42,7 +42,6 @@ export default function AdminSetPasswordPage() {
       router.push('/admin-login');
     } catch (err) {
       toast.error('Failed to reset password');
-      console.error('Failed to reset password', err);
     } finally {
       setLoading(false);
     }
@@ -108,5 +107,13 @@ export default function AdminSetPasswordPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AdminSetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <AdminSetPasswordContent />
+    </Suspense>
   );
 } 
