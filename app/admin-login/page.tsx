@@ -38,6 +38,7 @@ export default function AdminLoginPage() {
       await supabase.auth.signInWithOAuth({ provider: 'google' });
     } catch (error) {
       toast.error('Google sign-in failed');
+      console.error('Google sign-in failed', error);
     } finally {
       setLoading(false);
     }
@@ -61,7 +62,7 @@ export default function AdminLoginPage() {
           disabled={loading}
           className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 rounded-xl bg-white text-gray-700 font-semibold shadow-sm hover:bg-gray-50 transition-colors mb-4"
         >
-          <img src="/logos/google.svg" alt="Google" className="w-5 h-5" />
+          <img src="/logos/logo-google.svg" alt="Google" className="w-5 h-5" />
           Continue with Google
         </button>
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
