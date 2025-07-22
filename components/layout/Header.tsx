@@ -287,7 +287,7 @@ export default function Header() {
     <header className="bg-white shadow-sm sticky top-0 z-50">
       {/* Top Row - Logo, Search, Account, Cart */}
       <div className="border-b border-gray-200">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex-shrink-0">
@@ -470,7 +470,7 @@ export default function Header() {
 
       {/* Bottom Menu - Desktop/Tablet */}
       <nav className="hidden md:block border-b border-gray-200 bg-white">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <ul className="flex space-x-2">
             {navigation.map((item) => {
               const isActive = typeof window !== 'undefined' && window.location.pathname === item.href;
@@ -497,7 +497,7 @@ export default function Header() {
       {/* Mobile Search - Overlay */}
       {isSearchOpen && (
         <div className="md:hidden border-b border-gray-200 bg-white">
-          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <form onSubmit={handleSearch} className="space-y-3">
               {/* Category Dropdown for Mobile */}
               <div className="relative category-dropdown">
@@ -576,7 +576,7 @@ export default function Header() {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden border-b border-gray-200 bg-white">
-          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <nav className="space-y-2">
               {navigation.map((item) => (
                 <Link
