@@ -86,9 +86,9 @@ export default function AdminLoginPage() {
             </button>
           </div>
         </form>
-        <div className="mt-4 text-center">
+        {/* <div className="mt-4 text-center">
           <a href="/admin-reset" className="text-sm text-lime-700 hover:underline">Forgot password?</a>
-        </div>
+        </div> */}
       </div>
     </div>
   );

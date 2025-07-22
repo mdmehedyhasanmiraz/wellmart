@@ -42,6 +42,7 @@ export default function AdminSetPasswordPage() {
       router.push('/admin-login');
     } catch (err) {
       toast.error('Failed to reset password');
+      console.error('Failed to reset password', err);
     } finally {
       setLoading(false);
     }
