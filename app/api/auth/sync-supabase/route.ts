@@ -118,6 +118,15 @@ export async function POST(request: NextRequest) {
       if (!dbUser) {
         return NextResponse.json({ error: 'Failed to find or create user' }, { status: 500 });
       }
+      // Ensure Supabase Auth user_metadata.role matches our users table
+      if (supaUser && dbUser && supaUser.user_metadata?.role !== dbUser.role) {
+        await supabaseAdminLocal.auth.admin.updateUserById(supaUser.id, {
+          user_metadata: {
+            ...supaUser.user_metadata,
+            role: dbUser.role,
+          },
+        });
+      }
       // Issue custom JWT session
       const token = AuthService.generateToken({
         id: dbUser.id,

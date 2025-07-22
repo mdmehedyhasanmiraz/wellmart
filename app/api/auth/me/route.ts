@@ -49,7 +49,26 @@ export async function GET(request: NextRequest) {
       data: { user }
     } = await supabase.auth.getUser();
     if (user) {
-      // Optionally: sync user to your own users table here if needed
+      // Look up user in our own users table by id or email
+      let dbUser = null;
+      if (supabaseAdmin) {
+        // Try by id
+        const { data: userById } = await supabaseAdmin
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        dbUser = userById;
+        // If not found by id, try by email
+        if (!dbUser && user.email) {
+          const { data: userByEmail } = await supabaseAdmin
+            .from('users')
+            .select('*')
+            .eq('email', user.email)
+            .single();
+          dbUser = userByEmail;
+        }
+      }
       return NextResponse.json({
         success: true,
         user: {
@@ -57,11 +76,11 @@ export async function GET(request: NextRequest) {
           name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
           phone: user.phone || '',
           email: user.email || '',
-          role: user.user_metadata?.role || 'customer',
-          division: '',
-          district: '',
-          upazila: '',
-          street: '',
+          role: dbUser?.role || user.user_metadata?.role || 'customer',
+          division: dbUser?.division || '',
+          district: dbUser?.district || '',
+          upazila: dbUser?.upazila || '',
+          street: dbUser?.street || '',
         }
       });
     }
