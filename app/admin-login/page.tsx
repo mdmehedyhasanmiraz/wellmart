@@ -26,6 +26,7 @@ export default function AdminLoginPage() {
       router.push('/admin');
     } catch (err) {
       toast.error('Login failed');
+      console.error('Login failed', err);
     } finally {
       setLoading(false);
     }
