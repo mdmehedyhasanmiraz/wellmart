@@ -25,7 +25,7 @@ export default function EditBannerPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [initialImageUrls, setInitialImageUrls] = useState<string[]>([]);
+  // const [initialImageUrls, setInitialImageUrls] = useState<string[]>([]);
   const [showImageSelector, setShowImageSelector] = useState(false);
   const [bucketImages, setBucketImages] = useState<Array<{url: string, name: string, path: string}>>([]);
   const [loadingImages, setLoadingImages] = useState(false);
@@ -61,7 +61,7 @@ export default function EditBannerPage() {
         is_active: data.is_active ?? true
       });
       setImagePreviews(data.image_urls || []);
-      setInitialImageUrls(data.image_urls || []);
+      // setInitialImageUrls(data.image_urls || []);
       setIsLoading(false);
     };
     fetchBanner();
@@ -108,6 +108,7 @@ export default function EditBannerPage() {
       setBucketImages(imageUrls);
     } catch (error) {
       toast.error('Failed to load images from bucket');
+      console.error('Failed to load images from bucket', error);
     } finally {
       setLoadingImages(false);
     }

@@ -15,7 +15,6 @@ import {
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
-import { useEffect } from 'react';
 
 export default function NewBannerPage() {
   const router = useRouter();
@@ -128,12 +127,14 @@ export default function NewBannerPage() {
       setBucketImages(imageUrls);
     } catch (error) {
       toast.error('Failed to load images from bucket');
+      console.error('Failed to load images from bucket', error);
     } finally {
       setLoadingImages(false);
     }
   };
+  // Change selectImageFromBucket to allow multiple selection
   const selectImageFromBucket = (imageUrl: string) => {
-    setImagePreviews([imageUrl]);
+    setImagePreviews(prev => [...prev, imageUrl]);
     setImageFiles([]);
     setShowImageSelector(false);
   };
