@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, Folder } from 'lucide-react';
+import { ArrowLeft, Save, Folder, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
@@ -28,6 +28,9 @@ export default function NewCategoryPage() {
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
+  const [showImageSelector, setShowImageSelector] = useState(false);
+  const [bucketImages, setBucketImages] = useState<Array<{url: string, name: string, path: string}>>([]);
+  const [loadingImages, setLoadingImages] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -36,6 +39,60 @@ export default function NewCategoryPage() {
   const fetchCategories = async () => {
     const { data } = await supabase.from('categories').select('id, name').order('name');
     setCategories(data || []);
+  };
+
+  const fetchBucketImages = async () => {
+    setLoadingImages(true);
+    try {
+      const { error: bucketError } = await supabase.storage.from('images').list('', { limit: 1 });
+      if (bucketError) {
+        toast.error('Cannot access images bucket. Please check storage permissions.');
+        return;
+      }
+      const { data, error } = await supabase.storage.from('images').list('', { limit: 100, offset: 0 });
+      if (error) {
+        toast.error('Failed to load images from bucket');
+        return;
+      }
+      if (!data || data.length === 0) {
+        toast.success('No images found in the images bucket. Upload some images first.');
+        setBucketImages([]);
+        return;
+      }
+      const imageUrls = await Promise.all(
+        data
+          .filter(file => file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i))
+          .map(async (file) => {
+            const filePath = `${file.name}`;
+            try {
+              const { data: signedData, error: signedError } = await supabase.storage.from('images').createSignedUrl(filePath, 3600);
+              if (signedError) {
+                const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(filePath);
+                return { url: publicUrl, name: file.name, path: filePath };
+              }
+              return { url: signedData.signedUrl, name: file.name, path: filePath };
+            } catch (error) {
+              const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(filePath);
+              return { url: publicUrl, name: file.name, path: filePath };
+            }
+          })
+      );
+      setBucketImages(imageUrls);
+    } catch (error) {
+      toast.error('Failed to load images from bucket');
+    } finally {
+      setLoadingImages(false);
+    }
+  };
+
+  const selectImageFromBucket = (imageUrl: string) => {
+    setFormData(prev => ({ ...prev, image_url: imageUrl }));
+    setShowImageSelector(false);
+  };
+
+  const removeImage = () => {
+    setFormData(prev => ({ ...prev, image_url: '' }));
+    setImageFile(null);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -116,8 +173,8 @@ export default function NewCategoryPage() {
             Back to Categories
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Add New Category</h1>
-            <p className="text-gray-600">Create a new category for your catalog</p>
+            <h1 className="text-2xl font-bold text-gray-900">New Category</h1>
+            <p className="text-gray-600">Create a new category</p>
           </div>
         </div>
       </div>
@@ -190,19 +247,100 @@ export default function NewCategoryPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category Image
                 </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500"
-                />
-                {imageUploading && <p className="text-xs text-gray-500 mt-1">Uploading image...</p>}
-                {imageFile && !imageUploading && (
-                  <img
-                    src={URL.createObjectURL(imageFile)}
-                    alt="Preview"
-                    className="mt-2 w-32 h-32 object-cover rounded border"
+                <div className="flex items-center gap-4 mb-2">
+                  {formData.image_url && (
+                    <div className="relative">
+                      <img
+                        src={formData.image_url}
+                        alt="Current"
+                        className="w-32 h-32 object-cover rounded border"
+                      />
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                        title="Remove image"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                  {imageFile && !imageUploading && (
+                    <img
+                      src={URL.createObjectURL(imageFile)}
+                      alt="Preview"
+                      className="w-32 h-32 object-cover rounded border"
+                    />
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                    id="category-image-upload"
                   />
+                  <label
+                    htmlFor="category-image-upload"
+                    className="bg-lime-600 text-white px-4 py-2 rounded-lg hover:bg-lime-700 transition-colors cursor-pointer"
+                  >
+                    Upload New
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => { fetchBucketImages(); setShowImageSelector(true); }}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Select Existing
+                  </button>
+                </div>
+                {imageUploading && <p className="text-xs text-gray-500 mt-1">Uploading image...</p>}
+                {/* Image Selector Modal */}
+                {showImageSelector && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                      <div className="flex justify-between items-center mb-6">
+                        <div>
+                          <h3 className="text-xl font-semibold text-gray-800">Select Image from Bucket</h3>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Found {bucketImages.length} images • Click to select
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setShowImageSelector(false)}
+                          className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      {loadingImages ? (
+                        <div className="text-center py-12">
+                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-600 mx-auto"></div>
+                          <p className="mt-4 text-gray-600 text-lg">Loading images from bucket...</p>
+                        </div>
+                      ) : bucketImages.length === 0 ? (
+                        <div className="text-center py-12">
+                          <div className="text-gray-400 text-6xl mb-4">📁</div>
+                          <p className="text-gray-500 text-lg">No images found in bucket</p>
+                          <p className="text-gray-400 text-sm mt-2">Upload some images first to see them here</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {bucketImages.map((image, index) => (
+                            <div
+                              key={index}
+                              className="cursor-pointer border rounded-lg overflow-hidden hover:shadow-lg transition"
+                              onClick={() => selectImageFromBucket(image.url)}
+                            >
+                              <img src={image.url} alt={image.name} className="w-full h-32 object-cover" />
+                              <div className="p-2 text-xs text-gray-700 truncate">{image.name}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
               <div>

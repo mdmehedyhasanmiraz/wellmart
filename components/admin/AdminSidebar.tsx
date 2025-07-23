@@ -9,9 +9,7 @@ import {
   Users, 
   LogOut, 
   X,
-  ChevronRight,
-  Settings,
-  ChartBar,
+  ChevronRight
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { adminNavigation } from './adminNavigation';
