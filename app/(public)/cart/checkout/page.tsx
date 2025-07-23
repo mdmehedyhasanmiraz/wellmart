@@ -11,6 +11,15 @@ import { bankDetails } from '@/lib/config/bankDetails';
 import { CartService } from '@/lib/services/cart';
 import { Product } from '@/types/product';
 import { createClient } from '@/utils/supabase/client';
+// Use require for JSON imports to avoid type errors
+const divisionsData = require('@/../data/bd-geo/bd-divisions.json');
+const districtsData = require('@/../data/bd-geo/bd-districts.json');
+const upazilasData = require('@/../data/bd-geo/bd-upazilas.json');
+
+// Types for geo data
+interface Division { id: string; name: string; }
+interface District { id: string; division_id: string; name: string; }
+interface Upazila { id: string; district_id: string; name: string; }
 
 const paymentMethods = [
   { id: 'bkash', label: 'bKash Payment' },
@@ -77,6 +86,8 @@ export default function CheckoutPage() {
     postal: '',
     country: '',
     district: '',
+    division: '',
+    upazila: '',
   });
   const [shipping, setShipping] = useState({
     name: '',
@@ -87,11 +98,24 @@ export default function CheckoutPage() {
     postal: '',
     country: '',
     district: '',
+    division: '',
+    upazila: '',
   });
   const [sameShipping, setSameShipping] = useState(true);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [freeDeliveryMin, setFreeDeliveryMin] = useState<number>(799);
+
+  // Geo data state
+  const [divisions] = useState<Division[]>(divisionsData.divisions);
+  const [districts] = useState<District[]>(districtsData.districts);
+  const [upazilas] = useState<Upazila[]>(upazilasData.upazilas);
+
+  // Filtered options
+  const billingDistricts = districts.filter((d: District) => d.division_id === billing.division);
+  const billingUpazilas = upazilas.filter((u: Upazila) => u.district_id === billing.district);
+  const shippingDistricts = districts.filter((d: District) => d.division_id === shipping.division);
+  const shippingUpazilas = upazilas.filter((u: Upazila) => u.district_id === shipping.district);
 
   useEffect(() => {
     async function loadUser() {
@@ -126,17 +150,39 @@ export default function CheckoutPage() {
           setFreeDeliveryMin(Number(data.free_delivery_min));
         }
       } catch (error) {
+        console.error('Error fetching free delivery minimum:', error);
         // fallback to default
       }
     }
     fetchFreeDeliveryMin();
   }, []);
 
-  const handleBillingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setBilling({ ...billing, [e.target.name]: e.target.value });
+  const handleBillingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setBilling(prev => {
+      let updated = { ...prev, [name]: value };
+      // Reset dependent fields
+      if (name === 'division') {
+        updated.district = '';
+        updated.upazila = '';
+      } else if (name === 'district') {
+        updated.upazila = '';
+      }
+      return updated;
+    });
   };
-  const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setShipping({ ...shipping, [e.target.name]: e.target.value });
+  const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setShipping(prev => {
+      let updated = { ...prev, [name]: value };
+      if (name === 'division') {
+        updated.district = '';
+        updated.upazila = '';
+      } else if (name === 'district') {
+        updated.upazila = '';
+      }
+      return updated;
+    });
   };
 
   const createOrder = async (paymentMethod: string, paymentStatus: string = 'pending') => {
@@ -324,26 +370,51 @@ export default function CheckoutPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="country" className="block text-gray-800 font-medium mb-1">Country <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    name="country"
-                    value={billing.country}
+                  <label htmlFor="division" className="block text-gray-800 font-medium mb-1">Division <span className="text-red-500">*</span></label>
+                  <select
+                    name="division"
+                    value={billing.division || ''}
                     onChange={handleBillingChange}
                     className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                     required
-                  />
+                  >
+                    <option value="">Select Division</option>
+                    {divisions.map((div: Division) => (
+                      <option key={div.id} value={div.id}>{div.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label htmlFor="district" className="block text-gray-800 font-medium mb-1">District <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
+                  <select
                     name="district"
-                    value={billing.district}
+                    value={billing.district || ''}
                     onChange={handleBillingChange}
                     className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                     required
-                  />
+                    disabled={!billing.division}
+                  >
+                    <option value="">Select District</option>
+                    {billingDistricts.map((dist: District) => (
+                      <option key={dist.id} value={dist.id}>{dist.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="upazila" className="block text-gray-800 font-medium mb-1">Upazila/Thana <span className="text-red-500">*</span></label>
+                  <select
+                    name="upazila"
+                    value={billing.upazila || ''}
+                    onChange={handleBillingChange}
+                    className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                    required
+                    disabled={!billing.district}
+                  >
+                    <option value="">Select Upazila/Thana</option>
+                    {billingUpazilas.map((upz: Upazila) => (
+                      <option key={upz.id} value={upz.id}>{upz.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label htmlFor="city" className="block text-gray-800 font-medium mb-1">City <span className="text-red-500">*</span></label>
@@ -427,59 +498,51 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div>
-                    <label htmlFor="country" className="block text-gray-800 font-medium mb-1">Country <span className="text-red-500">*</span></label>
-                    <input
-                      type="text"
-                      name="country"
-                      value={shipping.country}
+                    <label htmlFor="division" className="block text-gray-800 font-medium mb-1">Division <span className="text-red-500">*</span></label>
+                    <select
+                      name="division"
+                      value={shipping.division || ''}
                       onChange={handleShippingChange}
                       className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                       required
-                    />
+                    >
+                      <option value="">Select Division</option>
+                      {divisions.map((div: Division) => (
+                        <option key={div.id} value={div.id}>{div.name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label htmlFor="district" className="block text-gray-800 font-medium mb-1">District <span className="text-red-500">*</span></label>
-                    <input
-                      type="text"
+                    <select
                       name="district"
-                      value={shipping.district}
+                      value={shipping.district || ''}
                       onChange={handleShippingChange}
                       className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                       required
-                    />
+                      disabled={!shipping.division}
+                    >
+                      <option value="">Select District</option>
+                      {shippingDistricts.map((dist: District) => (
+                        <option key={dist.id} value={dist.id}>{dist.name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
-                    <label htmlFor="city" className="block text-gray-800 font-medium mb-1">City <span className="text-red-500">*</span></label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={shipping.city}
+                    <label htmlFor="upazila" className="block text-gray-800 font-medium mb-1">Upazila/Thana <span className="text-red-500">*</span></label>
+                    <select
+                      name="upazila"
+                      value={shipping.upazila || ''}
                       onChange={handleShippingChange}
                       className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                       required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="postal" className="block text-gray-800 font-medium mb-1">Postal Code <span className="text-red-500">*</span></label>
-                    <input
-                      type="text"
-                      name="postal"
-                      value={shipping.postal}
-                      onChange={handleShippingChange}
-                      className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
-                      required
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label htmlFor="address" className="block text-gray-800 font-medium mb-1">Street Address <span className="text-red-500">*</span></label>
-                    <input
-                      type="text"
-                      name="address"
-                      value={shipping.address}
-                      onChange={handleShippingChange}
-                      className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
-                      required
-                    />
+                      disabled={!shipping.district}
+                    >
+                      <option value="">Select Upazila/Thana</option>
+                      {shippingUpazilas.map((upz: Upazila) => (
+                        <option key={upz.id} value={upz.id}>{upz.name}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               )}

@@ -48,6 +48,7 @@ export default function SiteSettingsPage() {
         free_delivery_min: data.free_delivery_min !== undefined && data.free_delivery_min !== null ? Number(data.free_delivery_min) : 799,
       });
     }
+    console.log(error);
     setIsLoading(false);
   };
 
