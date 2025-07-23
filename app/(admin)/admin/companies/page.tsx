@@ -12,7 +12,7 @@ import {
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 
-interface Manufacturer {
+interface Company {
   id: string;
   name: string;
   country: string | null;
@@ -20,20 +20,20 @@ interface Manufacturer {
   created_at: string;
 }
 
-export default function ManufacturersPage() {
-  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
+export default function CompaniesPage() {
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const supabase = createClient();
 
   useEffect(() => {
-    fetchManufacturers();
+    fetchCompanies();
   }, [searchTerm]);
 
-  const fetchManufacturers = async () => {
+  const fetchCompanies = async () => {
     try {
       let query = supabase
-        .from('manufacturers')
+        .from('companies')
         .select('*')
         .order('name');
 
@@ -45,31 +45,31 @@ export default function ManufacturersPage() {
 
       if (error) throw error;
       
-      setManufacturers(data || []);
+      setCompanies(data || []);
     } catch (error) {
-      console.error('Error fetching manufacturers:', error);
-      toast.error('Failed to load manufacturers');
+      console.error('Error fetching companies:', error);
+      toast.error('Failed to load companies');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDeleteManufacturer = async (manufacturerId: string) => {
-    if (!confirm('Are you sure you want to delete this manufacturer? Products from this manufacturer will be unassigned.')) return;
+  const handleDeleteCompany = async (companyId: string) => {
+    if (!confirm('Are you sure you want to delete this company? Products from this company will be unassigned.')) return;
 
     try {
       const { error } = await supabase
-        .from('manufacturers')
+        .from('companies')
         .delete()
-        .eq('id', manufacturerId);
+        .eq('id', companyId);
 
       if (error) throw error;
 
-      toast.success('Manufacturer deleted successfully');
-      fetchManufacturers();
+      toast.success('Company deleted successfully');
+      fetchCompanies();
     } catch (error) {
-      console.error('Error deleting manufacturer:', error);
-      toast.error('Failed to delete manufacturer');
+      console.error('Error deleting company:', error);
+      toast.error('Failed to delete company');
     }
   };
 
@@ -91,15 +91,15 @@ export default function ManufacturersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Manufacturers</h1>
-          <p className="text-gray-600">Manage product manufacturers</p>
+          <h1 className="text-2xl font-bold text-gray-900">Companies</h1>
+          <p className="text-gray-600">Manage product companies</p>
         </div>
         <Link
-          href="/admin/manufacturers/new"
+          href="/admin/companies/new"
           className="bg-lime-600 text-white px-4 py-2 rounded-lg hover:bg-lime-700 transition-colors flex items-center"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Add Manufacturer
+          Add Company
         </Link>
       </div>
 
@@ -109,7 +109,7 @@ export default function ManufacturersPage() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             type="text"
-            placeholder="Search manufacturers..."
+            placeholder="Search companies..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-transparent"
@@ -117,10 +117,10 @@ export default function ManufacturersPage() {
         </div>
       </div>
 
-      {/* Manufacturers Grid */}
+      {/* Companies Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {manufacturers.map((manufacturer) => (
-          <div key={manufacturer.id} className="bg-white rounded-lg shadow overflow-hidden">
+        {companies.map((company) => (
+          <div key={company.id} className="bg-white rounded-lg shadow overflow-hidden">
             {/* Manufacturer Logo */}
             <div className="h-32 bg-gray-200 flex items-center justify-center">
               {/* Removed logo_url as per new interface */}
@@ -131,29 +131,29 @@ export default function ManufacturersPage() {
             <div className="p-4">
               <div className="flex items-start justify-between mb-2">
                 <h3 className="text-lg font-medium text-gray-900">
-                  {manufacturer.name}
+                  {company.name}
                 </h3>
                 {/* Removed is_active status as per new interface */}
               </div>
               
               {/* Removed description as per new interface */}
 
-              {manufacturer.website && (
+              {company.website && (
                 <div className="mb-3">
                   <a
-                    href={manufacturer.website}
+                    href={company.website}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-blue-600 hover:text-blue-800"
                   >
-                    {manufacturer.website}
+                    {company.website}
                   </a>
                 </div>
               )}
 
               {/* Removed product_count as per new interface */}
               <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-                <span>Created: {new Date(manufacturer.created_at).toLocaleDateString()}</span>
+                <span>Created: {new Date(company.created_at).toLocaleDateString()}</span>
               </div>
 
               {/* Actions */}
@@ -162,16 +162,16 @@ export default function ManufacturersPage() {
 
                 <div className="flex items-center space-x-2">
                   <Link
-                    href={`/admin/manufacturers/${manufacturer.id}`}
+                    href={`/admin/companies/${company.id}`}
                     className="p-1 text-blue-600 hover:text-blue-900"
-                    title="Edit Manufacturer"
+                    title="Edit Company"
                   >
                     <Edit className="w-4 h-4" />
                   </Link>
                   <button
-                    onClick={() => handleDeleteManufacturer(manufacturer.id)}
+                    onClick={() => handleDeleteCompany(company.id)}
                     className="p-1 text-red-600 hover:text-red-900"
-                    title="Delete Manufacturer"
+                    title="Delete Company"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -182,21 +182,21 @@ export default function ManufacturersPage() {
         ))}
       </div>
 
-      {manufacturers.length === 0 && (
+      {companies.length === 0 && (
         <div className="text-center py-12 bg-white rounded-lg shadow">
           <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No manufacturers found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No companies found</h3>
           <p className="text-gray-500 mb-4">
             {searchTerm
               ? 'Try adjusting your search'
-              : 'Get started by adding your first manufacturer'
+              : 'Get started by adding your first company'
             }
           </p>
           <Link
-            href="/admin/manufacturers/new"
+            href="/admin/companies/new"
             className="bg-lime-600 text-white px-4 py-2 rounded-lg hover:bg-lime-700 transition-colors"
           >
-            Add Manufacturer
+            Add Company
           </Link>
         </div>
       )}
@@ -205,7 +205,7 @@ export default function ManufacturersPage() {
       <div className="bg-white p-4 rounded-lg shadow">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600">
           <div>
-            <span className="font-medium">Total Manufacturers:</span> {manufacturers.length}
+            <span className="font-medium">Total Companies:</span> {companies.length}
           </div>
           {/* Removed Active count as per new interface */}
           {/* Removed Total Products count as per new interface */}
