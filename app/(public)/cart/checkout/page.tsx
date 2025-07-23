@@ -12,9 +12,9 @@ import { CartService } from '@/lib/services/cart';
 import { Product } from '@/types/product';
 import { createClient } from '@/utils/supabase/client';
 // Use require for JSON imports to avoid type errors
-const divisionsData = require('@/../data/bd-geo/bd-divisions.json');
-const districtsData = require('@/../data/bd-geo/bd-districts.json');
-const upazilasData = require('@/../data/bd-geo/bd-upazilas.json');
+const divisionsData = require('@/data/bd-geo/bd-divisions.json');
+const districtsData = require('@/data/bd-geo/bd-districts.json');
+const upazilasData = require('@/data/bd-geo/bd-upazilas.json');
 
 // Types for geo data
 interface Division { id: string; name: string; }
