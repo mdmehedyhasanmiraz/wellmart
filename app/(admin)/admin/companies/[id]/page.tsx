@@ -7,7 +7,7 @@ import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 
-export default function EditManufacturerPage() {
+export default function EditCompanyPage() {
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
@@ -21,20 +21,20 @@ export default function EditManufacturerPage() {
   });
 
   useEffect(() => {
-    if (id) fetchManufacturer();
+    if (id) fetchCompany();
     // eslint-disable-next-line
   }, [id]);
 
-  const fetchManufacturer = async () => {
+  const fetchCompany = async () => {
     setIsFetching(true);
     const { data, error } = await supabase
-      .from('manufacturers')
+      .from('companies')
       .select('name, country, website')
       .eq('id', id)
       .single();
     if (error || !data) {
-      toast.error('Manufacturer not found');
-      router.push('/admin/manufacturers');
+      toast.error('Company not found');
+      router.push('/admin/companies');
       return;
     }
     setFormData({
@@ -55,21 +55,21 @@ export default function EditManufacturerPage() {
     setIsLoading(true);
     try {
       if (!formData.name.trim()) {
-        toast.error('Manufacturer name is required');
+        toast.error('Company name is required');
         setIsLoading(false);
         return;
       }
-      const { error } = await supabase.from('manufacturers').update({
+      const { error } = await supabase.from('companies').update({
         name: formData.name.trim(),
         country: formData.country.trim() || null,
         website: formData.website.trim() || null,
       }).eq('id', id);
       if (error) throw error;
-      toast.success('Manufacturer updated successfully');
-      router.push('/admin/manufacturers');
+      toast.success('Company updated successfully');
+      router.push('/admin/companies');
     } catch (error) {
-      console.error('Error updating manufacturer:', error);
-      toast.error('Failed to update manufacturer');
+      console.error('Error updating company:', error);
+      toast.error('Failed to update company');
     } finally {
       setIsLoading(false);
     }
@@ -89,15 +89,15 @@ export default function EditManufacturerPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Link
-            href="/admin/manufacturers"
+            href="/admin/companies"
             className="flex items-center text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Manufacturers
+            Back to Companies
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Edit Manufacturer</h1>
-            <p className="text-gray-600">Update manufacturer details</p>
+            <h1 className="text-2xl font-bold text-gray-900">Edit Company</h1>
+            <p className="text-gray-600">Update company details</p>
           </div>
         </div>
       </div>
@@ -106,12 +106,12 @@ export default function EditManufacturerPage() {
           <div className="space-y-6 bg-white p-6 rounded-lg shadow">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <Building2 className="w-5 h-5 mr-2" />
-              Manufacturer Information
+              Company Information
             </h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Name *
+                  Manufactured/Importer/Distributor Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -120,7 +120,7 @@ export default function EditManufacturerPage() {
                   onChange={handleInputChange}
                   required
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500"
-                  placeholder="Manufacturer name"
+                  placeholder="Manufactured/Importer/Distributor name"
                 />
               </div>
               <div>

@@ -7,7 +7,7 @@ import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 
-export default function NewManufacturerPage() {
+export default function NewCompanyPage() {
   const router = useRouter();
   const supabase = createClient();
   const [isLoading, setIsLoading] = useState(false);
@@ -27,11 +27,11 @@ export default function NewManufacturerPage() {
     setIsLoading(true);
     try {
       if (!formData.name.trim()) {
-        toast.error('Manufacturer name is required');
+        toast.error('Company name is required');
         setIsLoading(false);
         return;
       }
-      const { error } = await supabase.from('manufacturers').insert([
+      const { error } = await supabase.from('companies').insert([
         {
           name: formData.name.trim(),
           country: formData.country.trim() || null,
@@ -39,11 +39,11 @@ export default function NewManufacturerPage() {
         },
       ]);
       if (error) throw error;
-      toast.success('Manufacturer created successfully');
-      router.push('/admin/manufacturers');
+      toast.success('Company created successfully');
+      router.push('/admin/companies');
     } catch (error) {
-      console.error('Error creating manufacturer:', error);
-      toast.error('Failed to create manufacturer');
+      console.error('Error creating company:', error);
+      toast.error('Failed to create company');
     } finally {
       setIsLoading(false);
     }
@@ -55,15 +55,15 @@ export default function NewManufacturerPage() {
       <div className="flex items-center justify-between">
         <div className="flex flex-col space-x-4">
           <Link
-            href="/admin/manufacturers"
+            href="/admin/companies"
             className="flex items-center text-gray-400 hover:text-lime-600"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Manufacturers
+            Back to Companies
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Add New Manufacturer</h1>
-            <p className="text-gray-600">Create a new manufacturer for your catalog</p>
+            <h1 className="text-2xl font-bold text-gray-900">Add New Company</h1>
+            <p className="text-gray-600">Create a new company for your catalog</p>
           </div>
         </div>
       </div>
@@ -72,12 +72,12 @@ export default function NewManufacturerPage() {
           <div className="space-y-6 bg-white p-6 rounded-lg shadow">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <Building2 className="w-5 h-5 mr-2" />
-              Manufacturer Information
+              Company Information
             </h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Name *
+                  Manufactured/Importer/Distributor Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -86,7 +86,7 @@ export default function NewManufacturerPage() {
                   onChange={handleInputChange}
                   required
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500"
-                  placeholder="Manufacturer name"
+                  placeholder="Manufactured/Importer/Distributor name"
                 />
               </div>
               <div>
@@ -130,7 +130,7 @@ export default function NewManufacturerPage() {
             className="inline-flex items-center px-6 py-2 bg-lime-600 text-white font-semibold rounded-lg shadow hover:bg-lime-700 transition-colors disabled:opacity-50"
           >
             <Save className="w-4 h-4 mr-2" />
-            {isLoading ? 'Saving...' : 'Save Manufacturer'}
+            {isLoading ? 'Saving...' : 'Save Company'}
           </button>
         </div>
       </form>

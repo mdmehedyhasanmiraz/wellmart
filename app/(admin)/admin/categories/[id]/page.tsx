@@ -25,7 +25,10 @@ export default function EditCategoryPage() {
     slug: '',
     description: '',
     parent_id: '',
+    image_url: '', // Add image_url to formData
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
 
   useEffect(() => {
     if (id) fetchCategory();
@@ -37,7 +40,7 @@ export default function EditCategoryPage() {
     setIsFetching(true);
     const { data, error } = await supabase
       .from('categories')
-      .select('name, slug, description, parent_id')
+      .select('name, slug, description, parent_id, image_url')
       .eq('id', id)
       .single();
     if (error || !data) {
@@ -50,6 +53,7 @@ export default function EditCategoryPage() {
       slug: data.slug || '',
       description: data.description || '',
       parent_id: data.parent_id || '',
+      image_url: data.image_url || '',
     });
     setIsFetching(false);
   };
@@ -62,6 +66,12 @@ export default function EditCategoryPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,11 +88,26 @@ export default function EditCategoryPage() {
         setIsLoading(false);
         return;
       }
+      let imageUrl = formData.image_url;
+      if (imageFile) {
+        setImageUploading(true);
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `categories/${formData.slug}-${Date.now()}.${fileExt}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage.from('images').upload(fileName, imageFile, {
+          cacheControl: '3600',
+          upsert: true,
+        });
+        setImageUploading(false);
+        if (uploadError) throw uploadError;
+        const { data: publicUrlData } = supabase.storage.from('images').getPublicUrl(fileName);
+        imageUrl = publicUrlData?.publicUrl || '';
+      }
       const { error } = await supabase.from('categories').update({
         name: formData.name.trim(),
         slug: formData.slug.trim(),
         description: formData.description.trim() || null,
         parent_id: formData.parent_id || null,
+        image_url: imageUrl || null,
       }).eq('id', id);
       if (error) throw error;
       toast.success('Category updated successfully');
@@ -92,6 +117,7 @@ export default function EditCategoryPage() {
       toast.error('Failed to update category');
     } finally {
       setIsLoading(false);
+      setImageUploading(false);
     }
   };
 
@@ -169,6 +195,33 @@ export default function EditCategoryPage() {
                   placeholder="Category description"
                   rows={3}
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Category Image
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500"
+                />
+                {imageUploading && <p className="text-xs text-gray-500 mt-1">Uploading image...</p>}
+                {imageFile ? (
+                  <img
+                    src={URL.createObjectURL(imageFile)}
+                    alt="Preview"
+                    className="mt-2 w-32 h-32 object-cover rounded border"
+                  />
+                ) : (
+                  formData.image_url && (
+                    <img
+                      src={formData.image_url}
+                      alt="Current"
+                      className="mt-2 w-32 h-32 object-cover rounded border"
+                    />
+                  )
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">

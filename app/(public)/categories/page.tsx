@@ -8,6 +8,7 @@ type Category = {
   id: string;
   name: string;
   slug?: string;
+  image_url?: string | null;
 };
 
 export default function CategoriesPage() {
@@ -19,7 +20,7 @@ export default function CategoriesPage() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('categories')
-        .select('*')
+        .select('id, name, slug, image_url')
         .order('name');
       if (error) {
         console.error('Error fetching categories:', error);
@@ -46,8 +47,16 @@ export default function CategoriesPage() {
                 href={`/shop?category=${cat.id}`}
                 className="flex flex-col items-center p-4 bg-gray-100 rounded-lg hover:bg-green-50 transition"
               >
-                <div className="w-16 h-16 bg-green-200 rounded-full flex items-center justify-center mb-3 text-2xl text-green-700">
-                  <span role="img" aria-label="Category">📦</span>
+                <div className="w-16 h-16 bg-green-200 rounded-full flex items-center justify-center mb-3 overflow-hidden">
+                  {cat.image_url ? (
+                    <img
+                      src={cat.image_url}
+                      alt={cat.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span role="img" aria-label="Category" className="text-2xl text-green-700">📦</span>
+                  )}
                 </div>
                 <span className="font-semibold text-gray-800 text-center">{cat.name}</span>
               </Link>

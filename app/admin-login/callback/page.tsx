@@ -12,9 +12,17 @@ export default function AdminLoginCallback() {
     const check = async () => {
       const { data } = await supabase.auth.getUser();
       if (data?.user) {
-        router.replace('/admin');
+        if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+          window.location.href = 'http://localhost:3000/admin';
+        } else {
+          router.replace('/admin');
+        }
       } else {
-        router.replace('/admin-login');
+        if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+          window.location.href = 'http://localhost:3000/admin-login';
+        } else {
+          router.replace('/admin-login');
+        }
       }
     };
     check();

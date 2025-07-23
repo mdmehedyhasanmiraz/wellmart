@@ -12,6 +12,7 @@ interface Category {
   slug: string;
   icon?: string;
   subcategories?: SubCategory[];
+  image_url?: string | null;
 }
 
 interface SubCategory {
@@ -48,7 +49,7 @@ export default function HeroSection() {
       // First, get all categories
       const { data: allCategories, error: categoriesError } = await supabase
         .from('categories')
-        .select('id, name, slug, description, parent_id')
+        .select('id, name, slug, description, parent_id, image_url')
         .order('name');
 
       if (categoriesError) {
@@ -59,7 +60,7 @@ export default function HeroSection() {
       // Get all subcategories (categories with parent_id)
       const { data: subcategories, error: subError } = await supabase
         .from('categories')
-        .select('id, name, slug, description, category_id:parent_id')
+        .select('id, name, slug, description, category_id:parent_id, image_url')
         .not('parent_id', 'is', null)
         .order('name');
 
@@ -170,7 +171,15 @@ export default function HeroSection() {
                           className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors duration-200"
                         >
                           <div className="flex items-center">
-                            <Package className="w-4 h-4 text-gray-500 mr-3" />
+                            {category.image_url ? (
+                              <img
+                                src={category.image_url}
+                                alt={category.name}
+                                className="w-6 h-6 object-cover rounded-full mr-3 border"
+                              />
+                            ) : (
+                              <Package className="w-4 h-4 text-gray-500 mr-3" />
+                            )}
                             <span className="text-gray-700 font-medium">{category.name}</span>
                           </div>
                           <ChevronDown 
@@ -205,7 +214,15 @@ export default function HeroSection() {
                         className="w-full flex items-center px-6 py-4 text-left hover:bg-gray-50 transition-colors duration-200"
                       >
                         <div className="flex items-center">
-                          <Package className="w-4 h-4 text-gray-500 mr-3" />
+                          {category.image_url ? (
+                            <img
+                              src={category.image_url}
+                              alt={category.name}
+                              className="w-6 h-6 object-cover rounded-full mr-3 border"
+                            />
+                          ) : (
+                            <Package className="w-4 h-4 text-gray-500 mr-3" />
+                          )}
                           <span className="text-gray-700 font-medium">{category.name}</span>
                         </div>
                       </Link>
