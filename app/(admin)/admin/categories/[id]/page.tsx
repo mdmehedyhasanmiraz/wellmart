@@ -25,7 +25,9 @@ export default function EditCategoryPage() {
     slug: '',
     description: '',
     parent_id: '',
-    image_url: '', // Add image_url to formData
+    image_url: '',
+    is_home: true,
+    position: '',
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
@@ -40,7 +42,7 @@ export default function EditCategoryPage() {
     setIsFetching(true);
     const { data, error } = await supabase
       .from('categories')
-      .select('name, slug, description, parent_id, image_url')
+      .select('name, slug, description, parent_id, image_url, is_home, position')
       .eq('id', id)
       .single();
     if (error || !data) {
@@ -54,6 +56,8 @@ export default function EditCategoryPage() {
       description: data.description || '',
       parent_id: data.parent_id || '',
       image_url: data.image_url || '',
+      is_home: typeof data.is_home === 'boolean' ? data.is_home : true,
+      position: data.position !== null && data.position !== undefined ? String(data.position) : '',
     });
     setIsFetching(false);
   };
@@ -64,8 +68,11 @@ export default function EditCategoryPage() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' && 'checked' in e.target ? (e.target as HTMLInputElement).checked : value
+    }));
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,6 +115,8 @@ export default function EditCategoryPage() {
         description: formData.description.trim() || null,
         parent_id: formData.parent_id || null,
         image_url: imageUrl || null,
+        is_home: formData.is_home,
+        position: formData.position ? parseInt(formData.position) : null,
       }).eq('id', id);
       if (error) throw error;
       toast.success('Category updated successfully');
@@ -238,6 +247,33 @@ export default function EditCategoryPage() {
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Show in Home (Hero Section)
+                </label>
+                <input
+                  type="checkbox"
+                  name="is_home"
+                  checked={formData.is_home}
+                  onChange={handleInputChange}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-700">Display this category in the home hero section</span>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Position (Order)
+                </label>
+                <input
+                  type="number"
+                  name="position"
+                  value={formData.position}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500"
+                  placeholder="e.g. 1 for first, 2 for second, ..."
+                  min={1}
+                />
               </div>
             </div>
           </div>

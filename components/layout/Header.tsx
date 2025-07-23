@@ -155,7 +155,8 @@ export default function Header() {
           });
         }
       } catch (error) {
-        // fallback to default
+        console.error('Error fetching site settings:', error);
+        setSiteSettings({ site_name: 'Wellmart', logo_url: '/logos/logo-wellmart.png' });
       }
     }
     fetchSiteSettings();

@@ -30,7 +30,7 @@ export default function SiteSettingsPage() {
 
   const fetchSettings = async () => {
     setIsLoading(true);
-    const { data, error } = await supabase.from("site_settings").select("*").order("updated_at", { ascending: false }).limit(1).single();
+    const { data } = await supabase.from("site_settings").select("*").order("updated_at", { ascending: false }).limit(1).single();
     if (data) {
       setSettings({
         site_name: data.site_name,
