@@ -21,7 +21,8 @@ export default function SiteSettingsPage() {
       routingNumber: "",
       swiftCode: "",
       instructions: [""]
-    }
+    },
+    free_delivery_min: 799,
   });
 
   useEffect(() => {
@@ -30,7 +31,7 @@ export default function SiteSettingsPage() {
 
   const fetchSettings = async () => {
     setIsLoading(true);
-    const { data } = await supabase.from("site_settings").select("*").order("updated_at", { ascending: false }).limit(1).single();
+    const { data, error } = await supabase.from("site_settings").select("*").order("updated_at", { ascending: false }).limit(1).single();
     if (data) {
       setSettings({
         site_name: data.site_name,
@@ -43,7 +44,8 @@ export default function SiteSettingsPage() {
           routingNumber: "",
           swiftCode: "",
           instructions: [""]
-        }
+        },
+        free_delivery_min: data.free_delivery_min !== undefined && data.free_delivery_min !== null ? Number(data.free_delivery_min) : 799,
       });
     }
     setIsLoading(false);
@@ -51,7 +53,7 @@ export default function SiteSettingsPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setSettings((prev) => ({ ...prev, [name]: value }));
+    setSettings((prev) => ({ ...prev, [name]: name === 'free_delivery_min' ? Number(value) : value }));
   };
 
   const handleBankChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,7 +120,8 @@ export default function SiteSettingsPage() {
         site_name: settings.site_name,
         logo_url: logoUrl,
         bank_details: settings.bank_details,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        free_delivery_min: settings.free_delivery_min,
       });
       if (error) throw error;
       toast.success("Site settings saved!");
@@ -208,6 +211,19 @@ export default function SiteSettingsPage() {
             ))}
             <button type="button" onClick={addInstruction} className="mt-2 px-3 py-1 bg-lime-600 text-white rounded">Add Instruction</button>
           </div>
+        </div>
+        {/* Free Delivery Minimum */}
+        <div>
+          <label className="block text-sm font-medium mb-2">Free Delivery Minimum Order (৳)</label>
+          <input
+            type="number"
+            name="free_delivery_min"
+            value={settings.free_delivery_min}
+            onChange={handleInputChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            min={0}
+          />
+          <p className="text-xs text-gray-500 mt-1">Orders above this amount will get free delivery.</p>
         </div>
         <div>
           <button type="submit" disabled={isSaving} className="px-6 py-2 bg-lime-600 text-white font-semibold rounded-lg shadow hover:bg-lime-700 transition-colors disabled:opacity-50">

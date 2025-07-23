@@ -10,6 +10,7 @@ import type { CartItem, GuestCartItem } from '@/types/cart';
 import { bankDetails } from '@/lib/config/bankDetails';
 import { CartService } from '@/lib/services/cart';
 import { Product } from '@/types/product';
+import { createClient } from '@/utils/supabase/client';
 
 const paymentMethods = [
   { id: 'bkash', label: 'bKash Payment' },
@@ -90,6 +91,7 @@ export default function CheckoutPage() {
   const [sameShipping, setSameShipping] = useState(true);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [freeDeliveryMin, setFreeDeliveryMin] = useState<number>(799);
 
   useEffect(() => {
     async function loadUser() {
@@ -113,6 +115,21 @@ export default function CheckoutPage() {
     }
 
     loadUser();
+  }, []);
+
+  useEffect(() => {
+    async function fetchFreeDeliveryMin() {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.from('site_settings').select('free_delivery_min').order('updated_at', { ascending: false }).limit(1).single();
+        if (data && data.free_delivery_min !== undefined && data.free_delivery_min !== null) {
+          setFreeDeliveryMin(Number(data.free_delivery_min));
+        }
+      } catch (error) {
+        // fallback to default
+      }
+    }
+    fetchFreeDeliveryMin();
   }, []);
 
   const handleBillingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -487,6 +504,16 @@ export default function CheckoutPage() {
               <ShoppingCart className="w-6 h-6 text-lime-600" />
               Order Summary
             </h2>
+            {/* Free Delivery Message */}
+            {total >= freeDeliveryMin ? (
+              <div className="mb-2 p-2 rounded bg-green-50 text-green-700 text-center text-sm font-medium border border-green-200">
+                🎉 You qualify for <b>Free Delivery</b>!
+              </div>
+            ) : (
+              <div className="mb-2 p-2 rounded bg-yellow-50 text-yellow-700 text-center text-sm font-medium border border-yellow-200">
+                Add <b>৳{(freeDeliveryMin - total).toFixed(2)}</b> more to your order for <b>Free Delivery</b>!
+              </div>
+            )}
             <div className="divide-y divide-gray-100">
               {items.length === 0 ? (
                 <div className="text-gray-500 py-8 text-center">Your cart is empty</div>
