@@ -219,18 +219,16 @@ export default function MediaPage() {
       const { error } = await supabase.storage
         .from('images')
         .remove([filePath]);
-      
       if (error) {
-        console.error('Error deleting file:', error);
-        toast.error('Failed to delete file');
+        console.error('Error deleting file:', error, 'File path:', filePath);
+        toast.error(`Failed to delete file: ${filePath} (${error.message})`);
         return;
       }
-      
       toast.success('File deleted successfully');
       fetchMediaFiles(); // Refresh the list
     } catch (error) {
-      console.error('Error deleting file:', error);
-      toast.error('Failed to delete file');
+      console.error('Error deleting file:', error, 'File path:', filePath);
+      toast.error(`Failed to delete file: ${filePath}`);
     }
   };
 

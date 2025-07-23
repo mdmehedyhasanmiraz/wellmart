@@ -15,6 +15,7 @@ export default function NewCompanyPage() {
     name: '',
     country: '',
     website: '',
+    address: '',
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,6 +37,7 @@ export default function NewCompanyPage() {
           name: formData.name.trim(),
           country: formData.country.trim() || null,
           website: formData.website.trim() || null,
+          address: formData.address.trim() || null,
         },
       ]);
       if (error) throw error;
@@ -119,6 +121,19 @@ export default function NewCompanyPage() {
                     placeholder="https://example.com"
                   />
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Address
+                </label>
+                <input
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500"
+                  placeholder="Company address"
+                />
               </div>
             </div>
           </div>

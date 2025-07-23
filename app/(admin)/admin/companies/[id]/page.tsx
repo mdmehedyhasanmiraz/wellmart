@@ -18,6 +18,7 @@ export default function EditCompanyPage() {
     name: '',
     country: '',
     website: '',
+    address: '',
   });
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export default function EditCompanyPage() {
     setIsFetching(true);
     const { data, error } = await supabase
       .from('companies')
-      .select('name, country, website')
+      .select('name, country, website, address')
       .eq('id', id)
       .single();
     if (error || !data) {
@@ -41,6 +42,7 @@ export default function EditCompanyPage() {
       name: data.name || '',
       country: data.country || '',
       website: data.website || '',
+      address: data.address || '',
     });
     setIsFetching(false);
   };
@@ -63,6 +65,7 @@ export default function EditCompanyPage() {
         name: formData.name.trim(),
         country: formData.country.trim() || null,
         website: formData.website.trim() || null,
+        address: formData.address.trim() || null,
       }).eq('id', id);
       if (error) throw error;
       toast.success('Company updated successfully');
@@ -153,6 +156,19 @@ export default function EditCompanyPage() {
                     placeholder="https://example.com"
                   />
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Address
+                </label>
+                <input
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500"
+                  placeholder="Company address"
+                />
               </div>
             </div>
           </div>
