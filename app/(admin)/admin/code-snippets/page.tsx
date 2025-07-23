@@ -10,9 +10,16 @@ const LOCATIONS = [
   { value: "footer", label: "Footer (before </body>)" },
 ];
 
+interface CodeSnippet {
+  id: string;
+  name: string;
+  location: string;
+  code: string;
+}
+
 export default function CodeSnippetsPage() {
   const supabase = createClient();
-  const [snippets, setSnippets] = useState<any[]>([]);
+  const [snippets, setSnippets] = useState<CodeSnippet[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     id: '',
@@ -32,6 +39,7 @@ export default function CodeSnippetsPage() {
     const { data, error } = await supabase.from('code_snippets').select('*').order('created_at', { ascending: false });
     if (data) setSnippets(data);
     setLoading(false);
+    console.log(error);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -39,7 +47,7 @@ export default function CodeSnippetsPage() {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleEdit = (snippet: any) => {
+  const handleEdit = (snippet: CodeSnippet) => {
     setForm({
       id: snippet.id,
       name: snippet.name,
@@ -92,6 +100,7 @@ export default function CodeSnippetsPage() {
       fetchSnippets();
     } catch (error) {
       toast.error('Failed to save');
+      console.error('Error saving snippet:', error);
     } finally {
       setSaving(false);
     }
