@@ -10,6 +10,7 @@ import type { CartItem, GuestCartItem } from '@/types/cart';
 import type { Product, Category } from '@/types/product';
 import Image from 'next/image';
 import { supabaseAuthService } from '@/lib/services/supabaseAuth';
+import { createClient } from '@/utils/supabase/client';
 
 interface User {
   id: string;
@@ -136,9 +137,28 @@ export default function Header() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [siteSettings, setSiteSettings] = useState<{ site_name: string; logo_url: string }>({ site_name: 'Wellmart', logo_url: '/logos/logo-wellmart.png' });
 
   useEffect(() => {
     checkUser();
+  }, []);
+
+  useEffect(() => {
+    async function fetchSiteSettings() {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.from('site_settings').select('site_name, logo_url').order('updated_at', { ascending: false }).limit(1).single();
+        if (data) {
+          setSiteSettings({
+            site_name: data.site_name || 'Wellmart',
+            logo_url: data.logo_url || '/logos/logo-wellmart.png',
+          });
+        }
+      } catch (error) {
+        // fallback to default
+      }
+    }
+    fetchSiteSettings();
   }, []);
 
   // Fetch categories from API
@@ -293,12 +313,13 @@ export default function Header() {
             <div className="flex-shrink-0">
               <Link href="/" className="flex items-center">
                 <Image 
-                  src="/logos/logo-wellmart.png" 
-                  alt="Wellmart" 
+                  src={siteSettings.logo_url}
+                  alt={siteSettings.site_name}
                   className="h-11 w-auto"
                   width={100}
                   height={100}
                 />
+                <span className="ml-2 text-xl font-bold text-gray-900 hidden sm:inline">{siteSettings.site_name}</span>
               </Link>
             </div>
 
