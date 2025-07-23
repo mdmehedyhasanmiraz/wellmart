@@ -12,9 +12,9 @@ import { CartService } from '@/lib/services/cart';
 import { Product } from '@/types/product';
 import { createClient } from '@/utils/supabase/client';
 // Use require for JSON imports to avoid type errors
-const divisionsData = require('@/data/bd-geo/bd-divisions.json');
-const districtsData = require('@/data/bd-geo/bd-districts.json');
-const upazilasData = require('@/data/bd-geo/bd-upazilas.json');
+import divisionsData from '@/data/bd-geo/bd-divisions.json';
+import districtsData from '@/data/bd-geo/bd-districts.json';
+import upazilasData from '@/data/bd-geo/bd-upazilas.json';
 
 // Types for geo data
 interface Division { id: string; name: string; }
@@ -160,7 +160,7 @@ export default function CheckoutPage() {
   const handleBillingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setBilling(prev => {
-      let updated = { ...prev, [name]: value };
+      const updated = { ...prev, [name]: value };
       // Reset dependent fields
       if (name === 'division') {
         updated.district = '';
@@ -174,7 +174,7 @@ export default function CheckoutPage() {
   const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setShipping(prev => {
-      let updated = { ...prev, [name]: value };
+      const updated = { ...prev, [name]: value };
       if (name === 'division') {
         updated.district = '';
         updated.upazila = '';
