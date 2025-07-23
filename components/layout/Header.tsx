@@ -137,7 +137,7 @@ export default function Header() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [siteSettings, setSiteSettings] = useState<{ site_name: string; logo_url: string }>({ site_name: 'Wellmart', logo_url: '/logos/logo-wellmart.png' });
+  const [siteSettings, setSiteSettings] = useState<{ logo_url: string }>({ logo_url: '/logos/logo-wellmart.png' });
 
   useEffect(() => {
     checkUser();
@@ -150,13 +150,12 @@ export default function Header() {
         const { data } = await supabase.from('site_settings').select('site_name, logo_url').order('updated_at', { ascending: false }).limit(1).single();
         if (data) {
           setSiteSettings({
-            site_name: data.site_name || 'Wellmart',
             logo_url: data.logo_url || '/logos/logo-wellmart.png',
           });
         }
       } catch (error) {
         console.error('Error fetching site settings:', error);
-        setSiteSettings({ site_name: 'Wellmart', logo_url: '/logos/logo-wellmart.png' });
+        setSiteSettings({ logo_url: '/logos/logo-wellmart.png' });
       }
     }
     fetchSiteSettings();
@@ -315,12 +314,11 @@ export default function Header() {
               <Link href="/" className="flex items-center">
                 <Image 
                   src={siteSettings.logo_url}
-                  alt={siteSettings.site_name}
+                  alt="Wellmart Logo"
                   className="h-11 w-auto"
                   width={100}
                   height={100}
                 />
-                <span className="ml-2 text-xl font-bold text-gray-900 hidden sm:inline">{siteSettings.site_name}</span>
               </Link>
             </div>
 
