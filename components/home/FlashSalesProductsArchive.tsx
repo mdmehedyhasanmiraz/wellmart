@@ -7,7 +7,7 @@ import type { Product } from "@/types/product";
 import { Loader2, Package } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 
-export default function FeaturedProductsArchive() {
+export default function FlashSalesProductsArchive() {
   const { addToCart } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,7 +33,7 @@ export default function FeaturedProductsArchive() {
 
   return (
     <section className="my-12 mx-auto max-w-7xl px-3">
-      <h2 className="text-2xl font-bold mb-6">Featured Products</h2>
+      <h2 className="text-2xl font-bold mb-6">Flash Sales</h2>
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="animate-spin text-blue-600" size={32} /></div>
       ) : products.length === 0 ? (
@@ -42,7 +42,7 @@ export default function FeaturedProductsArchive() {
           <div className="mt-4 text-lg font-medium text-gray-900">No products found</div>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} onAddToCart={() => addToCart(product.id, 1)} />
           ))}

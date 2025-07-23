@@ -66,7 +66,7 @@ export default function NewCategoryPage() {
         setImageUploading(true);
         const fileExt = imageFile.name.split('.').pop();
         const fileName = `categories/${formData.slug}-${Date.now()}.${fileExt}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage.from('images').upload(fileName, imageFile, {
+        const { error: uploadError } = await supabase.storage.from('images').upload(fileName, imageFile, {
           cacheControl: '3600',
           upsert: true,
         });
