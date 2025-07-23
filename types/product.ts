@@ -20,6 +20,7 @@ export interface Product {
   updated_at: string;
   category?: Category;
   manufacturer?: Manufacturer;
+  keywords?: string[];
 }
 
 export interface Category {

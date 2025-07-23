@@ -63,7 +63,6 @@ export default function ProductArchive({
 
         // Apply status filter - show both published and draft products for now
         // You can change this to only show published products when ready
-        query = query.in('status', ['published', 'draft']);
 
         // Apply search filter
         if (filters.search) {

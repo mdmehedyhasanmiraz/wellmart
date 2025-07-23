@@ -55,6 +55,7 @@ export default function NewProductPage() {
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
+    generic_name: '',
     description: '',
     price_regular: '',
     price_offer: '',
@@ -89,17 +90,24 @@ export default function NewProductPage() {
   };
 
   useEffect(() => {
-    if (!formData.name) {
+    if (!formData.name && !formData.generic_name) {
       setSuggestedKeywords([]);
       return;
     }
-    // Use keyword-extractor to get keywords from the product name
-    const extracted = keyword_extractor.extract(formData.name, {
+    // Use keyword-extractor to get keywords from the product name and generic name
+    const nameKeywords = keyword_extractor.extract(formData.name, {
       language: 'english',
       remove_digits: true,
       return_changed_case: true,
       remove_duplicates: true,
     });
+    const genericKeywords = keyword_extractor.extract(formData.generic_name || '', {
+      language: 'english',
+      remove_digits: true,
+      return_changed_case: true,
+      remove_duplicates: true,
+    });
+    const extracted = [...nameKeywords, ...genericKeywords].filter((kw, i, arr) => kw.length > 2 && arr.indexOf(kw) === i);
     // Optionally, add some common suffixes for e-commerce
     const suggestions = [
       ...extracted,
@@ -109,9 +117,12 @@ export default function NewProductPage() {
       formData.name + ' price',
       formData.name + ' online',
       formData.name + ' buy',
+      formData.generic_name + ' price',
+      formData.generic_name + ' online',
+      formData.generic_name + ' buy',
     ].filter((kw, i, arr) => kw.length > 2 && arr.indexOf(kw) === i && !keywords.includes(kw));
     setSuggestedKeywords(suggestions.slice(0, 8));
-  }, [formData.name, keywords]);
+  }, [formData.name, formData.generic_name, keywords]);
 
   const fetchCategories = async () => {
     try {
@@ -336,6 +347,7 @@ export default function NewProductPage() {
         name: formData.name,
         slug: formData.slug,
         description: formData.description,
+        generic_name: formData.generic_name,
         price_regular: parseFloat(formData.price_regular),
         price_offer: formData.price_offer ? parseFloat(formData.price_offer) : null,
         stock: parseInt(formData.stock),
@@ -345,7 +357,20 @@ export default function NewProductPage() {
         is_active: formData.is_active,
         sku: formData.sku || "",
         image_urls: allImageUrls,
-        // keywords: keywords,
+        keywords: keywords.length > 0 ? keywords : [
+          ...keyword_extractor.extract(formData.name, {
+            language: 'english',
+            remove_digits: true,
+            return_changed_case: true,
+            remove_duplicates: true,
+          }),
+          ...keyword_extractor.extract(formData.generic_name || '', {
+            language: 'english',
+            remove_digits: true,
+            return_changed_case: true,
+            remove_duplicates: true,
+          })
+        ],
         video: formData.video,
       };
       if (user?.role === 'admin') {
@@ -425,6 +450,19 @@ export default function NewProductPage() {
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-transparent"
                     placeholder="Enter product slug (e.g. product-name)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Generic Name
+                  </label>
+                  <input
+                    type="text"
+                    name="generic_name"
+                    value={formData.generic_name || ""}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-transparent"
+                    placeholder="Enter generic name"
                   />
                 </div>
                 <div>

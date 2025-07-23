@@ -265,9 +265,9 @@ export default function Header() {
   };
 
   const navigation = [
+    { name: 'Categories', href: '/categories' },
     { name: 'Home', href: '/' },
     { name: 'Shop', href: '/shop' },
-    { name: 'Categories', href: '/categories' },
     { name: 'Deals', href: '/shop' },
     { name: 'About', href: '/about' },
     { name: 'Contact', href: '/contact' },
@@ -487,7 +487,7 @@ export default function Header() {
             })}
           </ul>
           <div className="ml-auto pl-4 text-base font-bold text-gray-800 whitespace-nowrap">
-            <Link href="tel:01711997285" className="text-lime-600 hover:text-lime-700 transition-colors">
+            <Link href="tel:+8801711997285" className="text-green-700 hover:text-lime-700 transition-colors px-4">
               Call: 01711-997285
             </Link>
           </div>
