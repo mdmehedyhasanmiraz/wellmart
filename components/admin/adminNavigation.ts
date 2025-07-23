@@ -8,7 +8,9 @@ import {
   Star,
   Building2,
   FolderOpen,
-  Ticket
+  Ticket,
+  Code,
+  Settings
 } from 'lucide-react';
 
 export const adminNavigation = [
@@ -23,4 +25,6 @@ export const adminNavigation = [
   { name: 'Coupons', href: '/admin/coupons', icon: Ticket },
   { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { name: 'Users', href: '/admin/users', icon: Users },
+  { name: 'Code Snippets', href: '/admin/code-snippets', icon: Code },
+  { name: 'Site Settings', href: '/admin/site-settings', icon: Settings },
 ]; 

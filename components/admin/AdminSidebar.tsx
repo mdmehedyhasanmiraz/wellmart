@@ -98,6 +98,10 @@ export default function AdminSidebar({
         <nav className="flex-1 overflow-y-auto mt-6 px-3 pb-4">
           <div className="space-y-1">
             {adminNavigation.map((item) => {
+              // Only show Site Settings and Code Snippets for admin
+              if ((item.href === '/admin/site-settings' || item.href === '/admin/code-snippets') && userRole !== 'admin') {
+                return null;
+              }
               const isActive = pathname === item.href;
               return (
                 <Link
@@ -120,24 +124,6 @@ export default function AdminSidebar({
                 </Link>
               );
             })}
-            {userRole === 'admin' && (
-              <Link
-                href="/admin/site-settings"
-                className="group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              >
-                <Settings className="mr-3 h-5 w-5" />
-                Site Settings
-              </Link>
-            )}
-            {userRole === 'admin' && (
-              <Link
-                href="/admin/profit-loss"
-                className="group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              >
-                <ChartBar className="mr-3 h-5 w-5" />
-                Profit & Loss
-              </Link>
-            )}
           </div>
         </nav>
 
