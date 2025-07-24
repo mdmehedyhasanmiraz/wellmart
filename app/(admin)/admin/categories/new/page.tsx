@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, Folder, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Save, Folder, X } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
@@ -73,12 +73,14 @@ export default function NewCategoryPage() {
               return { url: signedData.signedUrl, name: file.name, path: filePath };
             } catch (error) {
               const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(filePath);
+              console.error('Error fetching signed URL:', error);
               return { url: publicUrl, name: file.name, path: filePath };
             }
           })
       );
       setBucketImages(imageUrls);
     } catch (error) {
+      console.error('Error fetching images from bucket:', error);
       toast.error('Failed to load images from bucket');
     } finally {
       setLoadingImages(false);
