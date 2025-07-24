@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AuthService } from '@/lib/services/auth';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get current user from session
-    const session = AuthService.getCurrentUser(request);
-    
-    if (!session) {
+    // Get current user from Supabase Auth
+    const supabase = createRouteHandlerClient({ cookies });
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({
         success: false,
         message: 'No active session'
@@ -21,21 +24,21 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
     // Get user details from database
-    const { data: user, error: dbError } = await supabaseAdmin
+    const { data: dbUser, error: dbError } = await supabaseAdmin
       .from('users')
       .select('*')
-      .eq('id', session.userId)
+      .eq('id', user.id)
       .single();
 
     return NextResponse.json({
       success: true,
-      session: {
-        userId: session.userId,
-        phone: session.phone,
-        role: session.role,
-        expiresAt: new Date(session.exp * 1000).toISOString()
+      user: {
+        id: user.id,
+        email: user.email,
+        role: dbUser?.role || user.user_metadata?.role || 'customer',
+        name: dbUser?.name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
       },
-      user: user || null,
+      dbUser: dbUser || null,
       dbError: dbError?.message || null
     });
 

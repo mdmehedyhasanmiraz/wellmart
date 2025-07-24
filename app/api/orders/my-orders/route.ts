@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AuthService } from '@/lib/services/auth';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get current user from session
-    const session = AuthService.getCurrentUser(request);
-    
-    if (!session) {
+    // Get current user from Supabase Auth
+    const supabase = createRouteHandlerClient({ cookies });
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({
         success: false,
         message: 'Not authenticated'
@@ -24,7 +27,7 @@ export async function GET(request: NextRequest) {
     const { data: orders, error } = await supabaseAdmin
       .from('user_orders')
       .select('id, created_at, total, status')
-      .eq('user_id', session.userId)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     if (error) {
