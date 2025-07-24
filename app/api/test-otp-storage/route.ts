@@ -3,10 +3,10 @@ import { NextResponse } from 'next/server';
 type OtpStorageType = Map<string, { otp: string; expiresAt: Date }>;
 
 function getOtpStorage(): OtpStorageType | null {
-  if (!(globalThis as any).otpStorage) {
+  if (!('otpStorage' in globalThis)) {
     return null;
   }
-  return (globalThis as any).otpStorage as OtpStorageType;
+  return (globalThis as unknown as { otpStorage: OtpStorageType }).otpStorage;
 }
 
 export async function GET() {
