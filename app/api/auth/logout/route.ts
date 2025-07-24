@@ -1,19 +1,13 @@
 import { NextResponse } from 'next/server';
-import { AuthService } from '@/lib/services/auth';
 
 export async function POST() {
   try {
-    const response = NextResponse.json({
+    // For Supabase Auth, sign out is handled on the client side.
+    return NextResponse.json({
       success: true,
       message: 'Logged out successfully',
       supabaseSignOut: true // Tell client to also sign out from Supabase
     });
-
-    // Clear session cookie
-    AuthService.clearSessionCookie(response);
-
-    return response;
-
   } catch (error) {
     console.error('Logout error:', error);
     return NextResponse.json({

@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
-import { AuthService } from '@/lib/services/auth';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if user is authenticated (optional for guest orders)
-    const session = AuthService.getCurrentUser(request);
+    // Get user from Supabase Auth if available
+    const supabase = createRouteHandlerClient({ cookies });
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
     const requestData = await request.json();
 
     // Validate required fields
@@ -28,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     // Create order data
     const orderData = {
-      user_id: session?.userId || requestData.user_id || null,
+      user_id: user?.id || requestData.user_id || null,
       cart_items: requestData.cart_items,
       total: requestData.total,
       payment_method: requestData.payment_method,

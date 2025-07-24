@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { smsService } from '@/lib/services/sms';
 import { createRouteHandlerClient } from '@/utils/supabase/server';
 
 export async function GET() {
@@ -29,21 +28,11 @@ export async function GET() {
       );
     }
 
-    // Get SMS balance
-    const result = await smsService.getBalance();
-
-    if (result.success) {
-      return NextResponse.json({
-        success: true,
-        balance: result.balance,
-        message: result.message,
-      });
-    } else {
-      return NextResponse.json(
-        { error: result.message },
-        { status: 400 }
-      );
-    }
+    // SMS balance check is deprecated/not implemented
+    return NextResponse.json({
+      success: false,
+      message: 'SMS balance check is not implemented.'
+    }, { status: 501 });
   } catch (error) {
     console.error('SMS balance check error:', error);
     return NextResponse.json(

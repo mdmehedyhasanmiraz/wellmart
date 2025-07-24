@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AuthService } from '@/lib/services/auth';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 export async function PUT(request: NextRequest) {
   try {
-    // Get current user from session
-    const session = AuthService.getCurrentUser(request);
-    
-    if (!session) {
+    // Get current user from Supabase Auth
+    const supabase = createRouteHandlerClient({ cookies });
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({
         success: false,
         message: 'Not authenticated'
@@ -33,7 +36,7 @@ export async function PUT(request: NextRequest) {
         upazila,
         street,
       })
-      .eq('id', session.userId);
+      .eq('id', user.id);
 
     if (error) {
       console.error('Update profile error:', error);
