@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server';
 
+type OtpStorageType = Map<string, { otp: string; expiresAt: Date }>;
+
+function getOtpStorage(): OtpStorageType | null {
+  if (!(globalThis as any).otpStorage) {
+    return null;
+  }
+  return (globalThis as any).otpStorage as OtpStorageType;
+}
+
 export async function GET() {
   try {
-    // Access the global OTP storage
-    const otpStorage = (global as { otpStorage: Map<string, { otp: string; expiresAt: Date }> }).otpStorage;
+    // Access the global OTP storage safely
+    const otpStorage = getOtpStorage();
     
     if (!otpStorage) {
       return NextResponse.json({
