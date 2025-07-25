@@ -44,7 +44,7 @@ export default function ProductPage({ params }: ProductPageProps) {
           .select(`
             *,
             category:categories(name, slug),
-            manufacturer:manufacturers!products_manufacturer_id_fkey(name)
+            company:companies!products_company_id_fkey(name)
           `)
           .eq('slug', resolvedParams.slug)
           .eq('is_active', true)
@@ -60,7 +60,7 @@ export default function ProductPage({ params }: ProductPageProps) {
             .select(`
               *,
               category:categories(name, slug),
-              manufacturer:manufacturers!products_manufacturer_id_fkey(name)
+              company:companies!products_company_id_fkey(name)
             `)
             .eq('slug', resolvedParams.slug)
             .eq('is_active', true)
@@ -75,7 +75,7 @@ export default function ProductPage({ params }: ProductPageProps) {
               .select(`
                 *,
                 category:categories(name, slug),
-                manufacturer:manufacturers!products_manufacturer_id_fkey(name)
+                company:companies!products_company_id_fkey(name)
               `)
               .eq('slug', resolvedParams.slug)
               .single();
@@ -355,10 +355,10 @@ export default function ProductPage({ params }: ProductPageProps) {
 
               {/* Company and Pack Size Info */}
               <div className="flex items-center gap-4 mb-4 text-sm text-gray-600">
-                {product.manufacturer?.name && (
+                {product.company?.name && (
                   <div className="flex items-center gap-1">
                     <span className="font-medium">Company:</span>
-                    <span>{product.manufacturer.name}</span>
+                    <span>{product.company.name}</span>
                   </div>
                 )}
                 {product.pack_size && (
@@ -489,10 +489,10 @@ export default function ProductPage({ params }: ProductPageProps) {
                     <span className="ml-2 text-gray-900">{product.pack_size}</span>
                   </div>
                 )}
-                {product.manufacturer?.name && (
+                {product.company?.name && (
                   <div>
                     <span className="font-medium text-gray-600">Company:</span>
-                    <span className="ml-2 text-gray-900">{product.manufacturer.name}</span>
+                    <span className="ml-2 text-gray-900">{product.company.name}</span>
                   </div>
                 )}
               </div>
@@ -565,10 +565,10 @@ export default function ProductPage({ params }: ProductPageProps) {
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-3">Company Information</h3>
                   <dl className="space-y-2">
-                    {product.manufacturer?.name && (
+                    {product.company?.name && (
                       <div className="flex justify-between">
                         <dt className="text-gray-600">Company</dt>
-                        <dd className="text-gray-900">{product.manufacturer.name}</dd>
+                        <dd className="text-gray-900">{product.company.name}</dd>
                       </div>
                     )}
                     <div className="flex justify-between">

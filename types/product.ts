@@ -20,6 +20,7 @@ export interface Product {
   updated_at: string;
   category?: Category;
   manufacturer?: Manufacturer;
+  company?: Company;
   keywords?: string[];
 }
 
@@ -40,6 +41,12 @@ export interface Manufacturer {
   country: string | null;
   website: string | null;
   created_at: string;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  // Add other fields as needed
 }
 
 export interface ProductFilters {
