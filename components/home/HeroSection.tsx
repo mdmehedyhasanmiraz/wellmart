@@ -236,7 +236,7 @@ export default function HeroSection() {
           {/* Banner and Cards Section */}
           <div className="lg:col-span-3">
             {/* Hero Slider */}
-            <HeroSlider banners={banners.filter(b => b.position === 'hero' && b.is_active)} />
+            <HeroSlider banners={banners.filter(b => b.position === 'main' && b.is_active)} />
             {/* Feature Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {getCardBanners().map((banner) => (
