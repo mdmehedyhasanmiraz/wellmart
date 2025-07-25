@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// TODO: Replace with your actual Nagad API integration logic and credentials
+// --- DEMO Nagad config ---
+// TODO: Replace these with your real Nagad credentials and endpoints
 const nagadConfig = {
-  base_url: process.env.NAGAD_BASE_URL || 'https://api.nagad.com.bd',
+  base_url: process.env.NAGAD_BASE_URL || 'https://sandbox.mynagad.com/remote-payment-gateway-uat/api/dfs',
   merchant_id: process.env.NAGAD_MERCHANT_ID || 'YOUR_MERCHANT_ID',
   merchant_number: process.env.NAGAD_MERCHANT_NUMBER || 'YOUR_MERCHANT_NUMBER',
   public_key: process.env.NAGAD_PUBLIC_KEY || 'YOUR_PUBLIC_KEY',
@@ -10,11 +11,39 @@ const nagadConfig = {
   callback_url: process.env.NAGAD_CALLBACK_URL || 'https://yourdomain.com/api/nagad/callback',
 };
 
+// --- DEMO: Helper to simulate Nagad API call ---
+async function demoNagadAuth() {
+  // TODO: Replace with real Nagad auth API call
+  // Simulate getting an access token
+  return {
+    access_token: 'demo_access_token',
+    token_type: 'Bearer',
+    expires_in: 3600,
+  };
+}
+
+// Add a type for the payment params
+interface DemoNagadPaymentParams {
+  amount: number;
+  email: string;
+  name: string;
+}
+
+async function demoNagadCreatePayment({ amount, email, name }: DemoNagadPaymentParams) {
+  // TODO: Replace with real Nagad payment initiation API call
+  // Simulate getting a payment URL
+  return {
+    payment_url: 'https://sandbox.mynagad.com/payment/demo-payment-url',
+    payment_ref: 'DEMO123456',
+  };
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { user_id, amount, email, name, phone, purpose } = await req.json();
+    console.log(user_id, amount, email, name, phone, purpose);
 
-    // TODO: Validate input as needed
+    // Validate input
     if (!amount || !email || !name) {
       return NextResponse.json({
         statusCode: 400,
@@ -22,20 +51,33 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // TODO: Integrate with Nagad API here
-    // 1. Authenticate with Nagad API (get token/session)
-    // 2. Create payment request (send amount, merchant info, callback, etc.)
-    // 3. Get payment URL from Nagad API response
-    // 4. Save payment record to your DB if needed
+    // --- DEMO: Step 1: Authenticate with Nagad ---
+    // TODO: Replace with real Nagad authentication
+    const authResult = await demoNagadAuth();
+    if (!authResult.access_token) {
+      return NextResponse.json({
+        statusCode: 500,
+        statusMessage: 'Failed to authenticate with Nagad',
+      });
+    }
 
-    // For now, return a mock Nagad payment URL
-    const mockNagadURL = 'https://sandbox.mynagad.com/payment/mock-payment-url';
+    // --- DEMO: Step 2: Initiate payment with Nagad ---
+    // TODO: Replace with real Nagad payment initiation
+    const paymentResult = await demoNagadCreatePayment({ amount, email, name });
+    if (!paymentResult.payment_url) {
+      return NextResponse.json({
+        statusCode: 500,
+        statusMessage: 'Failed to create Nagad payment',
+      });
+    }
 
+    // --- DEMO: Step 3: Return payment URL to frontend ---
     return NextResponse.json({
       statusCode: 200,
-      statusMessage: 'Nagad payment initiated (mock)',
+      statusMessage: 'Nagad payment initiated (demo)',
       data: {
-        nagadURL: mockNagadURL,
+        nagadURL: paymentResult.payment_url,
+        paymentRef: paymentResult.payment_ref,
         // Add any other info you want to return
       },
     });

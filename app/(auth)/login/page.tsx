@@ -11,7 +11,7 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [otpMode, setOtpMode] = useState(false);
   const [otpStep, setOtpStep] = useState<'request' | 'verify'>('request');
-  const [otpSent, setOtpSent] = useState(false);
+  // const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -77,7 +77,7 @@ function LoginForm() {
         setLoading(false);
         return;
       }
-      setOtpSent(true);
+      // setOtpSent(true);
       setOtpStep('verify');
       toast.success('OTP sent to your email!');
     } catch (err) {
@@ -92,7 +92,7 @@ function LoginForm() {
     e.preventDefault();
     setVerifying(true);
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
+      const { error } = await supabase.auth.verifyOtp({
         email,
         token: otpCode,
         type: 'email',

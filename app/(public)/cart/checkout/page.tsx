@@ -330,6 +330,7 @@ export default function CheckoutPage() {
         }
       } catch (error) {
         toast.error('Failed to initiate Nagad payment');
+        console.error('Error initiating Nagad payment:', error);
       } finally {
         setIsSubmitting(false);
       }
