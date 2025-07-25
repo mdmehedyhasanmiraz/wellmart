@@ -8,7 +8,7 @@ import {
   Package, 
   Users, 
   LogOut, 
-  X,
+  X, 
   ChevronRight
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
