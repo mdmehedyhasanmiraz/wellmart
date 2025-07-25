@@ -10,7 +10,10 @@ function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [otpMode, setOtpMode] = useState(false);
+  const [otpStep, setOtpStep] = useState<'request' | 'verify'>('request');
   const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [verifying, setVerifying] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
@@ -75,12 +78,37 @@ function LoginForm() {
         return;
       }
       setOtpSent(true);
+      setOtpStep('verify');
       toast.success('OTP sent to your email!');
     } catch (err) {
       toast.error('Failed to send OTP');
       console.error('OTP error', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setVerifying(true);
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: otpCode,
+        type: 'email',
+      });
+      if (error) {
+        toast.error(error.message || 'Invalid OTP');
+        setVerifying(false);
+        return;
+      }
+      toast.success('Login successful! Redirecting...');
+      router.push('/dashboard');
+    } catch (err) {
+      toast.error('OTP verification failed');
+      console.error('OTP verify error', err);
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -121,14 +149,14 @@ function LoginForm() {
             <button
               type="button"
               className={`px-4 py-2 rounded-l-lg border ${!otpMode ? 'bg-lime-600 text-white' : 'bg-gray-100 text-gray-700'} font-semibold`}
-              onClick={() => setOtpMode(false)}
+              onClick={() => { setOtpMode(false); setOtpStep('request'); }}
             >
               Email & Password
             </button>
             <button
               type="button"
               className={`px-4 py-2 rounded-r-lg border ${otpMode ? 'bg-lime-600 text-white' : 'bg-gray-100 text-gray-700'} font-semibold`}
-              onClick={() => setOtpMode(true)}
+              onClick={() => { setOtpMode(true); setOtpStep('request'); }}
             >
               Email OTP
             </button>
@@ -178,38 +206,72 @@ function LoginForm() {
               </div>
             </form>
           ) : (
-            <form onSubmit={handleEmailOtpSignIn} className="space-y-4">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500 focus:z-10 text-base shadow-sm"
-                  placeholder="you@example.com"
-                />
-              </div>
-              <div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-semibold rounded-xl text-white bg-lime-600 hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 disabled:opacity-50 shadow-md"
-                >
-                  {loading ? 'Sending OTP...' : 'Send OTP to Email'}
-                </button>
-              </div>
-              {otpSent && (
-                <div className="text-green-700 text-center text-sm mt-2">
-                  OTP sent! Please check your email and follow the link to sign in.
+            otpStep === 'request' ? (
+              <form onSubmit={handleEmailOtpSignIn} className="space-y-4">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500 focus:z-10 text-base shadow-sm"
+                    placeholder="you@example.com"
+                  />
                 </div>
-              )}
-            </form>
+                <div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-semibold rounded-xl text-white bg-lime-600 hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 disabled:opacity-50 shadow-md"
+                  >
+                    {loading ? 'Sending OTP...' : 'Send OTP to Email'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                <div>
+                  <label htmlFor="otp" className="block text-sm font-medium text-gray-700">
+                    Enter 6-digit OTP sent to your email
+                  </label>
+                  <input
+                    id="otp"
+                    name="otp"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    maxLength={6}
+                    required
+                    value={otpCode}
+                    onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                    className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500 focus:z-10 text-base shadow-sm tracking-widest text-center"
+                    placeholder="------"
+                  />
+                </div>
+                <div className="flex justify-between items-center">
+                  <button
+                    type="button"
+                    className="text-sm text-gray-500 hover:text-lime-600 underline"
+                    onClick={() => { setOtpStep('request'); setOtpCode(''); }}
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={verifying || otpCode.length !== 6}
+                    className="group relative flex justify-center py-3 px-6 border border-transparent text-base font-semibold rounded-xl text-white bg-lime-600 hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 disabled:opacity-50 shadow-md"
+                  >
+                    {verifying ? 'Verifying...' : 'Verify OTP'}
+                  </button>
+                </div>
+              </form>
+            )
           )}
         </div>
       </div>

@@ -23,8 +23,9 @@ interface Upazila { id: string; district_id: string; name: string; }
 
 const paymentMethods = [
   { id: 'bkash', label: 'bKash Payment' },
-  // { id: 'nagad', label: 'Nagad Payment' },
+  { id: 'nagad', label: 'Nagad Payment' },
   { id: 'bank', label: 'Bank Transfer' },
+  { id: 'cod', label: 'Cash on Delivery' },
 ];
 
 // Helper functions for product image and price
@@ -306,7 +307,34 @@ export default function CheckoutPage() {
     if (payment === 'bank') {
       await createOrder('bank', 'pending');
     } else if (payment === 'nagad') {
-      toast.error('Nagad payment is not available yet. Please select another payment method.');
+      // Call Nagad payment API and redirect
+      try {
+        setIsSubmitting(true);
+        const response = await fetch('/api/nagad/make-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: user?.id || null,
+            amount: total,
+            email: billing.email || user?.email || '',
+            name: billing.name,
+            phone: billing.phone,
+            purpose: 'order',
+          }),
+        });
+        const result = await response.json();
+        if (result.statusCode === 200 && result.data?.nagadURL) {
+          window.location.href = result.data.nagadURL;
+        } else {
+          toast.error(result.statusMessage || 'Failed to initiate Nagad payment');
+        }
+      } catch (error) {
+        toast.error('Failed to initiate Nagad payment');
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else if (payment === 'cod') {
+      await createOrder('cod', 'pending');
     } else {
       // For other payment methods, redirect to payment pages
       router.push(`/cart/payment/${payment}`);
