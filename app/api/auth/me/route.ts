@@ -38,7 +38,7 @@ export async function GET() {
           name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
           phone: user.phone || '',
           email: user.email || '',
-          role: dbUser?.role || user.user_metadata?.role || 'customer',
+          role: (dbUser?.role || user.user_metadata?.role || 'customer')?.toLowerCase().trim(),
           division: dbUser?.division || '',
           district: dbUser?.district || '',
           upazila: dbUser?.upazila || '',
