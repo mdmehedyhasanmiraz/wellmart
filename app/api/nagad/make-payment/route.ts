@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// --- DEMO Nagad config ---
-// TODO: Replace these with your real Nagad credentials and endpoints
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const nagadConfig = {
   base_url: process.env.NAGAD_BASE_URL || 'https://sandbox.mynagad.com/remote-payment-gateway-uat/api/dfs',
   merchant_id: process.env.NAGAD_MERCHANT_ID || 'YOUR_MERCHANT_ID',
@@ -29,6 +28,7 @@ interface DemoNagadPaymentParams {
   name: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function demoNagadCreatePayment({ amount, email, name }: DemoNagadPaymentParams) {
   // TODO: Replace with real Nagad payment initiation API call
   // Simulate getting a payment URL

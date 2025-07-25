@@ -96,8 +96,7 @@ export default function AdminSidebar({
         <nav className="flex-1 overflow-y-auto mt-6 px-3 pb-4">
           <div className="space-y-1">
             {adminNavigation.map((item) => {
-              // Only show Site Settings and Code Snippets for admin
-              if ((item.href === '/admin/site-settings' || item.href === '/admin/code-snippets') && userRole !== 'admin') {
+              if (item.adminOnly && userRole !== 'admin') {
                 return null;
               }
               const isActive = pathname === item.href;
