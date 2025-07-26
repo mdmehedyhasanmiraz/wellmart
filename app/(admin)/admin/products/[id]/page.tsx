@@ -205,6 +205,7 @@ export default function EditProductPage() {
   };
 
   const fetchBucketImages = async () => {
+    console.log('[DEBUG] fetchBucketImages called');
     setLoadingImages(true);
     try {
       const { error: bucketError } = await supabase.storage
@@ -375,15 +376,26 @@ export default function EditProductPage() {
         })
       });
 
-      const result = await response.json();
+      let result: any = null;
+      try {
+        result = await response.json();
+      } catch (err) {
+        console.error('[handleSubmit] Failed to parse JSON response:', err);
+        toast.error('Failed to update product: Invalid server response');
+        setIsLoading(false);
+        return;
+      }
+      console.log('[handleSubmit] API response:', result);
       if (!result.success) {
-        throw new Error(result.error || 'Failed to update product');
+        toast.error(result.error || result.details || 'Failed to update product');
+        setIsLoading(false);
+        return;
       }
       toast.success('Product updated successfully');
       router.push('/admin/products');
-    } catch (error) {
-      console.log(error);
-      toast.error('Failed to update product');
+    } catch (error: any) {
+      console.error('[handleSubmit] Error:', error);
+      toast.error(error?.message || 'Failed to update product');
     } finally {
       setIsLoading(false);
     }
