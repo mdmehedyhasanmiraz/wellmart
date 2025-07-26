@@ -111,15 +111,27 @@ export default function ReviewsPage() {
 
   const handleStatusChange = async (reviewId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
-        .from('reviews')
-        .update({ status: newStatus })
-        .eq('id', reviewId);
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update',
+          table: 'reviews',
+          id: reviewId,
+          data: { status: newStatus }
+        })
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      toast.success(`Review ${newStatus} successfully`);
-      fetchReviews();
+      if (result.success) {
+        toast.success(`Review ${newStatus} successfully`);
+        fetchReviews();
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Error updating review status:', error);
       toast.error('Failed to update review status');
@@ -130,15 +142,26 @@ export default function ReviewsPage() {
     if (!confirm('Are you sure you want to delete this review?')) return;
 
     try {
-      const { error } = await supabase
-        .from('reviews')
-        .delete()
-        .eq('id', reviewId);
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          table: 'reviews',
+          id: reviewId
+        })
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      toast.success('Review deleted successfully');
-      fetchReviews();
+      if (result.success) {
+        toast.success('Review deleted successfully');
+        fetchReviews();
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Error deleting review:', error);
       toast.error('Failed to delete review');

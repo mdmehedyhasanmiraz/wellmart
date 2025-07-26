@@ -75,15 +75,26 @@ export default function UsersPage() {
     if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
 
     try {
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', userId);
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          table: 'users',
+          id: userId
+        })
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      toast.success('User deleted successfully');
-      fetchUsers();
+      if (result.success) {
+        toast.success('User deleted successfully');
+        fetchUsers();
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Error deleting user:', error);
       toast.error('Failed to delete user');
@@ -92,15 +103,27 @@ export default function UsersPage() {
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({ role: newRole })
-        .eq('id', userId);
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update',
+          table: 'users',
+          id: userId,
+          data: { role: newRole }
+        })
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      toast.success('User role updated successfully');
-      fetchUsers();
+      if (result.success) {
+        toast.success('User role updated successfully');
+        fetchUsers();
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Error updating user role:', error);
       toast.error('Failed to update user role');

@@ -179,19 +179,26 @@ export default function CouponsPage() {
     }
 
     try {
-      const { error } = await supabase
-        .from('coupons')
-        .delete()
-        .eq('id', id);
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          table: 'coupons',
+          id: id
+        })
+      });
 
-      if (error) {
-        console.error('Error deleting coupon:', error);
-        toast.error('Failed to delete coupon');
-        return;
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success('Coupon deleted successfully');
+        fetchCoupons();
+      } else {
+        throw new Error(result.error);
       }
-
-      toast.success('Coupon deleted successfully');
-      fetchCoupons();
     } catch (error) {
       console.error('Error deleting coupon:', error);
       toast.error('Failed to delete coupon');
@@ -200,19 +207,27 @@ export default function CouponsPage() {
 
   const toggleActive = async (coupon: Coupon) => {
     try {
-      const { error } = await supabase
-        .from('coupons')
-        .update({ is_active: !coupon.is_active })
-        .eq('id', coupon.id);
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update',
+          table: 'coupons',
+          id: coupon.id,
+          data: { is_active: !coupon.is_active }
+        })
+      });
 
-      if (error) {
-        console.error('Error updating coupon status:', error);
-        toast.error('Failed to update coupon status');
-        return;
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(`Coupon ${coupon.is_active ? 'deactivated' : 'activated'} successfully`);
+        fetchCoupons();
+      } else {
+        throw new Error(result.error);
       }
-
-      toast.success(`Coupon ${coupon.is_active ? 'deactivated' : 'activated'} successfully`);
-      fetchCoupons();
     } catch (error) {
       console.error('Error updating coupon status:', error);
       toast.error('Failed to update coupon status');

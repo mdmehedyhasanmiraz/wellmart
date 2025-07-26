@@ -116,15 +116,26 @@ export default function ProductsPage() {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', productId);
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          table: 'products',
+          id: productId
+        })
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      toast.success('Product deleted successfully');
-      fetchProducts();
+      if (result.success) {
+        toast.success('Product deleted successfully');
+        fetchProducts();
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Error deleting product:', error);
       toast.error('Failed to delete product');
@@ -133,15 +144,27 @@ export default function ProductsPage() {
 
   const handleToggleStatus = async (productId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from('products')
-        .update({ is_active: !currentStatus })
-        .eq('id', productId);
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update',
+          table: 'products',
+          id: productId,
+          data: { is_active: !currentStatus }
+        })
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      toast.success(`Product ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
-      fetchProducts();
+      if (result.success) {
+        toast.success(`Product ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
+        fetchProducts();
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Error updating product status:', error);
       toast.error('Failed to update product status');

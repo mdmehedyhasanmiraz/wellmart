@@ -132,17 +132,27 @@ export default function OrdersPage() {
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
-        .from('user_orders')
-        .update({ 
-          status: newStatus
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update',
+          table: 'user_orders',
+          id: orderId,
+          data: { status: newStatus }
         })
-        .eq('id', orderId);
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      toast.success('Order status updated successfully');
-      fetchOrders();
+      if (result.success) {
+        toast.success('Order status updated successfully');
+        fetchOrders();
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Error updating order status:', error);
       toast.error('Failed to update order status');
@@ -220,14 +230,27 @@ export default function OrdersPage() {
   const handleDeleteOrder = async (orderId: string) => {
     if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) return;
     try {
-      const { error } = await supabase
-        .from('user_orders')
-        .delete()
-        .eq('id', orderId);
-      if (error) throw error;
-      toast.success('Order deleted successfully');
-      fetchOrders();
-      closeOrderDetails();
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          table: 'user_orders',
+          id: orderId
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success('Order deleted successfully');
+        fetchOrders();
+        closeOrderDetails();
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Error deleting order:', error);
       toast.error('Failed to delete order');

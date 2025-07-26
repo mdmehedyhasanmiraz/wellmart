@@ -61,15 +61,26 @@ export default function CompaniesPage() {
     if (!confirm('Are you sure you want to delete this company? Products from this company will be unassigned.')) return;
 
     try {
-      const { error } = await supabase
-        .from('companies')
-        .delete()
-        .eq('id', companyId);
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          table: 'companies',
+          id: companyId
+        })
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      toast.success('Company deleted successfully');
-      fetchCompanies();
+      if (result.success) {
+        toast.success('Company deleted successfully');
+        fetchCompanies();
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Error deleting company:', error);
       toast.error('Failed to delete company');

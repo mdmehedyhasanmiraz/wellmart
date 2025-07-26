@@ -81,15 +81,26 @@ export default function BannersPage() {
     if (!confirm('Are you sure you want to delete this banner?')) return;
 
     try {
-      const { error } = await supabase
-        .from('banners')
-        .delete()
-        .eq('id', bannerId);
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          table: 'banners',
+          id: bannerId
+        })
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      toast.success('Banner deleted successfully');
-      fetchBanners();
+      if (result.success) {
+        toast.success('Banner deleted successfully');
+        fetchBanners();
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Error deleting banner:', error);
       toast.error('Failed to delete banner');
@@ -98,15 +109,27 @@ export default function BannersPage() {
 
   const handleToggleStatus = async (bannerId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from('banners')
-        .update({ is_active: !currentStatus })
-        .eq('id', bannerId);
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update',
+          table: 'banners',
+          id: bannerId,
+          data: { is_active: !currentStatus }
+        })
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      toast.success(`Banner ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
-      fetchBanners();
+      if (result.success) {
+        toast.success(`Banner ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
+        fetchBanners();
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Error updating banner status:', error);
       toast.error('Failed to update banner status');

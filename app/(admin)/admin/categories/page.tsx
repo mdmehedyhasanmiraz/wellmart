@@ -62,15 +62,26 @@ export default function CategoriesPage() {
     if (!confirm('Are you sure you want to delete this category? Products in this category will be uncategorized.')) return;
 
     try {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', categoryId);
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          table: 'categories',
+          id: categoryId
+        })
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      toast.success('Category deleted successfully');
-      fetchCategories();
+      if (result.success) {
+        toast.success('Category deleted successfully');
+        fetchCategories();
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Error deleting category:', error);
       toast.error('Failed to delete category');
@@ -79,15 +90,27 @@ export default function CategoriesPage() {
 
   const handleToggleStatus = async (categoryId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from('categories')
-        .update({ is_active: !currentStatus })
-        .eq('id', categoryId);
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update',
+          table: 'categories',
+          id: categoryId,
+          data: { is_active: !currentStatus }
+        })
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      toast.success(`Category ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
-      fetchCategories();
+      if (result.success) {
+        toast.success(`Category ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
+        fetchCategories();
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Error updating category status:', error);
       toast.error('Failed to update category status');
