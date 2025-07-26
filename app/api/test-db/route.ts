@@ -1,16 +1,23 @@
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { supabaseAdmin } from '@/lib/supabase/server';
 
 export async function GET() {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    
-    // Test auth connection
-    const { data: { user }, error } = await supabase.auth.getUser();
+    if (!supabaseAdmin) {
+      return NextResponse.json({
+        success: false,
+        error: 'Supabase admin client not configured'
+      }, { status: 500 });
+    }
+
+    // Test basic database connection
+    const { data, error } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .limit(1);
 
     if (error) {
-      console.error('Auth error:', error);
+      console.error('Database error:', error);
       return NextResponse.json({
         success: false,
         error: error.message,
@@ -20,14 +27,8 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      message: 'Auth connection successful',
-      user: user ? {
-        id: user.id,
-        email: user.email,
-        hasUser: true
-      } : {
-        hasUser: false
-      }
+      message: 'Database connection successful',
+      data: data
     });
   } catch (error) {
     console.error('API error:', error);
