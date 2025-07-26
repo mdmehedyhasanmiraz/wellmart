@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
+interface TableCheckResult {
+  exists: boolean;
+  error: string | null;
+  data: unknown;
+}
+
 export async function GET() {
   try {
     if (!supabaseAdmin) {
@@ -10,7 +16,7 @@ export async function GET() {
       }, { status: 500 });
     }
 
-    const results: Record<string, any> = {};
+    const results: Record<string, TableCheckResult> = {};
 
     // Check if users table exists and is accessible
     try {
