@@ -5,7 +5,7 @@ import { useState } from 'react';
 interface TestResult {
   status: number | string;
   ok: boolean;
-  data?: any;
+  data?: Record<string, unknown>;
   error?: string;
 }
 
@@ -104,6 +104,12 @@ export default function DebugDatabase() {
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4">Manual Tests</h2>
           <div className="space-y-2">
+            <button
+              onClick={() => testEndpoint('/api/test-env', 'Environment Variables')}
+              className="block w-full text-left bg-gray-100 hover:bg-gray-200 p-3 rounded-lg"
+            >
+              Test Environment Variables
+            </button>
             <button
               onClick={() => testEndpoint('/api/test-db', 'Database Connection')}
               className="block w-full text-left bg-gray-100 hover:bg-gray-200 p-3 rounded-lg"
