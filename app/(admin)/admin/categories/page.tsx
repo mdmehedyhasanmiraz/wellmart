@@ -34,29 +34,21 @@ export default function CategoriesPage() {
 
   const fetchCategories = async () => {
     try {
-      let query = supabase
-        .from('categories')
-        .select(`
-          *,
-          product_count:products(count)
-        `)
-        .order('name');
+      setIsLoading(true);
+      
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('search', searchTerm);
 
-      if (searchTerm) {
-        query = query.ilike('name', `%${searchTerm}%`);
+      const response = await fetch(`/api/admin/categories?${params.toString()}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        setCategories(result.categories || []);
+      } else {
+        console.error('Error fetching categories:', result.error);
+        toast.error('Failed to load categories');
       }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      
-      // Transform the data to handle the count properly
-      const transformedData = data?.map(category => ({
-        ...category,
-        product_count: category.product_count?.[0]?.count || 0
-      })) || [];
-      
-      setCategories(transformedData);
     } catch (error) {
       console.error('Error fetching categories:', error);
       toast.error('Failed to load categories');

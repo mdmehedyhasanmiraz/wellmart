@@ -44,23 +44,24 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-      let query = supabase
-        .from('users')
-        .select('*')
-        .order(sortBy, { ascending: sortOrder === 'asc' });
+      setIsLoading(true);
+      
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('search', searchTerm);
+      if (roleFilter !== 'all') params.append('role', roleFilter);
+      params.append('sortBy', sortBy);
+      params.append('sortOrder', sortOrder);
 
-      if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
+      const response = await fetch(`/api/admin/users?${params.toString()}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        setUsers(result.users || []);
+      } else {
+        console.error('Error fetching users:', result.error);
+        toast.error('Failed to load users');
       }
-
-      if (roleFilter !== 'all') {
-        query = query.eq('role', roleFilter);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setUsers(data || []);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Failed to load users');

@@ -65,60 +65,26 @@ export default function ProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      let query = supabase
-        .from('products')
-        .select('*');
+      setIsLoading(true);
+      
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('search', searchTerm);
+      if (selectedCategory) params.append('category', selectedCategory);
+      if (selectedCompany) params.append('company', selectedCompany);
+      if (statusFilter !== 'all') params.append('status', statusFilter);
+      params.append('sortBy', sortBy);
+      params.append('sortOrder', sortOrder);
 
-      // Apply filters
-      if (searchTerm) {
-        query = query.ilike('name', `%${searchTerm}%`);
+      const response = await fetch(`/api/admin/products?${params.toString()}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        setProducts(result.products || []);
+      } else {
+        console.error('Error fetching products:', result.error);
+        toast.error('Failed to load products');
       }
-      if (selectedCategory) {
-        query = query.eq('category_id', selectedCategory);
-      }
-      if (selectedCompany) {
-        query = query.eq('company_id', selectedCompany);
-      }
-      if (statusFilter === 'active') {
-        query = query.eq('is_active', true);
-      } else if (statusFilter === 'inactive') {
-        query = query.eq('is_active', false);
-      }
-
-      // Apply sorting
-      query = query.order(sortBy, { ascending: sortOrder === 'asc' });
-
-      const { data, error } = await query;
-      if (error) throw error;
-
-      // Fetch category and company names for each product
-      const categoryIds = Array.from(new Set((data || []).map((p: Product) => p.category_id).filter(Boolean)));
-      const companyIds = Array.from(new Set((data || []).map((p: Product) => p.company_id).filter(Boolean)));
-      let categoryMap: Record<string, string> = {};
-      let companyMap: Record<string, string> = {};
-
-      if (categoryIds.length > 0) {
-        const { data: categories } = await supabase
-          .from('categories')
-          .select('id, name')
-          .in('id', categoryIds);
-        categoryMap = (categories || []).reduce((acc, cat) => ({ ...acc, [cat.id]: cat.name }), {});
-      }
-
-      if (companyIds.length > 0) {
-        const { data: companies } = await supabase
-          .from('companies')
-          .select('id, name')
-          .in('id', companyIds);
-        companyMap = (companies || []).reduce((acc, comp) => ({ ...acc, [comp.id]: comp.name }), {});
-      }
-
-      const productsWithNames = (data || []).map((p: Product) => ({
-        ...p,
-        category_name: p.category_id ? categoryMap[p.category_id] : undefined,
-        company_name: p.company_id ? companyMap[p.company_id] : undefined,
-      }));
-      setProducts(productsWithNames);
     } catch (error) {
       console.error('Error fetching products:', error);
       toast.error('Failed to load products');
@@ -128,13 +94,21 @@ export default function ProductsPage() {
   };
 
   const fetchCategories = async () => {
-    const { data } = await supabase.from('categories').select('id, name');
-    setCategories(data || []);
+    try {
+      const { data } = await supabase.from('categories').select('id, name');
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
   };
 
   const fetchCompanies = async () => {
-    const { data } = await supabase.from('companies').select('id, name');
-    setCompanies(data || []);
+    try {
+      const { data } = await supabase.from('companies').select('id, name');
+      setCompanies(data || []);
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+    }
   };
 
   const handleDeleteProduct = async (productId: string) => {

@@ -33,20 +33,21 @@ export default function CompaniesPage() {
 
   const fetchCompanies = async () => {
     try {
-      let query = supabase
-        .from('companies')
-        .select('*')
-        .order('name');
-
-      if (searchTerm) {
-        query = query.ilike('name', `%${searchTerm}%`);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
+      setIsLoading(true);
       
-      setCompanies(data || []);
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('search', searchTerm);
+
+      const response = await fetch(`/api/admin/companies?${params.toString()}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        setCompanies(result.companies || []);
+      } else {
+        console.error('Error fetching companies:', result.error);
+        toast.error('Failed to load companies');
+      }
     } catch (error) {
       console.error('Error fetching companies:', error);
       toast.error('Failed to load companies');

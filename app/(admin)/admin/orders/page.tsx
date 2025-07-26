@@ -102,46 +102,25 @@ export default function OrdersPage() {
 
   const fetchOrders = async () => {
     try {
-      let query = supabase
-        .from('user_orders')
-        .select('*')
-        .order(sortBy, { ascending: sortOrder === 'asc' });
-
-      if (searchTerm) {
-        query = query.or(`id.ilike.%${searchTerm}%,billing_name.ilike.%${searchTerm}%,billing_email.ilike.%${searchTerm}%,billing_phone.ilike.%${searchTerm}%`);
-      }
-
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
-      }
-
-      if (paymentFilter !== 'all') {
-        // Handle case where payment_status column might not exist yet
-        if (paymentFilter === 'pending') {
-          query = query.or('payment_status.is.null,payment_status.eq.pending');
-        } else {
-          query = query.eq('payment_status', paymentFilter);
-        }
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
+      setIsLoading(true);
       
-      // Transform the data to match our interface
-      const transformedOrders = (data || []).map((order: Order) => ({
-        ...order,
-        user: {
-          name: order.billing_name,
-          email: order.billing_email || '',
-          phone: order.billing_phone
-        }
-      }));
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('search', searchTerm);
+      if (statusFilter !== 'all') params.append('status', statusFilter);
+      if (paymentFilter !== 'all') params.append('payment', paymentFilter);
+      params.append('sortBy', sortBy);
+      params.append('sortOrder', sortOrder);
+
+      const response = await fetch(`/api/admin/orders?${params.toString()}`);
+      const result = await response.json();
       
-      setOrders(transformedOrders);
+      if (result.success) {
+        setOrders(result.orders || []);
+      } else {
+        console.error('Error fetching orders:', result.error);
+        toast.error('Failed to load orders');
+      }
     } catch (error) {
       console.error('Error fetching orders:', error);
       toast.error('Failed to load orders');
