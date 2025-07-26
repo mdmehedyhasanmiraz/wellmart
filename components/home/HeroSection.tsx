@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronDown, ChevronRight, Package } from 'lucide-react';
@@ -39,7 +39,7 @@ interface HeroSectionProps {
 
 export default function HeroSection({ categories, banners }: HeroSectionProps) {
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
 
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories(prev => 

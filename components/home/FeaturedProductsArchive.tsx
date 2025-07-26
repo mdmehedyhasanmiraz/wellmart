@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 import ProductCard from "../shop/ProductCard";
 import type { Product } from "@/types/product";
 import { Loader2, Package } from "lucide-react";
