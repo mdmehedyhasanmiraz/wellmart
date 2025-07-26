@@ -356,24 +356,78 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10">
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-6 lg:py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Cart Summary */}
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-8 md:mb-0 col-span-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">Checkout</h1>
+        
+        {/* Mobile Order Summary - Show at top on mobile */}
+        <div className="lg:hidden mb-6">
+          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <ShoppingCart className="w-5 h-5 text-lime-600" />
+              Order Summary
+            </h2>
+            {/* Free Delivery Message */}
+            {total >= freeDeliveryMin ? (
+              <div className="mb-3 p-2 rounded bg-green-50 text-green-700 text-center text-sm font-medium border border-green-200">
+                🎉 You qualify for <b>Free Delivery</b>!
+              </div>
+            ) : (
+              <div className="mb-3 p-2 rounded bg-yellow-50 text-yellow-700 text-center text-sm font-medium border border-yellow-200">
+                Add <b>৳{(freeDeliveryMin - total).toFixed(2)}</b> more for <b>Free Delivery</b>!
+              </div>
+            )}
+            <div className="divide-y divide-gray-100 mb-4">
+              {(items.length || 0) === 0 ? (
+                <div className="text-gray-500 py-4 text-center">Your cart is empty</div>
+              ) : (
+                items.slice(0, 3).map((item: CartItem | GuestCartItem) => (
+                  <div key={item.product_id} className="flex items-center py-3 gap-3">
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                      <img
+                        src={getProductImage(item.product)}
+                        alt={item.product?.name || 'Product'}
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-gray-900 text-sm truncate">{item.product?.name || 'Product'}</div>
+                      <div className="text-xs text-gray-500">Qty: {item.quantity}</div>
+                    </div>
+                    <div className="font-semibold text-lime-700 text-sm min-w-[50px] text-right">
+                      ৳{(getProductPrice(item.product) * item.quantity).toFixed(2)}
+                    </div>
+                  </div>
+                ))
+              )}
+              {(items.length || 0) > 3 && (
+                <div className="py-2 text-center text-sm text-gray-500">
+                  +{(items.length || 0) - 3} more items
+                </div>
+              )}
+            </div>
+            <div className="border-t border-gray-100 pt-3 flex justify-between items-center">
+              <span className="text-base font-bold text-gray-900">Total</span>
+              <span className="text-xl font-bold text-lime-600">৳{total.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          {/* Billing & Shipping Forms */}
+          <div className="lg:col-span-2 space-y-6">
             {/* Billing Address */}
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">Billing Address</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="col-span-2">
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Billing Address</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
                   <label htmlFor="name" className="block text-sm text-gray-800 font-medium mb-1">Full Name <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     name="name"
                     value={billing.name}
                     onChange={handleBillingChange}
-                    className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                    className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                     required
                   />
                 </div>
@@ -384,7 +438,7 @@ export default function CheckoutPage() {
                     name="phone"
                     value={billing.phone}
                     onChange={handleBillingChange}
-                    className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                    className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                     required
                   />
                 </div>
@@ -395,7 +449,7 @@ export default function CheckoutPage() {
                     name="email"
                     value={billing.email}
                     onChange={handleBillingChange}
-                    className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                    className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                   />
                 </div>
                 <div>
@@ -404,7 +458,7 @@ export default function CheckoutPage() {
                     name="division"
                     value={billing.division || ''}
                     onChange={handleBillingChange}
-                    className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                    className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                     required
                   >
                     <option value="">Select Division</option>
@@ -419,7 +473,7 @@ export default function CheckoutPage() {
                     name="district"
                     value={billing.district || ''}
                     onChange={handleBillingChange}
-                    className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                    className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                     required
                     disabled={!billing.division}
                   >
@@ -435,7 +489,7 @@ export default function CheckoutPage() {
                     name="upazila"
                     value={billing.upazila || ''}
                     onChange={handleBillingChange}
-                    className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                    className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                     required
                     disabled={!billing.district}
                   >
@@ -452,7 +506,7 @@ export default function CheckoutPage() {
                     name="city"
                     value={billing.city}
                     onChange={handleBillingChange}
-                    className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                    className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                     required
                   />
                 </div>
@@ -463,18 +517,18 @@ export default function CheckoutPage() {
                     name="postal"
                     value={billing.postal}
                     onChange={handleBillingChange}
-                    className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                    className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                     required
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <label htmlFor="address" className="block text-gray-800 font-medium mb-1">Street Address <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     name="address"
                     value={billing.address}
                     onChange={handleBillingChange}
-                    className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                    className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                     required
                   />
                 </div>
@@ -482,8 +536,8 @@ export default function CheckoutPage() {
             </div>
 
             {/* Shipping Address */}
-            <div className="mt-4">
-              <label className="flex items-center gap-2 mb-2 cursor-pointer">
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+              <label className="flex items-center gap-2 mb-4 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={sameShipping}
@@ -493,46 +547,46 @@ export default function CheckoutPage() {
                 <span className="text-gray-800 font-medium">Shipping address is same as billing</span>
               </label>
               {!sameShipping && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                  <div className="col-span-2">
-                    <label htmlFor="name" className="block text-gray-800 font-medium mb-1">Full Name <span className="text-red-500">*</span></label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <label htmlFor="shipping-name" className="block text-gray-800 font-medium mb-1">Full Name <span className="text-red-500">*</span></label>
                     <input
                       type="text"
                       name="name"
                       value={shipping.name}
                       onChange={handleShippingChange}
-                      className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                      className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                       required
                     />
                   </div>
                   <div>
-                    <label htmlFor="phone" className="block text-gray-800 font-medium mb-1">Phone Number <span className="text-red-500">*</span></label>
+                    <label htmlFor="shipping-phone" className="block text-gray-800 font-medium mb-1">Phone Number <span className="text-red-500">*</span></label>
                     <input
                       type="text"
                       name="phone"
                       value={shipping.phone}
                       onChange={handleShippingChange}
-                      className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                      className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                       required
                     />
                   </div>
                   <div>
-                    <label htmlFor="email" className="block text-gray-800 font-medium mb-1">Email Address</label>
+                    <label htmlFor="shipping-email" className="block text-gray-800 font-medium mb-1">Email Address</label>
                     <input
                       type="email"
                       name="email"
                       value={shipping.email}
                       onChange={handleShippingChange}
-                      className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                      className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                     />
                   </div>
                   <div>
-                    <label htmlFor="division" className="block text-gray-800 font-medium mb-1">Division <span className="text-red-500">*</span></label>
+                    <label htmlFor="shipping-division" className="block text-gray-800 font-medium mb-1">Division <span className="text-red-500">*</span></label>
                     <select
                       name="division"
                       value={shipping.division || ''}
                       onChange={handleShippingChange}
-                      className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                      className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                       required
                     >
                       <option value="">Select Division</option>
@@ -542,12 +596,12 @@ export default function CheckoutPage() {
                     </select>
                   </div>
                   <div>
-                    <label htmlFor="district" className="block text-gray-800 font-medium mb-1">District <span className="text-red-500">*</span></label>
+                    <label htmlFor="shipping-district" className="block text-gray-800 font-medium mb-1">District <span className="text-red-500">*</span></label>
                     <select
                       name="district"
                       value={shipping.district || ''}
                       onChange={handleShippingChange}
-                      className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                      className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                       required
                       disabled={!shipping.division}
                     >
@@ -558,12 +612,12 @@ export default function CheckoutPage() {
                     </select>
                   </div>
                   <div>
-                    <label htmlFor="upazila" className="block text-gray-800 font-medium mb-1">Upazila/Thana <span className="text-red-500">*</span></label>
+                    <label htmlFor="shipping-upazila" className="block text-gray-800 font-medium mb-1">Upazila/Thana <span className="text-red-500">*</span></label>
                     <select
                       name="upazila"
                       value={shipping.upazila || ''}
                       onChange={handleShippingChange}
-                      className="border border-gray-200 rounded-lg w-full px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                      className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
                       required
                       disabled={!shipping.district}
                     >
@@ -573,208 +627,250 @@ export default function CheckoutPage() {
                       ))}
                     </select>
                   </div>
+                  <div>
+                    <label htmlFor="shipping-city" className="block text-gray-800 font-medium mb-1">City <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={shipping.city}
+                      onChange={handleShippingChange}
+                      className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="shipping-postal" className="block text-gray-800 font-medium mb-1">Postal Code <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      name="postal"
+                      value={shipping.postal}
+                      onChange={handleShippingChange}
+                      className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                      required
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label htmlFor="shipping-address" className="block text-gray-800 font-medium mb-1">Street Address <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      name="address"
+                      value={shipping.address}
+                      onChange={handleShippingChange}
+                      className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                      required
+                    />
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Additional Notes */}
-            <div className="col-span-2 mt-4">
-              <label htmlFor="notes" className="block text-gray-800 font-medium mb-1">Additional Notes</label>
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+              <label htmlFor="notes" className="block text-gray-800 font-medium mb-2">Additional Notes</label>
               <textarea
                 id="notes"
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
                 placeholder="Any special instructions?"
-                className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400 min-h-[80px]"
+                className="w-full border border-gray-200 rounded-lg px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400 min-h-[80px]"
               />
             </div>
           </div>
 
-          {/* Checkout Form */}
-          <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-6 space-y-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <ShoppingCart className="w-6 h-6 text-lime-600" />
-              Order Summary
-            </h2>
-            {/* Free Delivery Message */}
-            {total >= freeDeliveryMin ? (
-              <div className="mb-2 p-2 rounded bg-green-50 text-green-700 text-center text-sm font-medium border border-green-200">
-                🎉 You qualify for <b>Free Delivery</b>!
-              </div>
-            ) : (
-              <div className="mb-2 p-2 rounded bg-yellow-50 text-yellow-700 text-center text-sm font-medium border border-yellow-200">
-                Add <b>৳{(freeDeliveryMin - total).toFixed(2)}</b> more to your order for <b>Free Delivery</b>!
-              </div>
-            )}
-            <div className="divide-y divide-gray-100">
-              {items.length === 0 ? (
-                <div className="text-gray-500 py-8 text-center">Your cart is empty</div>
+          {/* Desktop Order Summary & Payment */}
+          <div className="lg:col-span-1">
+            <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-4 sm:p-6 space-y-6 sticky top-4">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-lime-600" />
+                Order Summary
+              </h2>
+              
+              {/* Free Delivery Message */}
+              {total >= freeDeliveryMin ? (
+                <div className="mb-4 p-3 rounded bg-green-50 text-green-700 text-center text-sm font-medium border border-green-200">
+                  🎉 You qualify for <b>Free Delivery</b>!
+                </div>
               ) : (
-                items.map((item: CartItem | GuestCartItem) => (
-                  <div key={item.product_id} className="flex items-center py-4 gap-4">
-                    <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                      <img
-                        src={getProductImage(item.product)}
-                        alt={item.product?.name || 'Product'}
-                        className="object-cover w-full h-full"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-900 truncate">{item.product?.name || 'Product'}</div>
-                      <div className="text-sm text-gray-500">Qty: {item.quantity}</div>
-                    </div>
-                    <div className="font-semibold text-lime-700 text-base min-w-[60px] text-right">
-                      ৳{(getProductPrice(item.product) * item.quantity).toFixed(2)}
-                    </div>
-                  </div>
-                ))
+                <div className="mb-4 p-3 rounded bg-yellow-50 text-yellow-700 text-center text-sm font-medium border border-yellow-200">
+                  Add <b>৳{(freeDeliveryMin - total).toFixed(2)}</b> more for <b>Free Delivery</b>!
+                </div>
               )}
-            </div>
-            <div className="border-t border-gray-100 pt-4 mt-4 flex justify-between items-center">
-              <span className="text-lg font-bold text-gray-900">Total</span>
-              <span className="text-2xl font-bold text-lime-600">৳{total.toFixed(2)}</span>
-            </div>
-            {/* Payment Method */}
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">Payment Method</h2>
-              <div className="flex flex-col gap-2">
-                {paymentMethods.map((method) => (
-                  <label key={method.id} className="flex items-center gap-3 cursor-pointer p-2 rounded-lg border border-gray-200 hover:bg-lime-50 transition-colors">
-                    <input
-                      type="radio"
-                      name="payment"
-                      value={method.id}
-                      checked={payment === method.id}
-                      onChange={() => setPayment(method.id)}
-                      className="accent-lime-600 w-5 h-5"
-                    />
-                    <span className="text-gray-800 font-medium">{method.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {payment === 'bkash' ? (
-              <div>
-                {!user ? (
-                  <div className="p-4 bg-yellow-100 border-l-4 border-yellow-400 text-yellow-700 rounded-lg">
-                    <p className="text-center">Please log in to proceed with bKash payment.</p>
-                    <button
-                      onClick={() => router.push('/login?next=' + encodeURIComponent(window.location.pathname))}
-                      className="mt-3 w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold rounded-lg py-2 transition-colors"
-                    >
-                      Log In
-                    </button>
-                  </div>
+              
+              {/* Desktop Order Items */}
+              <div className="hidden lg:block divide-y divide-gray-100">
+                {(items.length || 0) === 0 ? (
+                  <div className="text-gray-500 py-8 text-center">Your cart is empty</div>
                 ) : (
-                  <BkashPaymentButton
-                    amount={total}
-                    user_id={user.id}
-                    email={billing.email || user.email || ''}
-                    name={billing.name}
-                    phone={billing.phone}
-                    purpose="order"
-                    disabled={!isFormValid}
-                  />
+                  items.map((item: CartItem | GuestCartItem) => (
+                    <div key={item.product_id} className="flex items-center py-4 gap-4">
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                        <img
+                          src={getProductImage(item.product)}
+                          alt={item.product?.name || 'Product'}
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-900 truncate">{item.product?.name || 'Product'}</div>
+                        <div className="text-sm text-gray-500">Qty: {item.quantity}</div>
+                      </div>
+                      <div className="font-semibold text-lime-700 text-base min-w-[60px] text-right">
+                        ৳{(getProductPrice(item.product) * item.quantity).toFixed(2)}
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
-            ) : payment === 'bank' ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center">
-                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              
+              <div className="border-t border-gray-100 pt-4 mt-4 flex justify-between items-center">
+                <span className="text-lg font-bold text-gray-900">Total</span>
+                <span className="text-2xl font-bold text-lime-600">৳{total.toFixed(2)}</span>
+              </div>
+              
+              {/* Payment Method */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Payment Method</h3>
+                <div className="space-y-2">
+                  {paymentMethods.map((method) => (
+                    <label key={method.id} className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-gray-200 hover:bg-lime-50 transition-colors">
+                      <input
+                        type="radio"
+                        name="payment"
+                        value={method.id}
+                        checked={payment === method.id}
+                        onChange={() => setPayment(method.id)}
+                        className="accent-lime-600 w-4 h-4 sm:w-5 sm:h-5"
+                      />
+                      <span className="text-gray-800 font-medium text-sm sm:text-base">{method.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Payment Method Specific Content */}
+              {payment === 'bkash' ? (
+                <div>
+                  {!user ? (
+                    <div className="p-4 bg-yellow-100 border-l-4 border-yellow-400 text-yellow-700 rounded-lg">
+                      <p className="text-center text-sm">Please log in to proceed with bKash payment.</p>
+                      <button
+                        type="button"
+                        onClick={() => router.push('/login?next=' + encodeURIComponent(window.location.pathname))}
+                        className="mt-3 w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold rounded-lg py-2 transition-colors text-sm"
+                      >
+                        Log In
+                      </button>
+                    </div>
+                  ) : (
+                    <BkashPaymentButton
+                      amount={total}
+                      user_id={user.id}
+                      email={billing.email || user.email || ''}
+                      name={billing.name}
+                      phone={billing.phone}
+                      purpose="order"
+                      disabled={!isFormValid}
+                    />
+                  )}
+                </div>
+              ) : payment === 'bank' ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h3 className="text-base sm:text-lg font-semibold text-blue-900 mb-3 flex items-center">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                      </svg>
+                      Bank Transfer Details
+                    </h3>
+                    <div className="space-y-2 text-xs sm:text-sm">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-gray-700">Bank Name:</span>
+                        <span className="text-gray-900">{bankDetails.bankName}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-gray-700">Account Name:</span>
+                        <span className="text-gray-900">{bankDetails.accountName}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-gray-700">Account Number:</span>
+                        <span className="text-gray-900 font-mono">{bankDetails.accountNumber}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-gray-700">Branch:</span>
+                        <span className="text-gray-900">{bankDetails.branch}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-gray-700">Routing Number:</span>
+                        <span className="text-gray-900 font-mono">{bankDetails.routingNumber}</span>
+                      </div>
+                      {bankDetails.swiftCode && (
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium text-gray-700">SWIFT Code:</span>
+                          <span className="text-gray-900 font-mono">{bankDetails.swiftCode}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-gray-700">Amount to Transfer:</span>
+                        <span className="text-base sm:text-lg font-bold text-lime-600">৳{total.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <h4 className="font-semibold text-yellow-800 mb-2 flex items-center text-sm sm:text-base">
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      Important Instructions
+                    </h4>
+                    <ul className="text-xs sm:text-sm text-yellow-700 space-y-1">
+                      {bankDetails.instructions.map((instruction, index) => (
+                        <li key={index}>• {instruction.replace('{amount}', `৳${total.toFixed(2)}`)}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg py-3 text-base sm:text-lg shadow transition-colors flex items-center justify-center"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-5 border-b-2 border-white mr-2"></div>
+                        Placing Order...
+                      </>
+                    ) : (
+                      'Place Order with Bank Transfer'
+                    )}
+                  </button>
+                </div>
+              ) : payment === 'nagad' ? (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h3 className="text-base sm:text-lg font-semibold text-green-900 mb-3 flex items-center">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                     </svg>
-                    Bank Transfer Details
+                    Nagad Payment
                   </h3>
-                                     <div className="space-y-3 text-sm">
-                     <div className="flex justify-between items-center">
-                       <span className="font-medium text-gray-700">Bank Name:</span>
-                       <span className="text-gray-900">{bankDetails.bankName}</span>
-                     </div>
-                     <div className="flex justify-between items-center">
-                       <span className="font-medium text-gray-700">Account Name:</span>
-                       <span className="text-gray-900">{bankDetails.accountName}</span>
-                     </div>
-                     <div className="flex justify-between items-center">
-                       <span className="font-medium text-gray-700">Account Number:</span>
-                       <span className="text-gray-900 font-mono">{bankDetails.accountNumber}</span>
-                     </div>
-                     <div className="flex justify-between items-center">
-                       <span className="font-medium text-gray-700">Branch:</span>
-                       <span className="text-gray-900">{bankDetails.branch}</span>
-                     </div>
-                     <div className="flex justify-between items-center">
-                       <span className="font-medium text-gray-700">Routing Number:</span>
-                       <span className="text-gray-900 font-mono">{bankDetails.routingNumber}</span>
-                     </div>
-                     {bankDetails.swiftCode && (
-                       <div className="flex justify-between items-center">
-                         <span className="font-medium text-gray-700">SWIFT Code:</span>
-                         <span className="text-gray-900 font-mono">{bankDetails.swiftCode}</span>
-                       </div>
-                     )}
-                     <div className="flex justify-between items-center">
-                       <span className="font-medium text-gray-700">Amount to Transfer:</span>
-                       <span className="text-lg font-bold text-lime-600">৳{total.toFixed(2)}</span>
-                     </div>
-                   </div>
+                  <p className="text-green-700 mb-4 text-sm">Nagad payment integration coming soon. Please select another payment method.</p>
+                  <button
+                    type="submit"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg py-3 text-base sm:text-lg shadow transition-colors"
+                  >
+                    Proceed to Payment
+                  </button>
                 </div>
-                
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <h4 className="font-semibold text-yellow-800 mb-2 flex items-center">
-                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    Important Instructions
-                  </h4>
-                                     <ul className="text-sm text-yellow-700 space-y-1">
-                     {bankDetails.instructions.map((instruction, index) => (
-                       <li key={index}>• {instruction.replace('{amount}', `৳${total.toFixed(2)}`)}</li>
-                     ))}
-                   </ul>
-                </div>
-
-                                 <button
-                   type="submit"
-                   disabled={isSubmitting}
-                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg py-3 text-lg shadow transition-colors flex items-center justify-center"
-                 >
-                   {isSubmitting ? (
-                     <>
-                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                       Placing Order...
-                     </>
-                   ) : (
-                     'Place Order with Bank Transfer'
-                   )}
-                 </button>
-              </div>
-            ) : payment === 'nagad' ? (
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <h3 className="text-lg font-semibold text-green-900 mb-3 flex items-center">
-                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                  </svg>
-                  Nagad Payment
-                </h3>
-                <p className="text-green-700 mb-4">Nagad payment integration coming soon. Please select another payment method.</p>
+              ) : (
                 <button
                   type="submit"
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg py-3 text-lg shadow transition-colors"
+                  className="w-full bg-lime-600 hover:bg-lime-700 text-white font-semibold rounded-lg py-3 text-base sm:text-lg shadow transition-colors"
                 >
                   Proceed to Payment
                 </button>
-              </div>
-            ) : (
-              <button
-                type="submit"
-                className="w-full bg-lime-600 hover:bg-lime-700 text-white font-semibold rounded-lg py-3 text-lg shadow transition-colors"
-              >
-                Proceed to Payment
-              </button>
-            )}
-          </form>
+              )}
+            </form>
+          </div>
         </div>
       </div>
     </div>

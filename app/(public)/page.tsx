@@ -1,4 +1,5 @@
 import HeroSection from "@/components/home/HeroSection";
+import FlashSaleProducts from "@/components/home/FlashSaleProducts";
 import FeaturedProductsArchive from '@/components/home/FeaturedProductsArchive';
 import TopProductsArchive from '@/components/home/TopProductsArchive';
 import RecentProductsArchive from '@/components/home/RecentProductsArchive';
@@ -39,6 +40,9 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <HeroSection />
+
+      {/* Flash Sale Products */}
+      <FlashSaleProducts />
 
       {/* CTA Section */}
       {/* <section className="bg-gray-900 text-white py-16">

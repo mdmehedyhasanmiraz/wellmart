@@ -11,18 +11,18 @@ export function getItemPrice(item: any): number {
   
   // If item has a product with price properties
   if (item.product) {
-    // Guest cart structure: product.price
-    if (typeof item.product.price === 'number') {
-      return item.product.price;
-    }
-    
-    // User cart structure: product.price_offer or product.price_regular
-    if (typeof item.product.price_offer === 'number') {
+    // Guest cart structure: product.price_offer or product.price_regular
+    if (typeof item.product.price_offer === 'number' && item.product.price_offer > 0) {
       return item.product.price_offer;
     }
     
     if (typeof item.product.price_regular === 'number') {
       return item.product.price_regular;
+    }
+    
+    // Legacy guest cart structure: product.price
+    if (typeof item.product.price === 'number') {
+      return item.product.price;
     }
   }
   

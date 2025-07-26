@@ -50,7 +50,8 @@ export interface GuestCartItem {
     id: string;
     name: string;
     slug: string;
-    price: number;
+    price_regular: number;
+    price_offer: number | null;
     image_url?: string;
     stock_quantity: number;
   };

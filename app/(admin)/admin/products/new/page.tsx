@@ -65,6 +65,7 @@ export default function NewProductPage() {
     category_id: '',
     manufacturer_id: '',
     is_active: true,
+    flash_sale: null as boolean | null,
     sku: '',
     video: '',
   });
@@ -355,6 +356,7 @@ export default function NewProductPage() {
         category_id: formData.category_id || null,
         manufacturer_id: formData.manufacturer_id || null,
         is_active: formData.is_active,
+        flash_sale: formData.flash_sale,
         sku: formData.sku || "",
         image_urls: allImageUrls,
         keywords: keywords.length > 0 ? keywords : [
@@ -865,6 +867,24 @@ export default function NewProductPage() {
                 />
                 <label className="ml-2 text-sm text-gray-700">
                   Active (visible to customers)
+                </label>
+              </div>
+
+              <div className="flex items-center mt-3">
+                <input
+                  type="checkbox"
+                  name="flash_sale"
+                  checked={formData.flash_sale === true}
+                  onChange={(e) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      flash_sale: e.target.checked ? true : null
+                    }));
+                  }}
+                  className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                />
+                <label className="ml-2 text-sm text-gray-700">
+                  Flash Sale (show in flash sale section)
                 </label>
               </div>
             </div>

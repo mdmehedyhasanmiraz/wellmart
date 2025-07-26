@@ -207,26 +207,11 @@ export class CartService {
     return data;
   }
 
-  // Merge guest cart with user cart
+  // Merge guest cart with user cart (simplified version)
   async mergeGuestCart(userId: string, guestCart: GuestCartItem[]): Promise<void> {
-    const supabase = await this.getSupabase();
-    
-    // Convert guest cart to JSONB format
-    const guestCartJson = guestCart.map(item => ({
-      product_id: item.product_id,
-      quantity: item.quantity
-    }));
-
-    const { error } = await supabase
-      .rpc('merge_guest_cart', {
-        guest_cart: JSON.stringify(guestCartJson),
-        user_uuid: userId
-      });
-
-    if (error) {
-      console.error('Error merging guest cart:', error);
-      throw new Error('Failed to merge guest cart');
-    }
+    // This method is now handled in the CartContext
+    // The context will call addToCart for each item individually
+    console.log('mergeGuestCart called - handled by context');
   }
 
   // Validate cart items (check stock availability)

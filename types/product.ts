@@ -16,6 +16,7 @@ export interface Product {
   category_id: string | null;
   manufacturer_id: string | null;
   is_active: boolean;
+  flash_sale: boolean | null;
   created_at: string;
   updated_at: string;
   category?: Category;

@@ -28,6 +28,7 @@ interface Product {
   category_id: string | null;
   manufacturer_id: string | null;
   is_active: boolean;
+  flash_sale: boolean | null;
   created_at: string;
   category_name?: string;
   manufacturer_name?: string;
@@ -311,6 +312,9 @@ export default function ProductsPage() {
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Flash Sale
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -371,6 +375,15 @@ export default function ProductsPage() {
                           : 'bg-red-100 text-red-800'
                       }`}>
                         {product.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                        product.flash_sale === true
+                          ? 'bg-blue-100 text-blue-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {product.flash_sale === true ? 'Yes' : 'No'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

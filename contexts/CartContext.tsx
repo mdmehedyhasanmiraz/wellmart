@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
-import { CartSummary, GuestCart, CartContextType } from '@/types/cart';
+import { CartSummary, GuestCart, CartContextType, GuestCartItem } from '@/types/cart';
 import { CartService } from '@/lib/services/cart';
 import { getItemTotal } from '@/utils/priceUtils';
 
@@ -32,6 +32,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (user) {
       loadUserCart();
+      // Sync guest cart when user logs in
+      if (guestCart.items.length > 0) {
+        syncGuestCart();
+      }
     } else {
       setCart(null);
     }
@@ -60,7 +64,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const userCart = await cartService.getUserCart(user.id);
-      // Ensure plain object
       setCart(userCart ? JSON.parse(JSON.stringify(userCart)) : null);
     } catch (error) {
       console.error('Error loading user cart:', error);
@@ -88,6 +91,43 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('guestCart', JSON.stringify(newCart));
     }
     setGuestCart(newCart);
+  };
+
+  // Fetch product details for guest cart
+  const fetchProductDetails = async (productId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          id,
+          name,
+          slug,
+          price_regular,
+          price_offer,
+          image_urls,
+          stock
+        `)
+        .eq('id', productId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching product details:', error);
+        return null;
+      }
+
+      return {
+        id: data.id,
+        name: data.name,
+        slug: data.slug,
+        price_regular: data.price_regular,
+        price_offer: data.price_offer,
+        image_url: data.image_urls?.[0] || '',
+        stock_quantity: data.stock
+      };
+    } catch (error) {
+      console.error('Error fetching product details:', error);
+      return null;
+    }
   };
 
   const addToCart = async (productId: string, quantity: number) => {
@@ -118,30 +158,29 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           
           saveGuestCart(newGuestCart);
         } else {
-          // Add new item (you'll need to fetch product details)
-          // For now, we'll create a placeholder
-          const newItem = {
-            product_id: productId,
-            quantity,
-            product: {
-              id: productId,
-              name: 'Product', // You'll need to fetch this
-              slug: '',
-              price: 0, // You'll need to fetch this
-              image_url: '',
-              stock_quantity: 0
-            }
-          };
+          // Fetch product details and add new item
+          const productDetails = await fetchProductDetails(productId);
           
-          const newItems = [...guestCart.items, newItem];
-          const newGuestCart = {
-            items: newItems,
-            total_items: newItems.reduce((sum, item) => sum + item.quantity, 0),
-            total_price: newItems.reduce((sum, item) => sum + getItemTotal(item), 0),
-            item_count: newItems.length
-          };
-          
-          saveGuestCart(newGuestCart);
+          if (productDetails) {
+            const newItem: GuestCartItem = {
+              product_id: productId,
+              quantity,
+              product: productDetails
+            };
+            
+            const newItems = [...guestCart.items, newItem];
+            const newGuestCart = {
+              items: newItems,
+              total_items: newItems.reduce((sum, item) => sum + item.quantity, 0),
+              total_price: newItems.reduce((sum, item) => sum + getItemTotal(item), 0),
+              item_count: newItems.length
+            };
+            
+            saveGuestCart(newGuestCart);
+          } else {
+            toast.error('Failed to fetch product details');
+            return;
+          }
         }
         
         toast.success('Added to cart');
@@ -246,7 +285,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (!user || guestCart.items.length === 0) return;
 
     try {
-      await cartService.mergeGuestCart(user.id, guestCart.items);
+      // Add each guest cart item to user cart
+      for (const item of guestCart.items) {
+        try {
+          await cartService.addToCart(user.id, {
+            product_id: item.product_id,
+            quantity: item.quantity
+          });
+        } catch (error) {
+          console.error(`Error adding item ${item.product_id} to user cart:`, error);
+        }
+      }
+      
+      // Reload user cart
       await loadUserCart();
       
       // Clear guest cart after successful sync
