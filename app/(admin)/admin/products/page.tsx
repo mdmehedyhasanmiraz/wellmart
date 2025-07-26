@@ -14,7 +14,6 @@ import {
   ChevronUp
 } from 'lucide-react';
 import AdminImage from '@/components/admin/AdminImage';
-import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 
 interface Product {
@@ -56,7 +55,6 @@ export default function ProductsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [showFilters, setShowFilters] = useState(false);
-  const supabase = createClient();
 
   useEffect(() => {
     fetchProducts();

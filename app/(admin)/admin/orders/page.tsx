@@ -17,7 +17,6 @@ import {
   Package,
   Truck,
 } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import { getItemPrice, getItemTotal, formatCurrency as formatCurrencyUtil } from '@/utils/priceUtils';
 

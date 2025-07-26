@@ -15,18 +15,19 @@ export default function TopProductsArchive() {
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("is_active", true)
-        .order("created_at", { ascending: false })
-        .limit(6);
-      if (error) {
+      try {
+        const response = await fetch('/api/public/data?type=top-products');
+        const result = await response.json();
+        if (result.success) {
+          setProducts(result.products || []);
+        } else {
+          console.error("Error fetching products:", result.error);
+        }
+      } catch (error) {
         console.error("Error fetching products:", error);
+      } finally {
+        setIsLoading(false);
       }
-      setProducts(data || []);
-      setIsLoading(false);
     };
     fetchProducts();
   }, []);

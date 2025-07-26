@@ -46,55 +46,13 @@ export default function HeroSection() {
 
   const fetchCategories = async () => {
     try {
-      // First, get all categories
-      const { data: allCategories, error: categoriesError } = await supabase
-        .from('categories')
-        .select('id, name, slug, description, parent_id, image_url')
-        .order('name');
-
-      if (categoriesError) {
-        console.error('Error fetching categories:', categoriesError);
-        return;
+      const response = await fetch('/api/public/data?type=categories');
+      const result = await response.json();
+      if (result.success) {
+        setCategories(result.categories || []);
+      } else {
+        console.error('Error fetching categories:', result.error);
       }
-
-      // Get all subcategories (categories with parent_id)
-      const { data: subcategories, error: subError } = await supabase
-        .from('categories')
-        .select('id, name, slug, description, category_id:parent_id, image_url')
-        .not('parent_id', 'is', null)
-        .order('name');
-
-      if (subError) {
-        console.error('Error fetching subcategories:', subError);
-        return;
-      }
-
-      // Group subcategories by parent
-      const subcategoriesByParent = subcategories?.reduce((acc, sub) => {
-        if (sub.category_id) {
-          if (!acc[sub.category_id]) {
-            acc[sub.category_id] = [];
-          }
-          acc[sub.category_id].push({
-            id: sub.id,
-            name: sub.name,
-            slug: sub.slug,
-            category_id: sub.category_id
-          });
-        }
-        return acc;
-      }, {} as Record<string, SubCategory[]>) || {};
-
-      // Build the final categories array
-      const processedCategories = allCategories?.map(category => ({
-        ...category,
-        subcategories: subcategoriesByParent[category.id] || []
-      })).filter(category => 
-        // Show categories that either have subcategories OR are not subcategories themselves
-        category.subcategories.length > 0 || !category.parent_id
-      ) || [];
-
-      setCategories(processedCategories);
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
@@ -102,18 +60,13 @@ export default function HeroSection() {
 
   const fetchBanners = async () => {
     try {
-      const { data: bannersData, error } = await supabase
-        .from('banners')
-        .select('*')
-        .eq('is_active', true)
-        .order('position');
-
-      if (error) {
-        console.error('Error fetching banners:', error);
-        return;
+      const response = await fetch('/api/public/data?type=banners');
+      const result = await response.json();
+      if (result.success) {
+        setBanners(result.banners || []);
+      } else {
+        console.error('Error fetching banners:', result.error);
       }
-
-      setBanners(bannersData || []);
     } catch (error) {
       console.error('Error fetching banners:', error);
     } finally {

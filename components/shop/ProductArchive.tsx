@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
 import type { Product, ProductFilters, Category, Company } from '@/types/product';
 import ProductCard from './ProductCard';
 import ProductFiltersComponent from './ProductFilters';
@@ -27,93 +26,58 @@ export default function ProductArchive({
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const supabase = createClient();
   const ITEMS_PER_PAGE = 12;
 
   // Fetch categories and companies
   useEffect(() => {
     const fetchMetadata = async () => {
       try {
-        const [categoriesResult, companiesResult] = await Promise.all([
-          supabase.from('categories').select('*').order('name'),
-          supabase.from('companies').select('*').order('name')
+        const [categoriesResponse, companiesResponse] = await Promise.all([
+          fetch('/api/public/data?type=categories'),
+          fetch('/api/public/data?type=companies')
         ]);
 
-        if (categoriesResult.data) setCategories(categoriesResult.data);
-        if (companiesResult.data) setCompanies(companiesResult.data);
+        const categoriesResult = await categoriesResponse.json();
+        const companiesResult = await companiesResponse.json();
+
+        if (categoriesResult.success) setCategories(categoriesResult.categories || []);
+        if (companiesResult.success) setCompanies(companiesResult.companies || []);
       } catch (error) {
         console.error('Error fetching metadata:', error);
       }
     };
 
     fetchMetadata();
-  }, [supabase]);
+  }, []);
 
   // Fetch products
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
       try {
-        // Build the query with proper filters
-        let query = supabase
-          .from('products')
-          .select('*', { count: 'exact' })
-          .eq('is_active', true)
-          .order('created_at', { ascending: false });
+        // Build query parameters
+        const params = new URLSearchParams();
+        params.append('type', 'shop-products');
+        if (filters.search) params.append('search', filters.search);
+        if (filters.category_id) params.append('category_id', filters.category_id);
+        if (filters.company_id) params.append('company_id', filters.company_id);
+        if (filters.min_price) params.append('min_price', filters.min_price.toString());
+        if (filters.max_price) params.append('max_price', filters.max_price.toString());
+        if (filters.in_stock) params.append('in_stock', filters.in_stock.toString());
+        if (filters.sort_by) params.append('sort_by', filters.sort_by);
+        if (filters.sort_order) params.append('sort_order', filters.sort_order);
+        params.append('page', currentPage.toString());
+        params.append('limit', ITEMS_PER_PAGE.toString());
 
-        // Apply status filter - show both published and draft products for now
-        // You can change this to only show published products when ready
+        const response = await fetch(`/api/public/data?${params.toString()}`);
+        const result = await response.json();
 
-        // Apply search filter
-        if (filters.search) {
-          query = query.ilike('name', `%${filters.search}%`);
+        if (result.success) {
+          setProducts(result.products || []);
+          setTotalCount(result.totalCount || 0);
+        } else {
+          console.error('Error fetching products:', result.error);
         }
-
-        // Apply category filter
-        if (filters.category_id) {
-          query = query.eq('category_id', filters.category_id);
-        }
-
-        // Apply company filter
-        if (filters.company_id) {
-          query = query.eq('company_id', filters.company_id);
-        }
-
-        // Apply price filters
-        if (filters.min_price) {
-          query = query.gte('price_regular', filters.min_price);
-        }
-        if (filters.max_price) {
-          query = query.lte('price_regular', filters.max_price);
-        }
-
-        // Apply stock filter
-        if (filters.in_stock) {
-          query = query.gt('stock', 0);
-        }
-
-        // Apply sorting
-        if (filters.sort_by) {
-          query = query.order(filters.sort_by, { 
-            ascending: filters.sort_order === 'asc' 
-          });
-        }
-
-        // Apply pagination
-        const from = (currentPage - 1) * ITEMS_PER_PAGE;
-        const to = from + ITEMS_PER_PAGE - 1;
-        query = query.range(from, to);
-
-        const { data, error, count } = await query;
-        console.log('Products:', data, 'Error:', error, 'Count:', count);
-
-        if (error) {
-          console.error('Error fetching products:', error);
-          return;
-        }
-
-        setProducts(data || []);
-        setTotalCount(count || 0);
       } catch (error) {
         console.error('Error fetching products:', error);
       } finally {
@@ -122,7 +86,7 @@ export default function ProductArchive({
     };
 
     fetchProducts();
-  }, [filters, currentPage, supabase]);
+  }, [filters, currentPage]);
 
   const handleFiltersChange = (newFilters: ProductFilters) => {
     setFilters(newFilters);

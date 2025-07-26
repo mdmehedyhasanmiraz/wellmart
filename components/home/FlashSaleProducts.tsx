@@ -19,24 +19,13 @@ export default function FlashSaleProducts() {
 
   const fetchFlashSaleProducts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          category:categories(name, slug),
-          company:companies!products_company_id_fkey(name)
-        `)
-        .eq('flash_sale', true)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (error) {
-        console.error('Error fetching flash sale products:', error);
-        return;
+      const response = await fetch('/api/public/data?type=flash-sale-products');
+      const result = await response.json();
+      if (result.success) {
+        setProducts(result.products || []);
+      } else {
+        console.error('Error fetching flash sale products:', result.error);
       }
-
-      setProducts(data || []);
     } catch (error) {
       console.error('Error fetching flash sale products:', error);
     } finally {
