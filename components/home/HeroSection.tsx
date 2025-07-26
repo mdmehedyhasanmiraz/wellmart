@@ -32,47 +32,14 @@ interface Banner {
   position: 'main' | 'card1' | 'card2' | 'card3' | 'card4' | 'hero';
 }
 
-export default function HeroSection() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [banners, setBanners] = useState<Banner[]>([]);
+interface HeroSectionProps {
+  categories: Category[];
+  banners: Banner[];
+}
+
+export default function HeroSection({ categories, banners }: HeroSectionProps) {
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-
-  useEffect(() => {
-    fetchCategories();
-    fetchBanners();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch('/api/public/data?type=categories');
-      const result = await response.json();
-      if (result.success) {
-        setCategories(result.categories || []);
-      } else {
-        console.error('Error fetching categories:', result.error);
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
-  const fetchBanners = async () => {
-    try {
-      const response = await fetch('/api/public/data?type=banners');
-      const result = await response.json();
-      if (result.success) {
-        setBanners(result.banners || []);
-      } else {
-        console.error('Error fetching banners:', result.error);
-      }
-    } catch (error) {
-      console.error('Error fetching banners:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [isLoading, setIsLoading] = useState(false);
 
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories(prev => 

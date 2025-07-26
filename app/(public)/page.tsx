@@ -1,69 +1,111 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import HeroSection from "@/components/home/HeroSection";
 import FlashSaleProducts from "@/components/home/FlashSaleProducts";
 import FeaturedProductsArchive from '@/components/home/FeaturedProductsArchive';
 import TopProductsArchive from '@/components/home/TopProductsArchive';
 import RecentProductsArchive from '@/components/home/RecentProductsArchive';
-import ogImage from '@/public/opengraph-image.webp';
+import { Loader2 } from 'lucide-react';
+import type { Product, Category, Banner } from '@/types/product';
 
-export const metadata = {
-  title: "Wellmart",
-  description: "Your trusted online shop for all your medical needs.",
-  keywords: ["medical", "health", "wellness", "pharmacy", "online pharmacy", "medical supplies", "medical equipment", "medical products", "medical equipment", "medical products", "medical equipment", "medical products"],
-  openGraph: {
-    title: "Wellmart",
-    description: "Your trusted online shop for all your medical needs.",
-    images: [ogImage.src],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Wellmart",
-    description: "Your trusted online shop for all your medical needs.",
-    images: [ogImage.src],
-  },
-  icons: {
-    icon: "/logos/logo-wellmart.png",
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-  alternates: {
-    canonical: "https://wellmart.com.bd",
-  },
-  // verification: {
-  //   google: "google-site-verification=1234567890",
-  // },
-};
+interface HomeData {
+  categories: Category[];
+  banners: Banner[];
+  flashSaleProducts: Product[];
+  featuredProducts: Product[];
+  topProducts: Product[];
+  recentProducts: Product[];
+}
 
 export default function HomePage() {
+  const [homeData, setHomeData] = useState<HomeData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchHomeData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await fetch('/api/public/data?type=home-data');
+        const result = await response.json();
+        
+        if (result.success) {
+          setHomeData(result.data);
+          console.log(`Home page loaded in ${result.timing}ms`);
+        } else {
+          setError(result.error || 'Failed to load home data');
+          console.error('Home data fetch error:', result.error);
+        }
+      } catch (error) {
+        setError('Failed to load home data');
+        console.error('Error fetching home data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHomeData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="animate-spin text-blue-600 mx-auto mb-4" size={48} />
+          <p className="text-gray-600">Loading Wellmart...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error: {error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!homeData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">No data available</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <HeroSection />
+      <HeroSection 
+        categories={homeData.categories} 
+        banners={homeData.banners} 
+      />
 
       {/* Flash Sale Products */}
-      <FlashSaleProducts />
+      <FlashSaleProducts products={homeData.flashSaleProducts} />
 
-      {/* CTA Section */}
-      {/* <section className="bg-gray-900 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">
-            Ready to Start Shopping?
-          </h2>
-          <p className="text-xl text-gray-300 mb-8">
-            Join thousands of satisfied customers who trust Wellmart
-          </p>
-          <a
-            href="/shop"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
-          >
-            Browse Products
-          </a>
-        </div>
-      </section> */}
-      <FeaturedProductsArchive />
-      <TopProductsArchive />
-      <RecentProductsArchive />
+      {/* Featured Products */}
+      <FeaturedProductsArchive products={homeData.featuredProducts} />
+      
+      {/* Top Products */}
+      <TopProductsArchive products={homeData.topProducts} />
+      
+      {/* Recent Products */}
+      <RecentProductsArchive products={homeData.recentProducts} />
     </div>
   );
 }

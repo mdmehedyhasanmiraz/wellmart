@@ -7,30 +7,13 @@ import type { Product } from "@/types/product";
 import { Loader2, Package } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 
-export default function FeaturedProductsArchive() {
-  const { addToCart } = useCart();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface FeaturedProductsArchiveProps {
+  products: Product[];
+}
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch('/api/public/data?type=featured-products');
-        const result = await response.json();
-        if (result.success) {
-          setProducts(result.products || []);
-        } else {
-          console.error("Error fetching products:", result.error);
-        }
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchProducts();
-  }, []);
+export default function FeaturedProductsArchive({ products }: FeaturedProductsArchiveProps) {
+  const { addToCart } = useCart();
+  const isLoading = false; // No longer loading since data is passed as props
 
   return (
     <section className="my-12 mx-auto max-w-full px-3">

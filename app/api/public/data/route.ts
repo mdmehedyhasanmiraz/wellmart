@@ -52,6 +52,9 @@ export async function GET(request: NextRequest) {
       case 'cart':
         result = getCartData();
         break;
+      case 'home-data':
+        result = await getHomeData();
+        break;
       default:
         return NextResponse.json({ success: false, error: 'Invalid type parameter' }, { status: 400 });
     }
@@ -637,5 +640,155 @@ async function getCartData() {
   } catch (error) {
     console.error('Error fetching cart data:', error);
     return NextResponse.json({ error: 'Failed to fetch cart data' }, { status: 500 });
+  }
+}
+
+async function getHomeData() {
+  const startTime = Date.now();
+  try {
+    if (!supabaseAdmin) {
+      console.error('supabaseAdmin is not available in getHomeData');
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Database service not available',
+        timing: Date.now() - startTime
+      }, { status: 500 });
+    }
+
+    // Fetch all home page data in parallel for maximum performance
+    const [
+      categoriesResult,
+      bannersResult,
+      flashSaleResult,
+      featuredResult,
+      topResult,
+      recentResult
+    ] = await Promise.all([
+      // Categories
+      supabaseAdmin
+        .from('categories')
+        .select('id, name, slug, description, parent_id, image_url')
+        .order('name'),
+      
+      // Banners
+      supabaseAdmin
+        .from('banners')
+        .select('*')
+        .eq('is_active', true)
+        .order('position'),
+      
+      // Flash Sale Products
+      supabaseAdmin
+        .from('products')
+        .select(`
+          *,
+          category:categories(name, slug),
+          company:companies!products_company_id_fkey(name)
+        `)
+        .eq('flash_sale', true)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(20),
+      
+      // Featured Products
+      supabaseAdmin
+        .from('products')
+        .select(`
+          *,
+          category:categories(name, slug),
+          company:companies!products_company_id_fkey(name)
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(6),
+      
+      // Top Products
+      supabaseAdmin
+        .from('products')
+        .select(`
+          *,
+          category:categories(name, slug),
+          company:companies!products_company_id_fkey(name)
+        `)
+        .eq('is_active', true)
+        .order('price_regular', { ascending: false })
+        .limit(8),
+      
+      // Recent Products
+      supabaseAdmin
+        .from('products')
+        .select(`
+          *,
+          category:categories(name, slug),
+          company:companies!products_company_id_fkey(name)
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(8)
+    ]);
+
+    // Check for errors
+    const errors = [
+      categoriesResult.error,
+      bannersResult.error,
+      flashSaleResult.error,
+      featuredResult.error,
+      topResult.error,
+      recentResult.error
+    ].filter(Boolean);
+
+    if (errors.length > 0) {
+      console.error('Errors in getHomeData:', errors);
+      throw new Error('One or more queries failed');
+    }
+
+    // Process categories (same logic as getCategories)
+    const allCategories = categoriesResult.data || [];
+    const subcategories = allCategories.filter(cat => cat.parent_id);
+    const subcategoriesByParent = subcategories.reduce((acc, sub) => {
+      if (sub.parent_id) {
+        if (!acc[sub.parent_id]) {
+          acc[sub.parent_id] = [];
+        }
+        acc[sub.parent_id].push({
+          id: sub.id,
+          name: sub.name,
+          slug: sub.slug,
+          category_id: sub.parent_id
+        });
+      }
+      return acc;
+    }, {} as Record<string, Array<{ id: string; name: string; slug: string; category_id: string }>>);
+
+    const processedCategories = allCategories.map(category => ({
+      ...category,
+      subcategories: subcategoriesByParent[category.id] || []
+    })).filter(category => 
+      category.subcategories.length > 0 || !category.parent_id
+    );
+
+    const timing = Date.now() - startTime;
+    console.log(`getHomeData completed in ${timing}ms`);
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        categories: processedCategories,
+        banners: bannersResult.data || [],
+        flashSaleProducts: flashSaleResult.data || [],
+        featuredProducts: featuredResult.data || [],
+        topProducts: topResult.data || [],
+        recentProducts: recentResult.data || []
+      },
+      timing
+    });
+
+  } catch (error) {
+    console.error('Error fetching home data:', error);
+    return NextResponse.json({ 
+      success: false,
+      error: 'Failed to fetch home data',
+      timing: Date.now() - startTime
+    }, { status: 500 });
   }
 } 

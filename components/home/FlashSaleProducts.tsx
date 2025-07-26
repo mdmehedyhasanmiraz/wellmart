@@ -7,31 +7,13 @@ import { ChevronLeft, ChevronRight, Clock, Zap } from 'lucide-react';
 
 import type { Product } from '@/types/product';
 
-export default function FlashSaleProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+interface FlashSaleProductsProps {
+  products: Product[];
+}
+
+export default function FlashSaleProducts({ products }: FlashSaleProductsProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-
-
-  useEffect(() => {
-    fetchFlashSaleProducts();
-  }, []);
-
-  const fetchFlashSaleProducts = async () => {
-    try {
-      const response = await fetch('/api/public/data?type=flash-sale-products');
-      const result = await response.json();
-      if (result.success) {
-        setProducts(result.products || []);
-      } else {
-        console.error('Error fetching flash sale products:', result.error);
-      }
-    } catch (error) {
-      console.error('Error fetching flash sale products:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = false; // No longer loading since data is passed as props
 
   const nextSlide = () => {
     setCurrentIndex((prev) => {

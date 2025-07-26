@@ -5,7 +5,6 @@ import { useCart } from '@/contexts/CartContext';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Zap, ShoppingCart, Truck, Tag } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import type { Product } from '@/types/product';
 
@@ -18,7 +17,6 @@ export default function FlashSalePage() {
     seconds: 0
   });
   const { addToCart } = useCart();
-  const supabase = createClient();
 
   // Set end time to 24 hours from now (you can customize this)
   const [endTime] = useState(() => {
@@ -34,23 +32,14 @@ export default function FlashSalePage() {
 
   const fetchFlashSaleProducts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          category:categories(name, slug),
-          company:companies!products_company_id_fkey(name)
-        `)
-        .eq('flash_sale', true)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching flash sale products:', error);
-        return;
+      const response = await fetch('/api/public/data?type=flash-sale-products');
+      const result = await response.json();
+      
+      if (result.success) {
+        setProducts(result.products || []);
+      } else {
+        console.error('Error fetching flash sale products:', result.error);
       }
-
-      setProducts(data || []);
     } catch (error) {
       console.error('Error fetching flash sale products:', error);
     } finally {
