@@ -31,42 +31,72 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const supabase = createClient();
 
   const checkUser = async () => {
+    console.log('[AuthContext] checkUser called');
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      console.log('[AuthContext] Supabase auth user:', authUser);
+      console.log('[AuthContext] Auth error:', authError);
+      
+      if (authError) {
+        console.error('[AuthContext] Auth error:', authError);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
       
       if (authUser) {
         // Fetch user details from the database
-        const response = await fetch('/api/auth/me');
-        if (response.ok) {
-          const { user: userData } = await response.json();
-          setUser(userData);
-        } else if (response.status === 404) {
-          // User doesn't exist in database, try to sync them
-          console.log('User not found in database, attempting to sync...');
-          const syncResponse = await fetch('/api/auth/sync-supabase', { 
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            }
-          });
+        try {
+          const response = await fetch('/api/auth/me');
+          console.log('[AuthContext] /api/auth/me response status:', response.status);
           
-          if (syncResponse.ok) {
-            const { user: syncedUser } = await syncResponse.json();
-            setUser(syncedUser);
-            console.log('User synced successfully');
+          if (response.ok) {
+            const result = await response.json();
+            console.log('[AuthContext] /api/auth/me result:', result);
+            if (result.success && result.user) {
+              setUser(result.user);
+            } else {
+              console.error('[AuthContext] Invalid response from /api/auth/me:', result);
+              setUser(null);
+            }
+          } else if (response.status === 404) {
+            // User doesn't exist in database, try to sync them
+            console.log('[AuthContext] User not found in database, attempting to sync...');
+            const syncResponse = await fetch('/api/auth/sync-supabase', { 
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            });
+            
+            if (syncResponse.ok) {
+              const syncResult = await syncResponse.json();
+              console.log('[AuthContext] Sync result:', syncResult);
+              if (syncResult.user) {
+                setUser(syncResult.user);
+                console.log('[AuthContext] User synced successfully');
+              } else {
+                console.error('[AuthContext] No user data in sync response');
+                setUser(null);
+              }
+            } else {
+              console.error('[AuthContext] Failed to sync user:', syncResponse.status);
+              setUser(null);
+            }
           } else {
-            console.error('Failed to sync user');
+            console.error('[AuthContext] Error fetching user:', response.status);
             setUser(null);
           }
-        } else {
-          console.error('Error fetching user:', response.status);
+        } catch (fetchError) {
+          console.error('[AuthContext] Fetch error:', fetchError);
           setUser(null);
         }
       } else {
+        console.log('[AuthContext] No auth user found');
         setUser(null);
       }
     } catch (error) {
-      console.error('Error checking user:', error);
+      console.error('[AuthContext] Error checking user:', error);
       setUser(null);
     } finally {
       setLoading(false);
@@ -97,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[AuthContext] Auth state change:', event, session?.user?.email);
       if (event === 'SIGNED_IN' && session?.user) {
         await checkUser();
         closeLoginPopup();

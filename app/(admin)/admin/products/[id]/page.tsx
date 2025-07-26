@@ -38,6 +38,13 @@ interface User {
   role: string;
 }
 
+type MutationResponse = {
+  success?: boolean;
+  error?: string;
+  details?: string;
+  [key: string]: unknown;
+};
+
 export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
@@ -376,7 +383,7 @@ export default function EditProductPage() {
         })
       });
 
-      let result: any = null;
+      let result: MutationResponse | null = null;
       try {
         result = await response.json();
       } catch (err) {
@@ -386,16 +393,21 @@ export default function EditProductPage() {
         return;
       }
       console.log('[handleSubmit] API response:', result);
-      if (!result.success) {
-        toast.error(result.error || result.details || 'Failed to update product');
+      if (!result || !result.success) {
+        toast.error(result?.error || result?.details || 'Failed to update product');
         setIsLoading(false);
         return;
       }
       toast.success('Product updated successfully');
       router.push('/admin/products');
-    } catch (error: any) {
-      console.error('[handleSubmit] Error:', error);
-      toast.error(error?.message || 'Failed to update product');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('[handleSubmit] Error:', error);
+        toast.error(error.message || 'Failed to update product');
+      } else {
+        console.error('[handleSubmit] Unknown error:', error);
+        toast.error('Failed to update product');
+      }
     } finally {
       setIsLoading(false);
     }

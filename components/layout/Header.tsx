@@ -132,16 +132,12 @@ export default function Header() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const router = useRouter();
   const { getCartCount } = useCart();
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [siteSettings, setSiteSettings] = useState<{ logo_url: string }>({ logo_url: '/logos/logo-wellmart.png' });
-
-  useEffect(() => {
-    // checkUser(); // This function is removed as per the new auth system.
-  }, []);
 
   useEffect(() => {
     async function fetchSiteSettings() {
@@ -418,7 +414,14 @@ export default function Header() {
 
               {/* Account */}
               <div className="relative">
-                {user ? (
+                {authLoading ? (
+                  <div className="flex items-center space-x-2 p-2 text-gray-500">
+                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                    </div>
+                    <span className="hidden sm:block text-sm">Loading...</span>
+                  </div>
+                ) : user ? (
                   <div className="relative group cursor-pointer">
                     <button className="flex items-center space-x-2 p-2 text-gray-700 hover:text-gray-900 rounded-lg hover:bg-gray-50">
                       {/* User Avatar */}

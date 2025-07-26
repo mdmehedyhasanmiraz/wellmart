@@ -48,133 +48,17 @@ export default function MediaPage() {
   const fetchMediaFiles = async () => {
     setLoading(true);
     try {
-      // Check if bucket exists
-      const { error: bucketError } = await supabase.storage
-        .from('images')
-        .list('', { limit: 1 });
-
-      if (bucketError) {
-        console.error('Bucket access error:', bucketError);
-        toast.error('Cannot access media bucket. Please check storage permissions.');
-        return;
-      }
-
-      // Get all folders and files from the bucket
-      const { data: rootData, error: rootError } = await supabase.storage
-        .from('images')
-        .list('', {
-          limit: 1000,
-          offset: 0,
-        });
-
-      if (rootError) {
-        console.error('Error fetching root files:', rootError);
-        toast.error('Failed to load media files');
-        return;
-      }
-
-      console.log('Root data:', rootData);
-
-      // Collect all files from all folders
-      let allFiles: FileObjectWithExtras[] = [];
-
-      // Add files from root directory
-      if (rootData) {
-        allFiles = allFiles.concat(rootData);
-      }
-
-      // Get files from known subfolders
-      const subfolders = ['products', 'banners'];
+      // Use the optimized API endpoint
+      const response = await fetch('/api/admin/data?type=media-files');
+      const result = await response.json();
       
-      for (const folder of subfolders) {
-        try {
-          const { data: folderData, error: folderError } = await supabase.storage
-            .from('images')
-            .list(folder, {
-              limit: 1000,
-              offset: 0,
-            });
-
-          if (folderError) {
-            console.error(`Error fetching ${folder} folder:`, folderError);
-            continue;
-          }
-
-          if (folderData) {
-            // Add folder path to each file
-            const filesWithPath = folderData.map(file => ({
-              ...file,
-              folder: folder,
-              fullPath: `${folder}/${file.name}`
-            }));
-            allFiles = allFiles.concat(filesWithPath);
-          }
-        } catch (error) {
-          console.error(`Error processing ${folder} folder:`, error);
-        }
-      }
-
-      console.log('All files found:', allFiles);
-
-      if (allFiles.length === 0) {
-        setMediaFiles([]);
+      if (!result.success) {
+        console.error('Media fetch error:', result.error);
+        toast.error(result.error || 'Failed to load media files');
         return;
       }
 
-      // Generate signed URLs for all image files
-      const mediaUrls = await Promise.all(
-        allFiles
-          .filter(file => file.name.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff)$/i))
-          .map(async (file) => {
-            const filePath = file.fullPath || file.name;
-            
-            try {
-              const { data: signedData, error: signedError } = await supabase.storage
-                .from('images')
-                .createSignedUrl(filePath, 3600);
-              
-              if (signedError) {
-                console.error(`Signed URL error for ${filePath}:`, signedError);
-                const { data: { publicUrl } } = supabase.storage
-                  .from('images')
-                  .getPublicUrl(filePath);
-                return {
-                  url: publicUrl,
-                  name: file.name,
-                  path: filePath,
-                  folder: file.folder || 'root',
-                  size: file.metadata?.size,
-                  created_at: file.created_at
-                };
-              }
-              
-              return {
-                url: signedData.signedUrl,
-                name: file.name,
-                path: filePath,
-                folder: file.folder || 'root',
-                size: file.metadata?.size,
-                created_at: file.created_at
-              };
-            } catch (error) {
-              console.error(`Error generating URL for ${filePath}:`, error);
-              const { data: { publicUrl } } = supabase.storage
-                .from('images')
-                .getPublicUrl(filePath);
-              return {
-                url: publicUrl,
-                name: file.name,
-                path: filePath,
-                folder: file.folder || 'root',
-                size: file.metadata?.size,
-                created_at: file.created_at
-              };
-            }
-          })
-      );
-
-      console.log('Generated media URLs:', mediaUrls);
-      setMediaFiles(mediaUrls);
+      setMediaFiles(result.files || []);
     } catch (error) {
       console.error('Error fetching media files:', error);
       toast.error('Failed to load media files');
@@ -363,9 +247,18 @@ export default function MediaPage() {
 
       {/* Media Files */}
       {loading ? (
-        <div className="bg-white p-8 rounded-lg shadow text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading media files...</p>
+        <div className="bg-white rounded-lg shadow">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 p-6">
+            {[...Array(12)].map((_, index) => (
+              <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="aspect-square bg-gray-200 animate-pulse"></div>
+                <div className="p-3">
+                  <div className="h-3 bg-gray-200 rounded animate-pulse mb-2"></div>
+                  <div className="h-2 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       ) : filteredFiles.length === 0 ? (
         <div className="bg-white p-8 rounded-lg shadow text-center">

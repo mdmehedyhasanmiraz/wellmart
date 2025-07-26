@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
+import { NextRequest } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
 // Type definitions for better type safety
 interface Order {
@@ -39,63 +41,32 @@ interface Order {
   updated_at: string;
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const type = searchParams.get('type');
+
   try {
-    // Check authentication
-    const supabase = createRouteHandlerClient({ cookies });
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check if user is admin/manager
-    const { data: dbUser } = await supabaseAdmin!
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (!dbUser || !['admin', 'manager'].includes(dbUser.role)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const type = searchParams.get('type');
-
-    if (!type) {
-      return NextResponse.json({ error: 'Type parameter is required' }, { status: 400 });
-    }
-
     switch (type) {
       case 'dashboard-stats':
         return await getDashboardStats();
-      
       case 'products':
         return await getProducts(searchParams);
-      
-      case 'users':
-        return await getUsers(searchParams);
-      
-      case 'orders':
-        return await getOrders(searchParams);
-      
       case 'categories':
         return await getCategories(searchParams);
-      
       case 'companies':
         return await getCompanies(searchParams);
-      
+      case 'users':
+        return await getUsers(searchParams);
+      case 'orders':
+        return await getOrders(searchParams);
+      case 'media-files':
+        return await getMediaFiles();
       default:
-        return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Invalid type parameter' }, { status: 400 });
     }
-
   } catch (error) {
     console.error('Admin data API error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error'
-    }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -411,4 +382,150 @@ async function getCompanies(searchParams: URLSearchParams) {
     success: true,
     companies: data || []
   });
+}
+
+async function getMediaFiles() {
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Check if bucket exists and is accessible
+    const { error: bucketError } = await supabase.storage
+      .from('images')
+      .list('', { limit: 1 });
+
+    if (bucketError) {
+      console.error('Bucket access error:', bucketError);
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Cannot access media bucket. Please check storage permissions.' 
+      }, { status: 500 });
+    }
+
+    // Get all files from all folders in parallel
+    const folders = ['', 'products', 'banners'];
+    const folderPromises = folders.map(async (folder) => {
+      try {
+        const { data, error } = await supabase.storage
+          .from('images')
+          .list(folder, {
+            limit: 1000,
+            offset: 0,
+          });
+
+        if (error) {
+          console.error(`Error fetching ${folder} folder:`, error);
+          return [];
+        }
+
+        // Add folder path to each file
+        return (data || []).map((file: any) => ({
+          ...file,
+          folder: folder || 'root',
+          fullPath: folder ? `${folder}/${file.name}` : file.name
+        }));
+      } catch (error) {
+        console.error(`Error processing ${folder} folder:`, error);
+        return [];
+      }
+    });
+
+    const folderResults = await Promise.all(folderPromises);
+    const allFiles = folderResults.flat();
+
+    console.log('All files found:', allFiles.length);
+
+    if (allFiles.length === 0) {
+      return NextResponse.json({
+        success: true,
+        files: []
+      });
+    }
+
+    // Filter for image files and generate URLs in batches
+    const imageFiles = allFiles.filter(file => 
+      file.name.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff)$/i)
+    );
+
+    // Generate URLs in batches to avoid overwhelming the API
+    const batchSize = 10;
+    const mediaUrls = [];
+
+    for (let i = 0; i < imageFiles.length; i += batchSize) {
+      const batch = imageFiles.slice(i, i + batchSize);
+      
+      const batchUrls = await Promise.all(
+        batch.map(async (file: any) => {
+          const filePath = file.fullPath || file.name;
+          
+          try {
+            // Try signed URL first
+            const { data: signedData, error: signedError } = await supabase.storage
+              .from('images')
+              .createSignedUrl(filePath, 3600);
+            
+            if (signedError) {
+              console.error(`Signed URL error for ${filePath}:`, signedError);
+              // Fallback to public URL
+              const { data: { publicUrl } } = supabase.storage
+                .from('images')
+                .getPublicUrl(filePath);
+              return {
+                url: publicUrl,
+                name: file.name,
+                path: filePath,
+                folder: file.folder,
+                size: file.metadata?.size,
+                created_at: file.created_at
+              };
+            }
+            
+            return {
+              url: signedData.signedUrl,
+              name: file.name,
+              path: filePath,
+              folder: file.folder,
+              size: file.metadata?.size,
+              created_at: file.created_at
+            };
+          } catch (error) {
+            console.error(`Error generating URL for ${filePath}:`, error);
+            // Final fallback to public URL
+            const { data: { publicUrl } } = supabase.storage
+              .from('images')
+              .getPublicUrl(filePath);
+            return {
+              url: publicUrl,
+              name: file.name,
+              path: filePath,
+              folder: file.folder,
+              size: file.metadata?.size,
+              created_at: file.created_at
+            };
+          }
+        })
+      );
+
+      mediaUrls.push(...batchUrls);
+    }
+
+    console.log('Generated media URLs:', mediaUrls.length);
+
+    const response = NextResponse.json({
+      success: true,
+      files: mediaUrls
+    });
+
+    // Add caching headers for better performance
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    
+    return response;
+  } catch (error) {
+    console.error('Error fetching media files:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Failed to fetch media files' 
+    }, { status: 500 });
+  }
 } 

@@ -1,6 +1,5 @@
 'use client';
 import { notFound } from 'next/navigation';
-import { createClient } from '@/utils/supabase/client';
 import type { Product } from '@/types/product';
 import React, { useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
@@ -27,110 +26,27 @@ export default function ProductPage({ params }: ProductPageProps) {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [userReview, setUserReview] = useState<Review | null>(null);
   const { addToCart } = useCart();
-  const supabase = createClient();
 
   useEffect(() => {
     const fetchProductAndReviews = async () => {
       try {
-        let finalProduct = null;
-
-        // Fetch product with more flexible filtering - try different status combinations
-        let productData = null;
-        let productError = null;
-
-        // First try: active and published
-        const { data: publishedProduct, error: publishedError } = await supabase
-          .from('products')
-          .select(`
-            *,
-            category:categories(name, slug),
-            company:companies!products_company_id_fkey(name)
-          `)
-          .eq('slug', resolvedParams.slug)
-          .eq('is_active', true)
-          .eq('status', 'published')
-          .single();
-
-        if (publishedProduct) {
-          productData = publishedProduct;
-        } else {
-          // Second try: active products regardless of status
-          const { data: activeProduct, error: activeError } = await supabase
-            .from('products')
-            .select(`
-              *,
-              category:categories(name, slug),
-              company:companies!products_company_id_fkey(name)
-            `)
-            .eq('slug', resolvedParams.slug)
-            .eq('is_active', true)
-            .single();
-
-          if (activeProduct) {
-            productData = activeProduct;
-          } else {
-            // Third try: any product with this slug
-            const { data: anyProduct, error: anyError } = await supabase
-              .from('products')
-              .select(`
-                *,
-                category:categories(name, slug),
-                company:companies!products_company_id_fkey(name)
-              `)
-              .eq('slug', resolvedParams.slug)
-              .single();
-
-            if (anyProduct) {
-              productData = anyProduct;
-            } else {
-              productError = anyError || activeError || publishedError;
-            }
-          }
-        }
-
-        if (productError || !productData) {
-          console.error('Product fetch error:', productError);
+        setLoading(true);
+        
+        // Use the optimized API endpoint
+        const response = await fetch(`/api/public/data?type=product-details&slug=${encodeURIComponent(resolvedParams.slug)}`);
+        const result = await response.json();
+        
+        if (!result.success) {
+          console.error('Product fetch error:', result.error);
           setProduct(null);
           setLoading(false);
           return;
         }
 
-        finalProduct = productData;
-
-        setProduct(finalProduct as unknown as Product);
-
-        // Fetch approved reviews
-        const { data: reviewsData, error: reviewsError } = await supabase
-          .from('reviews')
-          .select('*')
-          .eq('product_id', finalProduct.id)
-          .eq('status', 'approved')
-          .order('created_at', { ascending: false });
-
-        if (!reviewsError && reviewsData) {
-          setReviews(reviewsData as unknown as Review[]);
-        }
-
-        // Check if user has already reviewed this product
-        try {
-          const response = await fetch('/api/auth/me');
-          const result = await response.json();
-          
-          if (result.success) {
-            const { data: userReviewData } = await supabase
-              .from('reviews')
-              .select('*')
-              .eq('product_id', finalProduct.id)
-              .eq('user_id', result.user.id)
-              .single();
-            
-            if (userReviewData) {
-              setUserReview(userReviewData as unknown as Review);
-            }
-          }
-        } catch (error) {
-          console.error('Error checking user review:', error);
-        }
+        setProduct(result.product as Product);
+        setReviews(result.reviews as Review[]);
+        setUserReview(result.userReview as Review | null);
+        
       } catch (error) {
         console.error('Error fetching product:', error);
         setProduct(null);
@@ -140,14 +56,111 @@ export default function ProductPage({ params }: ProductPageProps) {
     };
 
     fetchProductAndReviews();
-  }, [resolvedParams.slug, supabase]);
+  }, [resolvedParams.slug]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-lime-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading product: {resolvedParams.slug}</p>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Breadcrumb Skeleton */}
+          <div className="mb-8">
+            <div className="flex items-center space-x-2">
+              <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+              <div className="h-4 bg-gray-200 rounded w-4 animate-pulse"></div>
+              <div className="h-4 bg-gray-200 rounded w-12 animate-pulse"></div>
+              <div className="h-4 bg-gray-200 rounded w-4 animate-pulse"></div>
+              <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column - Image Skeleton */}
+            <div className="space-y-4">
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="h-148 aspect-square bg-gray-200 animate-pulse"></div>
+                <div className="p-4">
+                  <div className="flex space-x-2">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="w-16 h-16 bg-gray-200 rounded-lg animate-pulse"></div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Product Details Skeleton */}
+            <div className="space-y-4">
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="h-6 bg-gray-200 rounded w-24 mb-4 animate-pulse"></div>
+                <div className="h-8 bg-gray-200 rounded w-3/4 mb-4 animate-pulse"></div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
+                    ))}
+                  </div>
+                  <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                </div>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                </div>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="h-8 bg-gray-200 rounded w-24 animate-pulse"></div>
+                  <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
+                </div>
+                <div className="flex items-center gap-2 mb-6">
+                  <div className="h-6 bg-gray-200 rounded w-16 animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+                    <div className="flex items-center bg-gray-100 border border-gray-200 rounded-xl">
+                      <div className="w-12 h-12 bg-gray-200 animate-pulse"></div>
+                      <div className="w-16 h-12 bg-white border-x border-gray-200"></div>
+                      <div className="w-12 h-12 bg-gray-200 animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex-1 h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                    <div className="w-12 h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                    <div className="w-12 h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="h-6 bg-gray-200 rounded w-32 mb-4 animate-pulse"></div>
+                <div className="grid grid-cols-2 gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="flex justify-between">
+                      <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                      <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs Skeleton */}
+          <div className="mt-8 bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="border-b border-gray-200">
+              <div className="flex">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="px-6 py-4">
+                    <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="h-4 bg-gray-200 rounded w-full mb-2 animate-pulse"></div>
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2 animate-pulse"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+            </div>
+          </div>
         </div>
       </div>
     );

@@ -1,47 +1,40 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { NextRequest } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const type = searchParams.get('type');
+
   try {
-    const { searchParams } = new URL(request.url);
-    const type = searchParams.get('type');
-
-    if (!type) {
-      return NextResponse.json({ error: 'Type parameter is required' }, { status: 400 });
-    }
-
     switch (type) {
       case 'categories':
         return await getCategories();
-
       case 'banners':
         return await getBanners();
-
       case 'flash-sale-products':
         return await getFlashSaleProducts();
-
       case 'featured-products':
         return await getFeaturedProducts();
-
       case 'top-products':
         return await getTopProducts();
-
       case 'recent-products':
         return await getRecentProducts();
-
       case 'shop-products':
         return await getShopProducts(searchParams);
-
+      case 'product-details':
+        const slug = searchParams.get('slug');
+        if (!slug) {
+          return NextResponse.json({ success: false, error: 'Product slug is required' }, { status: 400 });
+        }
+        return await getProductDetails(slug);
       default:
-        return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Invalid type parameter' }, { status: 400 });
     }
-
   } catch (error) {
-    console.error('Public data API error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error'
-    }, { status: 500 });
+    console.error('API error:', error);
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -314,5 +307,96 @@ async function getShopProducts(searchParams: URLSearchParams) {
   } catch (error) {
     console.error('Error fetching shop products:', error);
     return NextResponse.json({ error: 'Failed to fetch shop products' }, { status: 500 });
+  }
+} 
+
+async function getProductDetails(slug: string) {
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get the authenticated user first (if any)
+    let currentUser = null;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/me`);
+        if (response.ok) {
+          const result = await response.json();
+          currentUser = result.user;
+        }
+      }
+    } catch (error) {
+      console.log('No authenticated user or auth error:', error);
+    }
+
+    // Fetch product with all related data in a single query
+    let { data: product, error: productError } = await supabase
+      .from('products')
+      .select(`
+        *,
+        category:categories(name, slug),
+        company:companies!products_company_id_fkey(name)
+      `)
+      .eq('slug', slug)
+      .eq('is_active', true)
+      .single();
+
+    if (productError || !product) {
+      // Try without is_active filter as fallback
+      const { data: fallbackProduct, error: fallbackError } = await supabase
+        .from('products')
+        .select(`
+          *,
+          category:categories(name, slug),
+          company:companies!products_company_id_fkey(name)
+        `)
+        .eq('slug', slug)
+        .single();
+
+      if (fallbackError || !fallbackProduct) {
+        return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
+      }
+      
+      product = fallbackProduct;
+    }
+
+    // Fetch approved reviews for this product
+    const { data: reviews, error: reviewsError } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('product_id', product.id)
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false });
+
+    // Fetch user's review if authenticated
+    let userReview = null;
+    if (currentUser) {
+      const { data: userReviewData } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('product_id', product.id)
+        .eq('user_id', currentUser.id)
+        .single();
+      
+      userReview = userReviewData;
+    }
+
+    const response = NextResponse.json({
+      success: true,
+      product,
+      reviews: reviews || [],
+      userReview,
+      currentUser
+    });
+
+    // Add caching headers for better performance
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600'); // 5 minutes cache, 10 minutes stale-while-revalidate
+    
+    return response;
+  } catch (error) {
+    console.error('Error fetching product details:', error);
+    return NextResponse.json({ success: false, error: 'Failed to fetch product details' }, { status: 500 });
   }
 } 
