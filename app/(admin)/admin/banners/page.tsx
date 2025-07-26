@@ -13,6 +13,7 @@ import {
   ChevronUp,
   EyeOff
 } from 'lucide-react';
+import AdminImage from '@/components/admin/AdminImage';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 
@@ -276,12 +277,13 @@ export default function BannersPage() {
               <div className="relative h-48 bg-gray-200 flex overflow-x-auto gap-2 p-2">
                 {imageUrls.length > 0 ? (
                   imageUrls.map((img: string, idx: number) => (
-                    <img
+                    <AdminImage
                       key={idx}
                       src={img}
                       alt={banner.title}
                       className="h-full object-cover rounded-lg"
                       style={{ minWidth: '180px', maxWidth: '240px' }}
+                      fallbackIcon={<ImageIcon className="w-8 h-8 text-gray-400" />}
                     />
                   ))
                 ) : (

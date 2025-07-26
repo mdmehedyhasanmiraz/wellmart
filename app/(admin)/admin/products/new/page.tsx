@@ -13,6 +13,7 @@ import {
   FileText,
   Image as ImageIcon
 } from 'lucide-react';
+import AdminImage from '@/components/admin/AdminImage';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
@@ -127,14 +128,15 @@ export default function NewProductPage() {
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase.from('categories').select('id, name').order('name');
-      if (error) {
-        console.error('Error fetching categories:', error);
+      const response = await fetch('/api/admin/data?type=categories');
+      const result = await response.json();
+      if (result.success) {
+        console.log('Categories loaded:', result.categories);
+        setCategories(result.categories || []);
+      } else {
+        console.error('Error fetching categories:', result.error);
         toast.error('Failed to load categories');
-        return;
       }
-      console.log('Categories loaded:', data);
-      setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
       toast.error('Failed to load categories');
@@ -143,14 +145,15 @@ export default function NewProductPage() {
 
   const fetchCompanies = async () => {
     try {
-      const { data, error } = await supabase.from('companies').select('id, name').order('name');
-      if (error) {
-        console.error('Error fetching companies:', error);
+      const response = await fetch('/api/admin/data?type=companies');
+      const result = await response.json();
+      if (result.success) {
+        console.log('Companies loaded:', result.companies);
+        setCompanies(result.companies || []);
+      } else {
+        console.error('Error fetching companies:', result.error);
         toast.error('Failed to load companies');
-        return;
       }
-      console.log('Companies loaded:', data);
-      setCompanies(data || []);
     } catch (error) {
       console.error('Error fetching companies:', error);
       toast.error('Failed to load companies');
@@ -675,10 +678,11 @@ export default function NewProductPage() {
                   <div className="grid grid-cols-2 gap-2">
                     {imagePreviews.map((preview, index) => (
                       <div key={index} className="relative">
-                        <img
+                        <AdminImage
                           src={preview}
                           alt={`Preview ${index + 1}`}
                           className="w-full h-24 object-cover rounded-lg"
+                          fallbackIcon={<ImageIcon className="w-8 h-8 text-gray-400" />}
                         />
                         <button
                           type="button"
@@ -767,18 +771,14 @@ export default function NewProductPage() {
                           >
                             {/* Image */}
                             <div className="relative w-24 h-24 flex-shrink-0">
-                              <img
+                              <AdminImage
                                 src={image.url}
                                 alt={`Image ${index + 1}`}
                                 className="w-full h-full object-cover"
-                                onLoad={() => {
-                                  console.log(`Successfully loaded image: ${image.url}`);
-                                }}
-                                onError={(e) => {
+                                fallbackIcon={<ImageIcon className="w-6 h-6 text-gray-400" />}
+                                onError={() => {
                                   console.error(`Failed to load image: ${image.url}`);
                                   testImageUrl(image.url);
-                                  e.currentTarget.style.display = 'none';
-                                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
                                 }}
                               />
                               <div className="hidden absolute inset-0 bg-gray-200 flex items-center justify-center">

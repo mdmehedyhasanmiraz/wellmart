@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
+import AdminImage from '@/components/admin/AdminImage';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 
@@ -96,8 +97,13 @@ export default function ProductsPage() {
 
   const fetchCategories = async () => {
     try {
-      const { data } = await supabase.from('categories').select('id, name');
-      setCategories(data || []);
+      const response = await fetch('/api/admin/data?type=categories');
+      const result = await response.json();
+      if (result.success) {
+        setCategories(result.categories || []);
+      } else {
+        console.error('Error fetching categories:', result.error);
+      }
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
@@ -105,8 +111,13 @@ export default function ProductsPage() {
 
   const fetchCompanies = async () => {
     try {
-      const { data } = await supabase.from('companies').select('id, name');
-      setCompanies(data || []);
+      const response = await fetch('/api/admin/data?type=companies');
+      const result = await response.json();
+      if (result.success) {
+        setCompanies(result.companies || []);
+      } else {
+        console.error('Error fetching companies:', result.error);
+      }
     } catch (error) {
       console.error('Error fetching companies:', error);
     }
@@ -333,12 +344,13 @@ export default function ProductsPage() {
                   <tr key={product.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="w-12 h-12 bg-gray-200 rounded-lg mr-4 flex items-center justify-center">
+                        <div className="w-12 h-12 bg-gray-200 rounded-lg mr-4 flex items-center justify-center overflow-hidden">
                           {product.image_urls && product.image_urls.length > 0 ? (
-                            <img 
+                            <AdminImage 
                               src={product.image_urls[0]} 
                               alt={product.name}
                               className="w-full h-full object-cover rounded-lg"
+                              fallbackIcon={<Package className="w-6 h-6 text-gray-400" />}
                             />
                           ) : (
                             <Package className="w-6 h-6 text-gray-400" />

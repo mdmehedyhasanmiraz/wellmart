@@ -13,6 +13,7 @@ import {
   FileText,
   Image as ImageIcon
 } from 'lucide-react';
+import AdminImage from '@/components/admin/AdminImage';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
@@ -150,12 +151,13 @@ export default function EditProductPage() {
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase.from('categories').select('id, name').order('name');
-      if (error) {
+      const response = await fetch('/api/admin/data?type=categories');
+      const result = await response.json();
+      if (result.success) {
+        setCategories(result.categories || []);
+      } else {
         toast.error('Failed to load categories');
-        return;
       }
-      setCategories(data || []);
     } catch (error) {
       toast.error('Failed to load categories');
       console.log(error);
@@ -164,12 +166,13 @@ export default function EditProductPage() {
 
   const fetchCompanies = async () => {
     try {
-      const { data, error } = await supabase.from('companies').select('id, name').order('name');
-      if (error) {
+      const response = await fetch('/api/admin/data?type=companies');
+      const result = await response.json();
+      if (result.success) {
+        setCompanies(result.companies || []);
+      } else {
         toast.error('Failed to load companies');
-        return;
       }
-      setCompanies(data || []);
     } catch (error) {
       toast.error('Failed to load companies');
       console.log(error);
@@ -618,10 +621,11 @@ export default function EditProductPage() {
                   <div className="grid grid-cols-2 gap-2">
                     {imagePreviews.map((preview, index) => (
                       <div key={index} className="relative">
-                        <img
+                        <AdminImage
                           src={preview}
                           alt={`Preview ${index + 1}`}
                           className="w-full h-24 object-cover rounded-lg"
+                          fallbackIcon={<ImageIcon className="w-8 h-8 text-gray-400" />}
                         />
                         <button
                           type="button"
@@ -707,18 +711,12 @@ export default function EditProductPage() {
                           >
                             {/* Image */}
                             <div className="relative w-24 h-24 flex-shrink-0">
-                              <img
+                              <AdminImage
                                 src={image.url}
                                 alt={`Image ${index + 1}`}
                                 className="w-full h-full object-cover"
-                                onLoad={() => {
-                                  // Success
-                                }}
-                                onError={(e) => {
-                                  testImageUrl(image.url);
-                                  e.currentTarget.style.display = 'none';
-                                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                                }}
+                                fallbackIcon={<ImageIcon className="w-6 h-6 text-gray-400" />}
+                                onError={() => testImageUrl(image.url)}
                               />
                               <div className="hidden absolute inset-0 bg-gray-200 flex items-center justify-center">
                                 <div className="text-center">
