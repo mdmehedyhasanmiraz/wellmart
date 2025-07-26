@@ -169,8 +169,18 @@ async function getBanners() {
 }
 
 async function getFlashSaleProducts() {
+  const startTime = Date.now();
   try {
-    const { data, error } = await supabaseAdmin!
+    if (!supabaseAdmin) {
+      console.error('supabaseAdmin is not available in getFlashSaleProducts');
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Database service not available',
+        timing: Date.now() - startTime
+      }, { status: 500 });
+    }
+
+    const { data, error } = await supabaseAdmin
       .from('products')
       .select(`
         *,
@@ -183,17 +193,26 @@ async function getFlashSaleProducts() {
       .limit(20);
 
     if (error) {
+      console.error('Supabase error in getFlashSaleProducts:', error);
       throw error;
     }
 
+    const timing = Date.now() - startTime;
+    console.log(`getFlashSaleProducts completed in ${timing}ms, returned ${data?.length || 0} products`);
+
     return NextResponse.json({
       success: true,
-      products: data || []
+      products: data || [],
+      timing
     });
 
   } catch (error) {
     console.error('Error fetching flash sale products:', error);
-    return NextResponse.json({ error: 'Failed to fetch flash sale products' }, { status: 500 });
+    return NextResponse.json({ 
+      success: false,
+      error: 'Failed to fetch flash sale products',
+      timing: Date.now() - startTime
+    }, { status: 500 });
   }
 }
 
@@ -292,8 +311,18 @@ async function getTopProducts() {
 }
 
 async function getRecentProducts() {
+  const startTime = Date.now();
   try {
-    const { data, error } = await supabaseAdmin!
+    if (!supabaseAdmin) {
+      console.error('supabaseAdmin is not available in getRecentProducts');
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Database service not available',
+        timing: Date.now() - startTime
+      }, { status: 500 });
+    }
+
+    const { data, error } = await supabaseAdmin
       .from('products')
       .select(`
         *,
@@ -305,17 +334,26 @@ async function getRecentProducts() {
       .limit(8);
 
     if (error) {
+      console.error('Supabase error in getRecentProducts:', error);
       throw error;
     }
 
+    const timing = Date.now() - startTime;
+    console.log(`getRecentProducts completed in ${timing}ms, returned ${data?.length || 0} products`);
+
     return NextResponse.json({
       success: true,
-      products: data || []
+      products: data || [],
+      timing
     });
 
   } catch (error) {
     console.error('Error fetching recent products:', error);
-    return NextResponse.json({ error: 'Failed to fetch recent products' }, { status: 500 });
+    return NextResponse.json({ 
+      success: false,
+      error: 'Failed to fetch recent products',
+      timing: Date.now() - startTime
+    }, { status: 500 });
   }
 }
 
