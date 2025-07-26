@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { toast } from 'react-hot-toast';
+// import { toast } from 'react-hot-toast';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Search, User, ShoppingCart, Menu, ChevronDown, LogOut, Package, UserCheck } from 'lucide-react';

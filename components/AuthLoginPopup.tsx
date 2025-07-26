@@ -16,7 +16,6 @@ export default function LoginPopup() {
   const [isLoading, setIsLoading] = useState(false);
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [isOtpMode, setIsOtpMode] = useState(false);
-  const [loginMethod, setLoginMethod] = useState<'password' | 'otp' | 'google' | 'facebook'>('password');
   
   const supabase = createClient();
 
@@ -28,7 +27,6 @@ export default function LoginPopup() {
       setOtp('');
       setIsOtpSent(false);
       setIsOtpMode(false);
-      setLoginMethod('password');
     }
   }, [isLoginPopupOpen]);
 
@@ -63,6 +61,7 @@ export default function LoginPopup() {
       }
     } catch (error) {
       toast.error('An error occurred during login');
+      console.error('Login error', error);
     } finally {
       setIsLoading(false);
     }
@@ -94,6 +93,7 @@ export default function LoginPopup() {
         }
       } catch (error) {
         toast.error('Failed to send OTP');
+        console.error('Failed to send OTP', error);
       } finally {
         setIsLoading(false);
       }
@@ -120,6 +120,7 @@ export default function LoginPopup() {
         }
       } catch (error) {
         toast.error('Invalid OTP');
+        console.error('Failed to login with OTP', error);
       } finally {
         setIsLoading(false);
       }
@@ -141,6 +142,7 @@ export default function LoginPopup() {
         setIsLoading(false);
       }
     } catch (error) {
+      console.error('Failed to login with Google', error);
       toast.error('Failed to login with Google');
       setIsLoading(false);
     }
@@ -162,6 +164,7 @@ export default function LoginPopup() {
       }
     } catch (error) {
       toast.error('Failed to login with Facebook');
+      console.error('Failed to login with Facebook', error);
       setIsLoading(false);
     }
   };
