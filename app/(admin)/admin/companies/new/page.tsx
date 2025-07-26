@@ -32,15 +32,27 @@ export default function NewCompanyPage() {
         setIsLoading(false);
         return;
       }
-      const { error } = await supabase.from('companies').insert([
-        {
-          name: formData.name.trim(),
-          country: formData.country.trim() || null,
-          website: formData.website.trim() || null,
-          address: formData.address.trim() || null,
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      ]);
-      if (error) throw error;
+        body: JSON.stringify({
+          action: 'create',
+          table: 'companies',
+          data: {
+            name: formData.name.trim(),
+            country: formData.country.trim() || null,
+            website: formData.website.trim() || null,
+            address: formData.address.trim() || null,
+          }
+        })
+      });
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create company');
+      }
       toast.success('Company created successfully');
       router.push('/admin/companies');
     } catch (error) {

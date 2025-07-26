@@ -139,18 +139,30 @@ export default function NewCategoryPage() {
         const { data: publicUrlData } = supabase.storage.from('images').getPublicUrl(fileName);
         imageUrl = publicUrlData?.publicUrl || '';
       }
-      const { error } = await supabase.from('categories').insert([
-        {
-          name: formData.name.trim(),
-          slug: formData.slug.trim(),
-          description: formData.description.trim() || null,
-          parent_id: formData.parent_id || null,
-          image_url: imageUrl || null,
-          is_home: formData.is_home,
-          position: formData.position ? parseInt(formData.position) : null,
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      ]);
-      if (error) throw error;
+        body: JSON.stringify({
+          action: 'create',
+          table: 'categories',
+          data: {
+            name: formData.name.trim(),
+            slug: formData.slug.trim(),
+            description: formData.description.trim() || null,
+            parent_id: formData.parent_id || null,
+            image_url: imageUrl || null,
+            is_home: formData.is_home,
+            position: formData.position ? parseInt(formData.position) : null,
+          }
+        })
+      });
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create category');
+      }
       toast.success('Category created successfully');
       router.push('/admin/categories');
     } catch (error) {

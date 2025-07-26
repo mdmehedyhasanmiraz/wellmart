@@ -35,8 +35,8 @@ export async function GET() {
         success: true,
         user: {
           id: user.id,
-          name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-          phone: user.phone || '',
+          name: dbUser?.name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+          phone: dbUser?.phone || user.phone || '',
           email: user.email || '',
           role: (dbUser?.role || user.user_metadata?.role || 'customer')?.toLowerCase().trim(),
           division: dbUser?.division || '',

@@ -338,12 +338,24 @@ export default function EditProductPage() {
       if (user?.role === 'admin') {
         productData.price_purchase = formData.price_purchase ? parseFloat(formData.price_purchase) : null;
       }
-      // Update product instead of insert
-      const { error } = await supabase
-        .from('products')
-        .update(productData)
-        .eq('id', productId);
-      if (error) throw error;
+      // Update product using optimized mutations API
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update',
+          table: 'products',
+          id: productId,
+          data: productData
+        })
+      });
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update product');
+      }
       toast.success('Product updated successfully');
       router.push('/admin/products');
     } catch (error) {

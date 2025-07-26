@@ -174,10 +174,22 @@ export default function NewBannerPage() {
         is_active: formData.is_active,
         image_urls: allImageUrls
       };
-      const { error } = await supabase
-        .from('banners')
-        .insert([bannerData]);
-      if (error) throw error;
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'create',
+          table: 'banners',
+          data: bannerData
+        })
+      });
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create banner');
+      }
       toast.success('Banner created successfully');
       router.push('/admin/banners');
     } catch (error) {

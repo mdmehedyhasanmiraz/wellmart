@@ -382,11 +382,22 @@ export default function NewProductPage() {
         productData.price_purchase = formData.price_purchase ? parseFloat(formData.price_purchase) : null;
       }
 
-      const { error } = await supabase
-        .from('products')
-        .insert([productData]);
+      const response = await fetch('/api/admin/mutations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'create',
+          table: 'products',
+          data: productData
+        })
+      });
 
-      if (error) throw error;
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create product');
+      }
 
       toast.success('Product created successfully');
       router.push('/admin/products');

@@ -420,6 +420,28 @@ psql -h your-host -U your-user -d your-database -f database/optimize-admin-perfo
    - Operation completion times
    - User feedback
 
+## Recent Fixes (Latest Update)
+
+### 1. Product Creation Performance
+- **Issue**: Product creation was taking too long due to direct Supabase client calls
+- **Fix**: Updated product creation and editing pages to use `/api/admin/mutations` endpoint
+- **Impact**: Significantly faster product creation and editing operations
+
+### 2. Username Display Issue
+- **Issue**: Username was not updating properly in the header
+- **Fix**: Modified `/api/auth/me` route to prioritize database user data over metadata
+- **Impact**: Consistent username display across the application
+
+### 3. Additional Admin Pages Optimization
+- **Issue**: Banner, category, and company creation pages were still using direct Supabase calls
+- **Fix**: Updated all creation pages to use the unified mutations API
+- **Impact**: Faster creation operations for all admin entities
+
+### 4. Linter Error Resolution
+- **Issue**: Multiple linter errors in public data API and home components
+- **Fix**: Resolved type safety issues and removed unused imports
+- **Impact**: Cleaner codebase with better type safety
+
 ## Future Improvements
 
 ### 1. Caching Strategy
