@@ -65,6 +65,8 @@ export async function GET(request: NextRequest) {
         return await getDashboardStats();
       case 'products':
         return await getProducts(searchParams);
+      case 'product':
+        return await getProduct(searchParams);
       case 'categories':
         return await getCategories(searchParams);
       case 'companies':
@@ -245,6 +247,48 @@ async function getProducts(searchParams: URLSearchParams) {
     success: true,
     products: transformedData
   });
+}
+
+async function getProduct(searchParams: URLSearchParams) {
+  const productId = searchParams.get('id');
+  if (!productId) {
+    return NextResponse.json({ success: false, error: 'Product ID is required' }, { status: 400 });
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin!
+      .from('products')
+      .select(`
+        *,
+        categories!inner(id, name),
+        companies!inner(id, name)
+      `)
+      .eq('id', productId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching product:', error);
+      return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 });
+    }
+
+    if (!data) {
+      return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
+    }
+
+    const transformedProduct = {
+      ...data,
+      category_name: data.categories?.name,
+      company_name: data.companies?.name
+    };
+
+    return NextResponse.json({
+      success: true,
+      product: transformedProduct
+    });
+  } catch (error) {
+    console.error('Error fetching product:', error);
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+  }
 }
 
 async function getUsers(searchParams: URLSearchParams) {

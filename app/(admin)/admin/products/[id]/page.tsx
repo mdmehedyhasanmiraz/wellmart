@@ -103,34 +103,60 @@ export default function EditProductPage() {
 
   const fetchProduct = async () => {
     setIsLoading(true);
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('id', productId)
-      .single();
-    if (error || !data) {
+    try {
+      console.log('[fetchProduct] Fetching product with ID:', productId);
+      
+      // First check if user is authenticated
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      if (authError || !authUser) {
+        console.error('[fetchProduct] Auth error:', authError);
+        toast.error('Authentication required');
+        setNotFound(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // Fetch product using admin privileges via API to bypass RLS
+      const response = await fetch(`/api/admin/data?type=product&id=${productId}`);
+      const result = await response.json();
+      
+      if (!result.success) {
+        console.error('[fetchProduct] API error:', result.error);
+        toast.error(result.error || 'Failed to load product');
+        setNotFound(true);
+        setIsLoading(false);
+        return;
+      }
+
+      const data = result.product;
+      console.log('[fetchProduct] Product data loaded:', data);
+
+      setFormData({
+        name: data.name || '',
+        slug: data.slug || '',
+        description: data.description || '',
+        price_regular: data.price_regular?.toString() || '',
+        price_offer: data.price_offer?.toString() || '',
+        price_purchase: data.price_purchase?.toString() || '',
+        stock: data.stock?.toString() || '',
+        pack_size: data.pack_size || '',
+        category_id: data.category_id || '',
+        company_id: data.company_id || '',
+        is_active: data.is_active,
+        flash_sale: data.flash_sale,
+        sku: data.sku || '',
+        video: data.video || '',
+      });
+      setImagePreviews(data.image_urls || []);
+      setKeywords(data.keywords || []);
+      
+    } catch (error) {
+      console.error('[fetchProduct] Error:', error);
+      toast.error('Failed to load product details');
       setNotFound(true);
+    } finally {
       setIsLoading(false);
-      return;
     }
-    setFormData({
-      name: data.name || '',
-      slug: data.slug || '',
-      description: data.description || '',
-      price_regular: data.price_regular?.toString() || '',
-      price_offer: data.price_offer?.toString() || '',
-      price_purchase: data.price_purchase?.toString() || '',
-      stock: data.stock?.toString() || '',
-      pack_size: data.pack_size || '',
-      category_id: data.category_id || '',
-      company_id: data.company_id || '',
-      is_active: data.is_active,
-      flash_sale: data.flash_sale,
-      sku: data.sku || '',
-      video: data.video || '',
-    });
-    setImagePreviews(data.image_urls || []);
-    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -158,31 +184,51 @@ export default function EditProductPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/admin/data?type=categories');
-      const result = await response.json();
-      if (result.success) {
-        setCategories(result.categories || []);
-      } else {
+      console.log('[fetchCategories] Fetching categories...');
+      
+      // Use direct Supabase query with proper error handling
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name')
+        .order('name');
+
+      if (error) {
+        console.error('[fetchCategories] Supabase error:', error);
         toast.error('Failed to load categories');
+        return;
       }
+
+      console.log('[fetchCategories] Categories loaded:', data?.length || 0);
+      setCategories(data || []);
+      
     } catch (error) {
+      console.error('[fetchCategories] Error:', error);
       toast.error('Failed to load categories');
-      console.log(error);
     }
   };
 
   const fetchCompanies = async () => {
     try {
-      const response = await fetch('/api/admin/data?type=companies');
-      const result = await response.json();
-      if (result.success) {
-        setCompanies(result.companies || []);
-      } else {
+      console.log('[fetchCompanies] Fetching companies...');
+      
+      // Use direct Supabase query with proper error handling
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, name')
+        .order('name');
+
+      if (error) {
+        console.error('[fetchCompanies] Supabase error:', error);
         toast.error('Failed to load companies');
+        return;
       }
+
+      console.log('[fetchCompanies] Companies loaded:', data?.length || 0);
+      setCompanies(data || []);
+      
     } catch (error) {
+      console.error('[fetchCompanies] Error:', error);
       toast.error('Failed to load companies');
-      console.log(error);
     }
   };
 
@@ -335,21 +381,31 @@ export default function EditProductPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    
     try {
+      console.log('[handleSubmit] Starting product update for ID:', productId);
+      console.log('[handleSubmit] Form data:', formData);
+      
       // Upload all image files
       const uploadedImageUrls: string[] = [];
       for (const file of imageFiles) {
+        console.log('[handleSubmit] Uploading image:', file.name);
         const imageUrl = await uploadImage(file);
         if (imageUrl) {
           uploadedImageUrls.push(imageUrl);
+          console.log('[handleSubmit] Image uploaded successfully:', imageUrl);
         } else {
+          console.error('[handleSubmit] Failed to upload image:', file.name);
           toast.error(`Failed to upload image: ${file.name}`);
           setIsLoading(false);
           return;
         }
       }
+      
       // Combine uploaded images with selected bucket images
       const allImageUrls = [...uploadedImageUrls, ...imagePreviews.filter(url => !url.startsWith('data:'))];
+      console.log('[handleSubmit] All image URLs:', allImageUrls);
+      
       const productData: Partial<Product> = {
         name: formData.name,
         slug: formData.slug,
@@ -365,41 +421,65 @@ export default function EditProductPage() {
         sku: formData.sku || "",
         image_urls: allImageUrls,
         video: formData.video,
+        keywords: keywords,
       };
+      
       if (user?.role === 'admin') {
         productData.price_purchase = formData.price_purchase ? parseFloat(formData.price_purchase) : null;
       }
+      
+      console.log('[handleSubmit] Product data to update:', productData);
+      
       // Update product using optimized mutations API
+      const requestBody = {
+        action: 'update',
+        table: 'products',
+        id: productId,
+        data: productData
+      };
+      
+      console.log('[handleSubmit] Sending request to /api/admin/mutations:', requestBody);
+      
       const response = await fetch('/api/admin/mutations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          action: 'update',
-          table: 'products',
-          id: productId,
-          data: productData
-        })
+        body: JSON.stringify(requestBody)
       });
+
+      console.log('[handleSubmit] Response status:', response.status);
+      console.log('[handleSubmit] Response headers:', Object.fromEntries(response.headers.entries()));
 
       let result: MutationResponse | null = null;
       try {
-        result = await response.json();
+        const responseText = await response.text();
+        console.log('[handleSubmit] Raw response text:', responseText);
+        
+        if (responseText) {
+          result = JSON.parse(responseText);
+        }
       } catch (err) {
         console.error('[handleSubmit] Failed to parse JSON response:', err);
         toast.error('Failed to update product: Invalid server response');
         setIsLoading(false);
         return;
       }
-      console.log('[handleSubmit] API response:', result);
+      
+      console.log('[handleSubmit] Parsed API response:', result);
+      
       if (!result || !result.success) {
-        toast.error(result?.error || result?.details || 'Failed to update product');
+        const errorMessage = result?.error || result?.details || 'Failed to update product';
+        console.error('[handleSubmit] API returned error:', errorMessage);
+        toast.error(errorMessage);
         setIsLoading(false);
         return;
       }
+      
+      console.log('[handleSubmit] Product updated successfully');
       toast.success('Product updated successfully');
       router.push('/admin/products');
+      
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error('[handleSubmit] Error:', error);
@@ -409,6 +489,7 @@ export default function EditProductPage() {
         toast.error('Failed to update product');
       }
     } finally {
+      console.log('[handleSubmit] Setting loading to false');
       setIsLoading(false);
     }
   };
@@ -419,6 +500,16 @@ export default function EditProductPage() {
         <h2 className="text-2xl font-bold mb-4">Product Not Found</h2>
         <p className="text-gray-600 mb-6">The product you are trying to edit does not exist.</p>
         <Link href="/admin/products" className="text-lime-600 hover:underline">Back to Products</Link>
+      </div>
+    );
+  }
+
+  if (isLoading && !formData.name) {
+    return (
+      <div className="max-w-2xl mx-auto py-12 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-600 mx-auto mb-4"></div>
+        <h2 className="text-2xl font-bold mb-4">Loading Product</h2>
+        <p className="text-gray-600">Please wait while we load the product details...</p>
       </div>
     );
   }
@@ -462,7 +553,8 @@ export default function EditProductPage() {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-transparent"
+                    disabled={isLoading}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                     placeholder="Enter product name"
                   />
                 </div>
