@@ -13,7 +13,6 @@ import {
   User,
   Package
 } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 
 interface Review {
@@ -28,11 +27,14 @@ interface Review {
     name: string;
     image_urls: string[] | null;
   };
+  user: {
+    name: string;
+    email: string;
+  };
 }
 
 export default function ReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [userDetails, setUserDetails] = useState<{[key: string]: {email: string, name?: string}}>({});
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -40,67 +42,33 @@ export default function ReviewsPage() {
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
   const [showFilters, setShowFilters] = useState(false);
-  const supabase = createClient();
 
   useEffect(() => {
     fetchReviews();
   }, [searchTerm, statusFilter, ratingFilter, sortBy, sortOrder]);
 
-  const fetchUserDetails = async (userIds: string[]) => {
-    try {
-      // For now, we'll just show user IDs
-      // In a production app, you'd want to create a server-side API endpoint
-      // to fetch user details securely
-      const userMap: {[key: string]: {email: string, name?: string}} = {};
-      userIds.forEach(userId => {
-        userMap[userId] = {
-          email: `User ${userId.slice(0, 8)}...`,
-          name: `User ${userId.slice(0, 8)}...`
-        };
-      });
-      
-      setUserDetails(userMap);
-    } catch (error) {
-      console.error('Error fetching user details:', error);
-    }
-  };
+
 
   const fetchReviews = async () => {
     try {
-      let query = supabase
-        .from('reviews')
-        .select(`
-          *,
-          product:products(name, image_urls)
-        `)
-        .order(sortBy, { ascending: sortOrder === 'asc' });
+      const params = new URLSearchParams({
+        search: searchTerm,
+        status: statusFilter,
+        rating: ratingFilter,
+        sortBy,
+        sortOrder
+      });
 
-      if (searchTerm) {
-        query = query.or(`comment.ilike.%${searchTerm}%,product.name.ilike.%${searchTerm}%`);
+      const response = await fetch(`/api/admin/data?type=reviews&${params}`);
+      const result = await response.json();
+
+      if (!result.success) {
+        console.error('Reviews fetch error:', result.error);
+        toast.error(result.error || 'Failed to load reviews');
+        return;
       }
 
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
-      }
-
-      if (ratingFilter !== 'all') {
-        query = query.eq('rating', parseInt(ratingFilter));
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
-      
-      setReviews(data || []);
-      
-      // Fetch user details for all reviews
-      if (data && data.length > 0) {
-        const userIds = [...new Set(data.map(review => review.user_id))];
-        await fetchUserDetails(userIds);
-      }
+      setReviews(result.reviews || []);
     } catch (error) {
       console.error('Error fetching reviews:', error);
       toast.error('Failed to load reviews');
@@ -204,11 +172,39 @@ export default function ReviewsPage() {
 
   if (isLoading) {
     return (
-      <div className="animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+        </div>
+        
+        {/* Search and Filters Skeleton */}
+        <div className="bg-white p-6 rounded-lg shadow animate-pulse">
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex-1">
+              <div className="h-10 bg-gray-200 rounded-lg"></div>
+            </div>
+            <div className="h-10 bg-gray-200 rounded-lg w-24"></div>
+            <div className="h-10 bg-gray-200 rounded-lg w-32"></div>
+          </div>
+        </div>
+        
+        {/* Reviews Skeleton */}
         <div className="space-y-4">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="bg-white p-6 rounded-lg shadow h-24"></div>
+            <div key={i} className="bg-white p-6 rounded-lg shadow animate-pulse">
+              <div className="flex items-start space-x-4">
+                <div className="w-16 h-16 bg-gray-200 rounded-lg"></div>
+                <div className="flex-1 space-y-3">
+                  <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-16 bg-gray-200 rounded"></div>
+                </div>
+                <div className="w-8 h-8 bg-gray-200 rounded"></div>
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -335,7 +331,7 @@ export default function ReviewsPage() {
                       <div className="flex items-center">
                         <User className="w-4 h-4 text-gray-400 mr-1" />
                         <span className="text-sm text-gray-600">
-                          {userDetails[review.user_id]?.name || userDetails[review.user_id]?.email || 'Unknown User'}
+                          {review.user?.name || review.user?.email || 'Unknown User'}
                         </span>
                       </div>
                       <div className="flex items-center">

@@ -15,13 +15,6 @@ import {
   FolderOpen,
   Image as ImageIcon
 } from 'lucide-react';
-import type { FileObject as SupabaseFileObject } from '@supabase/storage-js';
-
-// Extend FileObject to include folder and fullPath for local use
-interface FileObjectWithExtras extends SupabaseFileObject {
-  folder?: string;
-  fullPath?: string;
-}
 
 interface MediaFile {
   url: string;
@@ -38,7 +31,6 @@ export default function MediaPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  // const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -48,7 +40,6 @@ export default function MediaPage() {
   const fetchMediaFiles = async () => {
     setLoading(true);
     try {
-      // Use the optimized API endpoint
       const response = await fetch('/api/admin/data?type=media-files');
       const result = await response.json();
       
@@ -89,7 +80,7 @@ export default function MediaPage() {
       }
       
       toast.success('Files uploaded successfully');
-      fetchMediaFiles(); // Refresh the list
+      fetchMediaFiles();
     } catch (error) {
       console.error('Error uploading files:', error);
       toast.error('Failed to upload files');
@@ -109,7 +100,7 @@ export default function MediaPage() {
         return;
       }
       toast.success('File deleted successfully');
-      fetchMediaFiles(); // Refresh the list
+      fetchMediaFiles();
     } catch (error) {
       console.error('Error deleting file:', error, 'File path:', filePath);
       toast.error(`Failed to delete file: ${filePath}`);

@@ -11,7 +11,6 @@ import {
   Calendar,
   BarChart3
 } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
 
 // Add interfaces for topProducts, recentOrders, and monthlySales
 interface TopProduct {
@@ -59,7 +58,6 @@ export default function AnalyticsPage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30'); // days
-  const supabase = createClient();
 
   useEffect(() => {
     fetchAnalytics();
@@ -67,109 +65,15 @@ export default function AnalyticsPage() {
 
   const fetchAnalytics = async () => {
     try {
-      // Fetch basic stats from correct tables
-      const [
-        ordersResult,
-        usersResult,
-        productsResult,
-        salesResult
-      ] = await Promise.all([
-        supabase.from('user_orders').select('id, total, created_at'),
-        supabase.from('users').select('id, created_at'),
-        supabase.from('products').select('id').eq('is_active', true),
-        supabase.from('user_orders').select('total').eq('status', 'delivered')
-      ]);
+      const response = await fetch(`/api/admin/data?type=analytics&timeRange=${timeRange}`);
+      const result = await response.json();
 
-      const orders = ordersResult.data || [];
-      const users = usersResult.data || [];
-      const products = productsResult.data || [];
-      const sales = salesResult.data || [];
+      if (!result.success) {
+        console.error('Analytics fetch error:', result.error);
+        return;
+      }
 
-      // Calculate metrics
-      const totalSales = sales.reduce((sum, order) => sum + (order.total || 0), 0);
-      const totalOrders = orders.length;
-      const totalUsers = users.length;
-      const totalProducts = products.length;
-      const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
-
-      // Calculate growth (simplified - comparing current period vs previous period)
-      const currentDate = new Date();
-      const daysAgo = parseInt(timeRange);
-      const previousPeriodStart = new Date(currentDate.getTime() - (daysAgo * 2 * 24 * 60 * 60 * 1000));
-      const currentPeriodStart = new Date(currentDate.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
-
-      const currentPeriodOrders = orders.filter(order => 
-        new Date(order.created_at) >= currentPeriodStart
-      );
-      const previousPeriodOrders = orders.filter(order => 
-        new Date(order.created_at) >= previousPeriodStart && 
-        new Date(order.created_at) < currentPeriodStart
-      );
-
-      const currentPeriodSales = currentPeriodOrders.reduce((sum, order) => sum + (order.total || 0), 0);
-      const previousPeriodSales = previousPeriodOrders.reduce((sum, order) => sum + (order.total || 0), 0);
-      const salesGrowth = previousPeriodSales > 0 ? ((currentPeriodSales - previousPeriodSales) / previousPeriodSales) * 100 : 0;
-
-      const orderGrowth = previousPeriodOrders.length > 0 ? 
-        ((currentPeriodOrders.length - previousPeriodOrders.length) / previousPeriodOrders.length) * 100 : 0;
-
-      const currentPeriodUsers = users.filter(user => 
-        new Date(user.created_at) >= currentPeriodStart
-      );
-      const previousPeriodUsers = users.filter(user => 
-        new Date(user.created_at) >= previousPeriodStart && 
-        new Date(user.created_at) < currentPeriodStart
-      );
-
-      const userGrowth = previousPeriodUsers.length > 0 ? 
-        ((currentPeriodUsers.length - previousPeriodUsers.length) / previousPeriodUsers.length) * 100 : 0;
-
-      // Fetch top products
-      const { data: topProducts } = await supabase
-        .from('products')
-        .select(`
-          id,
-          name,
-          price,
-          stock,
-          image_url
-        `)
-        .eq('is_active', true)
-        .order('stock', { ascending: false })
-        .limit(5);
-
-      // Fetch recent orders
-      const { data: recentOrders } = await supabase
-        .from('user_orders')
-        .select(`
-          id,
-          total,
-          status,
-          created_at,
-          billing_name
-        `)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      // Transform recent orders to match interface
-      const normalizedRecentOrders = (recentOrders || []).map((order) => ({
-        ...order,
-        user: { name: (order as { billing_name: string }).billing_name || '' }
-      })) as RecentOrder[];
-
-      setAnalytics({
-        totalSales,
-        totalOrders,
-        totalUsers,
-        totalProducts,
-        averageOrderValue,
-        salesGrowth,
-        orderGrowth,
-        userGrowth,
-        topProducts: topProducts || [],
-        recentOrders: normalizedRecentOrders,
-        monthlySales: [] // Simplified for now
-      });
+      setAnalytics(result.analytics);
     } catch (error) {
       console.error('Error fetching analytics:', error);
     } finally {
@@ -187,11 +91,48 @@ export default function AnalyticsPage() {
 
   if (isLoading) {
     return (
-      <div className="animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+        </div>
+        
+        {/* Key Metrics Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-white p-6 rounded-lg shadow h-32"></div>
+            <div key={i} className="bg-white p-6 rounded-lg shadow animate-pulse">
+              <div className="flex items-center">
+                <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+                <div className="ml-4 space-y-2">
+                  <div className="h-3 bg-gray-200 rounded w-20"></div>
+                  <div className="h-6 bg-gray-200 rounded w-16"></div>
+                </div>
+              </div>
+              <div className="mt-4">
+                <div className="h-3 bg-gray-200 rounded w-12"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Charts Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[1, 2].map((i) => (
+            <div key={i} className="bg-white p-6 rounded-lg shadow animate-pulse">
+              <div className="h-5 bg-gray-200 rounded w-32 mb-4"></div>
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map((j) => (
+                  <div key={j} className="flex items-center p-3 bg-gray-50 rounded-lg">
+                    <div className="w-8 h-8 bg-gray-200 rounded-full mr-3"></div>
+                    <div className="flex-1 space-y-1">
+                      <div className="h-3 bg-gray-200 rounded w-24"></div>
+                      <div className="h-2 bg-gray-200 rounded w-16"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </div>

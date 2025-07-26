@@ -360,10 +360,11 @@ async function getProductDetails(slug: string) {
       }
       
       product = fallbackProduct;
+      productError = fallbackError;
     }
 
     // Fetch approved reviews for this product
-    const { data: reviews, error: reviewsError } = await supabase
+    const { data: reviews } = await supabase
       .from('reviews')
       .select('*')
       .eq('product_id', product.id)
