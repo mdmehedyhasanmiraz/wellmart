@@ -4,14 +4,14 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, Clock, Zap } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
+
 import type { Product } from '@/types/product';
 
 export default function FlashSaleProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const supabase = createClient();
+
 
   useEffect(() => {
     fetchFlashSaleProducts();

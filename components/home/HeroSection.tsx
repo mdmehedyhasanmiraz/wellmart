@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronDown, ChevronRight, Package } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
+
 
 interface Category {
   id: string;
@@ -37,7 +37,7 @@ export default function HeroSection() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClient();
+
 
   useEffect(() => {
     fetchCategories();

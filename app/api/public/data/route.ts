@@ -82,7 +82,7 @@ async function getCategories() {
         });
       }
       return acc;
-    }, {} as Record<string, any[]>) || {};
+    }, {} as Record<string, Array<{ id: string; name: string; slug: string; category_id: string }>>) || {};
 
     // Build the final categories array
     const processedCategories = allCategories?.map(category => ({
