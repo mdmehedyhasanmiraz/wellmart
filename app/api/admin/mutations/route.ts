@@ -81,7 +81,7 @@ async function handleDelete(table: string, id: string) {
   }
 }
 
-async function handleUpdate(table: string, id: string, data: any) {
+async function handleUpdate(table: string, id: string, data: Record<string, unknown>) {
   if (!id || !data) {
     return NextResponse.json({ error: 'ID and data are required for update operations' }, { status: 400 });
   }
@@ -108,7 +108,7 @@ async function handleUpdate(table: string, id: string, data: any) {
   }
 }
 
-async function handleCreate(table: string, data: any) {
+async function handleCreate(table: string, data: Record<string, unknown>) {
   if (!data) {
     return NextResponse.json({ error: 'Data is required for create operations' }, { status: 400 });
   }
