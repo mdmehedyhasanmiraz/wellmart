@@ -94,7 +94,11 @@ async function handleUpdate(table: string, id: string, data: Record<string, unkn
 
     if (error) {
       console.error(`Error updating ${table}:`, error);
-      return NextResponse.json({ error: `Failed to update ${table}` }, { status: 500 });
+      console.error('Data that was sent:', JSON.stringify(data, null, 2));
+      return NextResponse.json({ 
+        error: `Failed to update ${table}`,
+        details: error.message || error.details || 'Unknown error'
+      }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -122,7 +126,11 @@ async function handleCreate(table: string, data: Record<string, unknown>) {
 
     if (error) {
       console.error(`Error creating ${table}:`, error);
-      return NextResponse.json({ error: `Failed to create ${table}` }, { status: 500 });
+      console.error('Data that was sent:', JSON.stringify(data, null, 2));
+      return NextResponse.json({ 
+        error: `Failed to create ${table}`,
+        details: error.message || error.details || 'Unknown error'
+      }, { status: 500 });
     }
 
     return NextResponse.json({

@@ -212,6 +212,8 @@ export default function EditProductPage() {
         .list('', { limit: 1 });
       if (bucketError) {
         toast.error('Cannot access images bucket. Please check storage permissions.');
+        setBucketImages([]);
+        setLoadingImages(false);
         return;
       }
       const { data, error } = await supabase.storage
@@ -219,11 +221,14 @@ export default function EditProductPage() {
         .list('products', { limit: 100, offset: 0 });
       if (error) {
         toast.error('Failed to load images from bucket');
+        setBucketImages([]);
+        setLoadingImages(false);
         return;
       }
       if (!data || data.length === 0) {
         toast.success('No images found in the products folder. Upload some images first.');
         setBucketImages([]);
+        setLoadingImages(false);
         return;
       }
       const imageUrls = await Promise.all(
@@ -235,26 +240,44 @@ export default function EditProductPage() {
               const { data: signedData, error: signedError } = await supabase.storage
                 .from('images')
                 .createSignedUrl(filePath, 3600);
-              if (signedError) {
-                const { data: { publicUrl } } = supabase.storage
+              if (signedError || !signedData?.signedUrl) {
+                if (signedError) {
+                  console.error(`Signed URL error for ${file.name}:`, signedError);
+                }
+                const { data: publicData } = supabase.storage
                   .from('images')
                   .getPublicUrl(filePath);
-                return { url: publicUrl, name: file.name, path: filePath };
+                if (publicData?.publicUrl) {
+                  return { url: publicData.publicUrl, name: file.name, path: filePath };
+                } else {
+                  console.error(`No valid URL for file: ${file.name}`);
+                  return null;
+                }
               }
               return { url: signedData.signedUrl, name: file.name, path: filePath };
             } catch (error) {
-              console.log(error);
-              const { data: { publicUrl } } = supabase.storage
+              console.error(`Error generating URL for ${file.name}:`, error);
+              const { data: publicData } = supabase.storage
                 .from('images')
                 .getPublicUrl(filePath);
-              return { url: publicUrl, name: file.name, path: filePath };
+              if (publicData?.publicUrl) {
+                return { url: publicData.publicUrl, name: file.name, path: filePath };
+              } else {
+                console.error(`No valid URL for file: ${file.name}`);
+                return null;
+              }
             }
           })
       );
-      setBucketImages(imageUrls);
+      const validImages = imageUrls.filter(Boolean) as { url: string; name: string; path: string }[];
+      setBucketImages(validImages);
+      if (validImages.length === 0) {
+        toast.error('No valid images found in the products folder.');
+      }
     } catch (error) {
       toast.error('Failed to load images from bucket');
-      console.log(error);
+      setBucketImages([]);
+      console.error(error);
     } finally {
       setLoadingImages(false);
     }
@@ -328,7 +351,7 @@ export default function EditProductPage() {
         stock: parseInt(formData.stock),
         pack_size: formData.pack_size,
         category_id: formData.category_id || null,
-        company: { id: formData.company_id || null } as Company,
+        company_id: formData.company_id || null,
         is_active: formData.is_active,
         flash_sale: formData.flash_sale,
         sku: formData.sku || "",

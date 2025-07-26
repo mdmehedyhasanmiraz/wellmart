@@ -196,10 +196,10 @@ export default function NewProductPage() {
       if (bucketError) {
         console.error('Bucket access error:', bucketError);
         toast.error('Cannot access images bucket. Please check storage permissions.');
+        setBucketImages([]);
+        setLoadingImages(false);
         return;
       }
-
-      console.log('Bucket access successful, checking products folder...');
 
       // Now check the products folder
       const { data, error } = await supabase.storage
@@ -212,15 +212,15 @@ export default function NewProductPage() {
       if (error) {
         console.error('Error fetching bucket images:', error);
         toast.error('Failed to load images from bucket');
+        setBucketImages([]);
+        setLoadingImages(false);
         return;
       }
 
-      console.log('Bucket files found:', data);
-
       if (!data || data.length === 0) {
-        console.log('No files found in products folder');
         toast.success('No images found in the products folder. Upload some images first.');
         setBucketImages([]);
+        setLoadingImages(false);
         return;
       }
 
@@ -229,28 +229,29 @@ export default function NewProductPage() {
           .filter(file => file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i))
           .map(async (file) => {
             const filePath = `products/${file.name}`;
-            
             try {
-              // Try to get a signed URL first (this should work regardless of bucket settings)
               const { data: signedData, error: signedError } = await supabase.storage
                 .from('images')
                 .createSignedUrl(filePath, 3600); // 1 hour expiry
-              
-              if (signedError) {
-                console.error(`Signed URL error for ${file.name}:`, signedError);
+              if (signedError || !signedData?.signedUrl) {
+                if (signedError) {
+                  console.error(`Signed URL error for ${file.name}:`, signedError);
+                }
                 // Fallback to public URL
-                const { data: { publicUrl } } = supabase.storage
+                const { data: publicData } = supabase.storage
                   .from('images')
                   .getPublicUrl(filePath);
-                console.log(`File: ${file.name}, Path: ${filePath}, Public URL: ${publicUrl}`);
-                return {
-                  url: publicUrl,
-                  name: file.name,
-                  path: filePath
-                };
+                if (publicData?.publicUrl) {
+                  return {
+                    url: publicData.publicUrl,
+                    name: file.name,
+                    path: filePath
+                  };
+                } else {
+                  console.error(`No valid URL for file: ${file.name}`);
+                  return null;
+                }
               }
-              
-              console.log(`File: ${file.name}, Path: ${filePath}, Signed URL: ${signedData.signedUrl}`);
               return {
                 url: signedData.signedUrl,
                 name: file.name,
@@ -259,23 +260,32 @@ export default function NewProductPage() {
             } catch (error) {
               console.error(`Error generating URL for ${file.name}:`, error);
               // Fallback to public URL
-              const { data: { publicUrl } } = supabase.storage
+              const { data: publicData } = supabase.storage
                 .from('images')
                 .getPublicUrl(filePath);
-              return {
-                url: publicUrl,
-                name: file.name,
-                path: filePath
-              };
+              if (publicData?.publicUrl) {
+                return {
+                  url: publicData.publicUrl,
+                  name: file.name,
+                  path: filePath
+                };
+              } else {
+                console.error(`No valid URL for file: ${file.name}`);
+                return null;
+              }
             }
           })
       );
 
-      console.log('Generated image URLs:', imageUrls);
-      setBucketImages(imageUrls);
+      const validImages = imageUrls.filter(Boolean) as { url: string; name: string; path: string }[];
+      setBucketImages(validImages);
+      if (validImages.length === 0) {
+        toast.error('No valid images found in the products folder.');
+      }
     } catch (error) {
       console.error('Error fetching bucket images:', error);
       toast.error('Failed to load images from bucket');
+      setBucketImages([]);
     } finally {
       setLoadingImages(false);
     }
@@ -357,7 +367,7 @@ export default function NewProductPage() {
         stock: parseInt(formData.stock),
         pack_size: formData.pack_size,
         category_id: formData.category_id || null,
-        company: { id: formData.company_id || null } as Company,
+        company_id: formData.company_id || null,
         is_active: formData.is_active,
         flash_sale: formData.flash_sale,
         sku: formData.sku || "",
