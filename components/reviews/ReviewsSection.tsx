@@ -95,12 +95,14 @@ export default function ReviewsSection({ productId, productSlug }: ReviewsSectio
     }
   };
 
-  const handleReviewSubmitted = async (newReview: Review) => {
-    setUserReview(newReview);
+  const handleReviewSubmitted = async () => {
     setShowForm(false);
     
-    // Reload reviews and stats
-    await loadReviews();
+    // Reload reviews, stats, and user review
+    await Promise.all([
+      loadReviews(),
+      loadUserReview()
+    ]);
     toast.success('Review submitted successfully!');
   };
 
