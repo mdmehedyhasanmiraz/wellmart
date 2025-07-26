@@ -646,7 +646,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                       <ReviewForm
                         productId={product.id}
                         existingReview={userReview}
-                        onReviewSubmitted={(review) => {
+                        onReviewSubmitted={(review: Review) => {
                           setUserReview(review);
                           setShowReviewForm(false);
                           // Refresh reviews list

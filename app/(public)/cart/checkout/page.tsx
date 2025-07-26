@@ -108,7 +108,7 @@ export default function CheckoutPage() {
     fetchFreeDeliveryMin();
   }, []);
 
-  const handleBillingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleBillingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setBilling(prev => {
       const updated = { ...prev, [name]: value };
@@ -123,7 +123,7 @@ export default function CheckoutPage() {
     });
   };
 
-  const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setShipping(prev => {
       const updated = { ...prev, [name]: value };
@@ -143,12 +143,19 @@ export default function CheckoutPage() {
     try {
       const orderData = {
         user_id: user?.id || null,
-        items: items.map((item: CartItem | GuestCartItem) => ({
-          product_id: item.product_id,
-          quantity: item.quantity,
-          price: item.price,
-          total: item.total
-        })),
+        items: items.map((item: CartItem | GuestCartItem) => {
+          // Calculate the price based on offer price or regular price
+          const price = item.product?.price_offer && item.product.price_offer > 0 
+            ? item.product.price_offer 
+            : item.product?.price_regular || 0;
+          
+          return {
+            product_id: item.product_id,
+            quantity: item.quantity,
+            price: price,
+            total: price * item.quantity
+          };
+        }),
         total_amount: total,
         payment_method: paymentMethod,
         status: status,
@@ -291,12 +298,19 @@ export default function CheckoutPage() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Order Summary</h3>
             <div className="space-y-2">
-              {items.map((item: CartItem | GuestCartItem) => (
-                <div key={item.product_id} className="flex justify-between text-sm">
-                  <span className="text-gray-600">{item.product_name} × {item.quantity}</span>
-                  <span className="font-medium">৳{item.total.toFixed(2)}</span>
-                </div>
-              ))}
+              {items.map((item: CartItem | GuestCartItem) => {
+                const price = item.product?.price_offer && item.product.price_offer > 0 
+                  ? item.product.price_offer 
+                  : item.product?.price_regular || 0;
+                const itemTotal = price * item.quantity;
+                
+                return (
+                  <div key={item.product_id} className="flex justify-between text-sm">
+                    <span className="text-gray-600">{item.product?.name} × {item.quantity}</span>
+                    <span className="font-medium">৳{itemTotal.toFixed(2)}</span>
+                  </div>
+                );
+              })}
             </div>
             <div className="border-t border-gray-200 mt-3 pt-3">
               <div className="flex justify-between font-semibold text-lg">
@@ -781,12 +795,19 @@ export default function CheckoutPage() {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
               <div className="space-y-3">
-                {items.map((item: CartItem | GuestCartItem) => (
-                  <div key={item.product_id} className="flex justify-between text-sm">
-                    <span className="text-gray-600">{item.product_name} × {item.quantity}</span>
-                    <span className="font-medium">৳{item.total.toFixed(2)}</span>
-                  </div>
-                ))}
+                {items.map((item: CartItem | GuestCartItem) => {
+                  const price = item.product?.price_offer && item.product.price_offer > 0 
+                    ? item.product.price_offer 
+                    : item.product?.price_regular || 0;
+                  const itemTotal = price * item.quantity;
+                  
+                  return (
+                    <div key={item.product_id} className="flex justify-between text-sm">
+                      <span className="text-gray-600">{item.product?.name} × {item.quantity}</span>
+                      <span className="font-medium">৳{itemTotal.toFixed(2)}</span>
+                    </div>
+                  );
+                })}
               </div>
               
               <div className="border-t border-gray-200 mt-4 pt-4 space-y-2">

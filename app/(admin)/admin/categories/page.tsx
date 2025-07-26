@@ -10,6 +10,7 @@ import {
   Package
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { createClient } from '@/utils/supabase/client';
 
 interface Category {
   id: string;
@@ -25,92 +26,89 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const supabase = createClient();
 
   useEffect(() => {
     fetchCategories();
   }, [searchTerm]);
 
-        const fetchCategories = async () => {
-        try {
-          setIsLoading(true);
+  const fetchCategories = async () => {
+    try {
+      setIsLoading(true);
+      console.log('[fetchCategories] Fetching categories...');
 
-          // Build query parameters
-          const params = new URLSearchParams();
-          params.append('type', 'categories');
-          if (searchTerm) params.append('search', searchTerm);
+      // Build the query
+      let query = supabase
+        .from('categories')
+        .select('*');
 
-          const response = await fetch(`/api/admin/data?${params.toString()}`);
-          const result = await response.json();
+      // Apply search filter
+      if (searchTerm) {
+        query = query.ilike('name', `%${searchTerm}%`);
+      }
 
-          if (result.success) {
-            setCategories(result.categories || []);
-          } else {
-            console.error('Error fetching categories:', result.error);
-            toast.error('Failed to load categories');
-          }
-        } catch (error) {
-          console.error('Error fetching categories:', error);
-          toast.error('Failed to load categories');
-        } finally {
-          setIsLoading(false);
-        }
-      };
+      // Order by name
+      query = query.order('name');
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('[fetchCategories] Supabase error:', error);
+        toast.error('Failed to load categories');
+        return;
+      }
+
+      console.log('[fetchCategories] Categories loaded:', data?.length || 0);
+      setCategories(data || []);
+      
+    } catch (error) {
+      console.error('[fetchCategories] Error:', error);
+      toast.error('Failed to load categories');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleDeleteCategory = async (categoryId: string) => {
     if (!confirm('Are you sure you want to delete this category? Products in this category will be uncategorized.')) return;
 
     try {
-      const response = await fetch('/api/admin/mutations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'delete',
-          table: 'categories',
-          id: categoryId
-        })
-      });
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', categoryId);
 
-      const result = await response.json();
-
-      if (result.success) {
-        toast.success('Category deleted successfully');
-        fetchCategories();
-      } else {
-        throw new Error(result.error);
+      if (error) {
+        console.error('[handleDeleteCategory] Supabase error:', error);
+        toast.error('Failed to delete category');
+        return;
       }
+
+      toast.success('Category deleted successfully');
+      fetchCategories();
     } catch (error) {
-      console.error('Error deleting category:', error);
+      console.error('[handleDeleteCategory] Error:', error);
       toast.error('Failed to delete category');
     }
   };
 
   const handleToggleStatus = async (categoryId: string, currentStatus: boolean) => {
     try {
-      const response = await fetch('/api/admin/mutations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'update',
-          table: 'categories',
-          id: categoryId,
-          data: { is_active: !currentStatus }
-        })
-      });
+      const { error } = await supabase
+        .from('categories')
+        .update({ is_active: !currentStatus })
+        .eq('id', categoryId);
 
-      const result = await response.json();
-
-      if (result.success) {
-        toast.success(`Category ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
-        fetchCategories();
-      } else {
-        throw new Error(result.error);
+      if (error) {
+        console.error('[handleToggleStatus] Supabase error:', error);
+        toast.error('Failed to update category status');
+        return;
       }
+
+      toast.success(`Category ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
+      fetchCategories();
     } catch (error) {
-      console.error('Error updating category status:', error);
+      console.error('[handleToggleStatus] Error:', error);
       toast.error('Failed to update category status');
     }
   };

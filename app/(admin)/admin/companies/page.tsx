@@ -11,6 +11,7 @@ import {
   Package
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { createClient } from '@/utils/supabase/client';
 
 interface Company {
   id: string;
@@ -24,63 +25,68 @@ export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const supabase = createClient();
 
   useEffect(() => {
     fetchCompanies();
   }, [searchTerm]);
 
-        const fetchCompanies = async () => {
-        try {
-          setIsLoading(true);
+  const fetchCompanies = async () => {
+    try {
+      setIsLoading(true);
+      console.log('[fetchCompanies] Fetching companies...');
 
-          // Build query parameters
-          const params = new URLSearchParams();
-          params.append('type', 'companies');
-          if (searchTerm) params.append('search', searchTerm);
+      // Build the query
+      let query = supabase
+        .from('companies')
+        .select('*');
 
-          const response = await fetch(`/api/admin/data?${params.toString()}`);
-          const result = await response.json();
+      // Apply search filter
+      if (searchTerm) {
+        query = query.ilike('name', `%${searchTerm}%`);
+      }
 
-          if (result.success) {
-            setCompanies(result.companies || []);
-          } else {
-            console.error('Error fetching companies:', result.error);
-            toast.error('Failed to load companies');
-          }
-        } catch (error) {
-          console.error('Error fetching companies:', error);
-          toast.error('Failed to load companies');
-        } finally {
-          setIsLoading(false);
-        }
-      };
+      // Order by name
+      query = query.order('name');
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('[fetchCompanies] Supabase error:', error);
+        toast.error('Failed to load companies');
+        return;
+      }
+
+      console.log('[fetchCompanies] Companies loaded:', data?.length || 0);
+      setCompanies(data || []);
+      
+    } catch (error) {
+      console.error('[fetchCompanies] Error:', error);
+      toast.error('Failed to load companies');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleDeleteCompany = async (companyId: string) => {
     if (!confirm('Are you sure you want to delete this company? Products from this company will be unassigned.')) return;
 
     try {
-      const response = await fetch('/api/admin/mutations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'delete',
-          table: 'companies',
-          id: companyId
-        })
-      });
+      const { error } = await supabase
+        .from('companies')
+        .delete()
+        .eq('id', companyId);
 
-      const result = await response.json();
-
-      if (result.success) {
-        toast.success('Company deleted successfully');
-        fetchCompanies();
-      } else {
-        throw new Error(result.error);
+      if (error) {
+        console.error('[handleDeleteCompany] Supabase error:', error);
+        toast.error('Failed to delete company');
+        return;
       }
+
+      toast.success('Company deleted successfully');
+      fetchCompanies();
     } catch (error) {
-      console.error('Error deleting company:', error);
+      console.error('[handleDeleteCompany] Error:', error);
       toast.error('Failed to delete company');
     }
   };
