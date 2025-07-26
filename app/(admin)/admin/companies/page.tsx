@@ -31,30 +31,31 @@ export default function CompaniesPage() {
     fetchCompanies();
   }, [searchTerm]);
 
-  const fetchCompanies = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Build query parameters
-      const params = new URLSearchParams();
-      if (searchTerm) params.append('search', searchTerm);
+        const fetchCompanies = async () => {
+        try {
+          setIsLoading(true);
 
-      const response = await fetch(`/api/admin/companies?${params.toString()}`);
-      const result = await response.json();
-      
-      if (result.success) {
-        setCompanies(result.companies || []);
-      } else {
-        console.error('Error fetching companies:', result.error);
-        toast.error('Failed to load companies');
-      }
-    } catch (error) {
-      console.error('Error fetching companies:', error);
-      toast.error('Failed to load companies');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+          // Build query parameters
+          const params = new URLSearchParams();
+          params.append('type', 'companies');
+          if (searchTerm) params.append('search', searchTerm);
+
+          const response = await fetch(`/api/admin/data?${params.toString()}`);
+          const result = await response.json();
+
+          if (result.success) {
+            setCompanies(result.companies || []);
+          } else {
+            console.error('Error fetching companies:', result.error);
+            toast.error('Failed to load companies');
+          }
+        } catch (error) {
+          console.error('Error fetching companies:', error);
+          toast.error('Failed to load companies');
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
   const handleDeleteCompany = async (companyId: string) => {
     if (!confirm('Are you sure you want to delete this company? Products from this company will be unassigned.')) return;

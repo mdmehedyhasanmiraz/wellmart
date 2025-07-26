@@ -54,25 +54,25 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const fetchDashboardData = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch('/api/admin/dashboard-stats');
-      const result = await response.json();
-      
-      if (result.success) {
-        setStats(result.stats);
-        setLowStockProducts(result.lowStockProducts || []);
-        setNotifications(result.notifications || []);
-      } else {
-        console.error('Error fetching dashboard data:', result.error);
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        const fetchDashboardData = async () => {
+        try {
+          setIsLoading(true);
+          const response = await fetch('/api/admin/data?type=dashboard-stats');
+          const result = await response.json();
+
+          if (result.success) {
+            setStats(result.stats);
+            setLowStockProducts(result.lowStockProducts || []);
+            setNotifications(result.notifications || []);
+          } else {
+            console.error('Error fetching dashboard data:', result.error);
+          }
+        } catch (error) {
+          console.error('Error fetching dashboard data:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
   // Add formatCurrency and formatPercentage helpers from analytics page
   const formatCurrency = (amount: number) => {

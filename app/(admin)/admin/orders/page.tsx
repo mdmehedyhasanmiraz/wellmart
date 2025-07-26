@@ -100,34 +100,35 @@ export default function OrdersPage() {
     fetchOrders();
   }, [searchTerm, statusFilter, paymentFilter, sortBy, sortOrder]);
 
-  const fetchOrders = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Build query parameters
-      const params = new URLSearchParams();
-      if (searchTerm) params.append('search', searchTerm);
-      if (statusFilter !== 'all') params.append('status', statusFilter);
-      if (paymentFilter !== 'all') params.append('payment', paymentFilter);
-      params.append('sortBy', sortBy);
-      params.append('sortOrder', sortOrder);
+        const fetchOrders = async () => {
+        try {
+          setIsLoading(true);
 
-      const response = await fetch(`/api/admin/orders?${params.toString()}`);
-      const result = await response.json();
-      
-      if (result.success) {
-        setOrders(result.orders || []);
-      } else {
-        console.error('Error fetching orders:', result.error);
-        toast.error('Failed to load orders');
-      }
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      toast.error('Failed to load orders');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+          // Build query parameters
+          const params = new URLSearchParams();
+          params.append('type', 'orders');
+          if (searchTerm) params.append('search', searchTerm);
+          if (statusFilter !== 'all') params.append('status', statusFilter);
+          if (paymentFilter !== 'all') params.append('payment', paymentFilter);
+          params.append('sortBy', sortBy);
+          params.append('sortOrder', sortOrder);
+
+          const response = await fetch(`/api/admin/data?${params.toString()}`);
+          const result = await response.json();
+
+          if (result.success) {
+            setOrders(result.orders || []);
+          } else {
+            console.error('Error fetching orders:', result.error);
+            toast.error('Failed to load orders');
+          }
+        } catch (error) {
+          console.error('Error fetching orders:', error);
+          toast.error('Failed to load orders');
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {

@@ -63,35 +63,36 @@ export default function ProductsPage() {
     fetchCompanies();
   }, [searchTerm, selectedCategory, selectedCompany, statusFilter, sortBy, sortOrder]);
 
-  const fetchProducts = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Build query parameters
-      const params = new URLSearchParams();
-      if (searchTerm) params.append('search', searchTerm);
-      if (selectedCategory) params.append('category', selectedCategory);
-      if (selectedCompany) params.append('company', selectedCompany);
-      if (statusFilter !== 'all') params.append('status', statusFilter);
-      params.append('sortBy', sortBy);
-      params.append('sortOrder', sortOrder);
+        const fetchProducts = async () => {
+        try {
+          setIsLoading(true);
 
-      const response = await fetch(`/api/admin/products?${params.toString()}`);
-      const result = await response.json();
-      
-      if (result.success) {
-        setProducts(result.products || []);
-      } else {
-        console.error('Error fetching products:', result.error);
-        toast.error('Failed to load products');
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      toast.error('Failed to load products');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+          // Build query parameters
+          const params = new URLSearchParams();
+          params.append('type', 'products');
+          if (searchTerm) params.append('search', searchTerm);
+          if (selectedCategory) params.append('category', selectedCategory);
+          if (selectedCompany) params.append('company', selectedCompany);
+          if (statusFilter !== 'all') params.append('status', statusFilter);
+          params.append('sortBy', sortBy);
+          params.append('sortOrder', sortOrder);
+
+          const response = await fetch(`/api/admin/data?${params.toString()}`);
+          const result = await response.json();
+
+          if (result.success) {
+            setProducts(result.products || []);
+          } else {
+            console.error('Error fetching products:', result.error);
+            toast.error('Failed to load products');
+          }
+        } catch (error) {
+          console.error('Error fetching products:', error);
+          toast.error('Failed to load products');
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
   const fetchCategories = async () => {
     try {

@@ -32,30 +32,31 @@ export default function CategoriesPage() {
     fetchCategories();
   }, [searchTerm]);
 
-  const fetchCategories = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Build query parameters
-      const params = new URLSearchParams();
-      if (searchTerm) params.append('search', searchTerm);
+        const fetchCategories = async () => {
+        try {
+          setIsLoading(true);
 
-      const response = await fetch(`/api/admin/categories?${params.toString()}`);
-      const result = await response.json();
-      
-      if (result.success) {
-        setCategories(result.categories || []);
-      } else {
-        console.error('Error fetching categories:', result.error);
-        toast.error('Failed to load categories');
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      toast.error('Failed to load categories');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+          // Build query parameters
+          const params = new URLSearchParams();
+          params.append('type', 'categories');
+          if (searchTerm) params.append('search', searchTerm);
+
+          const response = await fetch(`/api/admin/data?${params.toString()}`);
+          const result = await response.json();
+
+          if (result.success) {
+            setCategories(result.categories || []);
+          } else {
+            console.error('Error fetching categories:', result.error);
+            toast.error('Failed to load categories');
+          }
+        } catch (error) {
+          console.error('Error fetching categories:', error);
+          toast.error('Failed to load categories');
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
   const handleDeleteCategory = async (categoryId: string) => {
     if (!confirm('Are you sure you want to delete this category? Products in this category will be uncategorized.')) return;

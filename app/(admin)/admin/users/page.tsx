@@ -42,33 +42,34 @@ export default function UsersPage() {
     fetchUsers();
   }, [searchTerm, roleFilter, sortBy, sortOrder]);
 
-  const fetchUsers = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Build query parameters
-      const params = new URLSearchParams();
-      if (searchTerm) params.append('search', searchTerm);
-      if (roleFilter !== 'all') params.append('role', roleFilter);
-      params.append('sortBy', sortBy);
-      params.append('sortOrder', sortOrder);
+        const fetchUsers = async () => {
+        try {
+          setIsLoading(true);
 
-      const response = await fetch(`/api/admin/users?${params.toString()}`);
-      const result = await response.json();
-      
-      if (result.success) {
-        setUsers(result.users || []);
-      } else {
-        console.error('Error fetching users:', result.error);
-        toast.error('Failed to load users');
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      toast.error('Failed to load users');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+          // Build query parameters
+          const params = new URLSearchParams();
+          params.append('type', 'users');
+          if (searchTerm) params.append('search', searchTerm);
+          if (roleFilter !== 'all') params.append('role', roleFilter);
+          params.append('sortBy', sortBy);
+          params.append('sortOrder', sortOrder);
+
+          const response = await fetch(`/api/admin/data?${params.toString()}`);
+          const result = await response.json();
+
+          if (result.success) {
+            setUsers(result.users || []);
+          } else {
+            console.error('Error fetching users:', result.error);
+            toast.error('Failed to load users');
+          }
+        } catch (error) {
+          console.error('Error fetching users:', error);
+          toast.error('Failed to load users');
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
   const handleDeleteUser = async (userId: string) => {
     if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
