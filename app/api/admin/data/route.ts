@@ -674,12 +674,6 @@ async function getAnalytics(searchParams: URLSearchParams) {
     const totalProducts = products.length;
     const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
-    // Calculate growth (simplified - comparing current period vs previous period)
-    const currentDate = new Date();
-    const daysAgo = parseInt(timeRange);
-    // const previousPeriodStart = new Date(currentDate.getTime() - (daysAgo * 2 * 24 * 60 * 60 * 1000));
-    // const currentPeriodStart = new Date(currentDate.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
-
     // Get recent orders for display
     const { data: recentOrdersData } = await supabaseAdmin!
       .from('user_orders')
