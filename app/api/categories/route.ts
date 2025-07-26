@@ -1,54 +1,69 @@
-import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/server';
-import { Category } from '@/types/product';
+import { createClient } from '@/utils/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
+interface SubCategory {
+  id: string;
+  name: string;
+  slug: string;
+  category_id: string;
+}
+
+export async function GET(request: NextRequest) {
   try {
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
+    const supabase = await createClient();
+    const { searchParams } = new URL(request.url);
     
-    const { data, error } = await supabaseAdmin
+    // Get all categories
+    const { data: allCategories, error: categoriesError } = await supabase
       .from('categories')
-      .select('*')
-      .order('name', { ascending: true });
+      .select('id, name, slug, description, parent_id, image_url')
+      .order('name');
 
-    if (error) {
-      console.error('Error fetching categories:', error);
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch categories' },
-        { status: 500 }
-      );
+    if (categoriesError) {
+      console.error('Error fetching categories:', categoriesError);
+      return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 });
     }
 
-    // Build tree structure
-    const map: { [id: string]: Category & { children: Category[] } } = {};
-    data.forEach((cat: Category) => {
-      map[cat.id] = { ...cat, children: [] };
-    });
-    
-    const tree: Category[] = [];
-    Object.values(map).forEach(cat => {
-      if (cat.parent_id && map[cat.parent_id]) {
-        map[cat.parent_id].children.push(cat);
-      } else {
-        tree.push(cat);
+    // Get all subcategories (categories with parent_id)
+    const { data: subcategories, error: subError } = await supabase
+      .from('categories')
+      .select('id, name, slug, description, category_id:parent_id, image_url')
+      .not('parent_id', 'is', null)
+      .order('name');
+
+    if (subError) {
+      console.error('Error fetching subcategories:', subError);
+      return NextResponse.json({ error: 'Failed to fetch subcategories' }, { status: 500 });
+    }
+
+    // Group subcategories by parent
+    const subcategoriesByParent = subcategories?.reduce((acc: Record<string, SubCategory[]>, sub: any) => {
+      if (sub.category_id) {
+        if (!acc[sub.category_id]) {
+          acc[sub.category_id] = [];
+        }
+        acc[sub.category_id].push({
+          id: sub.id,
+          name: sub.name,
+          slug: sub.slug,
+          category_id: sub.category_id
+        });
       }
-    });
+      return acc;
+    }, {} as Record<string, SubCategory[]>) || {};
 
-    return NextResponse.json({
-      success: true,
-      categories: tree
-    });
+    // Build the final categories array
+    const processedCategories = allCategories?.map((category: any) => ({
+      ...category,
+      subcategories: subcategoriesByParent[category.id] || []
+    })).filter((category: any) => 
+      // Show categories that either have subcategories OR are not subcategories themselves
+      category.subcategories.length > 0 || !category.parent_id
+    ) || [];
 
+    return NextResponse.json({ categories: processedCategories });
   } catch (error) {
-    console.error('Categories API error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('Error in categories API:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

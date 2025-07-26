@@ -3,15 +3,16 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = createClient();
+    const { id } = await params;
     
     const { error } = await supabase
       .from('products')
       .delete()
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (error) {
       console.error('Error deleting product:', error);
@@ -28,16 +29,17 @@ export async function DELETE(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = createClient();
     const body = await request.json();
+    const { id } = await params;
     
     const { error } = await supabase
       .from('products')
       .update(body)
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (error) {
       console.error('Error updating product:', error);

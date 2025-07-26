@@ -4,14 +4,12 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, Clock, Zap } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
 import type { Product } from '@/types/product';
 
 export default function FlashSaleProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const supabase = createClient();
 
   useEffect(() => {
     fetchFlashSaleProducts();
@@ -19,24 +17,12 @@ export default function FlashSaleProducts() {
 
   const fetchFlashSaleProducts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          category:categories(name, slug),
-          company:companies!products_company_id_fkey(name)
-        `)
-        .eq('flash_sale', true)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (error) {
-        console.error('Error fetching flash sale products:', error);
-        return;
+      const response = await fetch('/api/products/public?flash_sale=true&limit=20');
+      if (!response.ok) {
+        throw new Error('Failed to fetch flash sale products');
       }
-
-      setProducts(data || []);
+      const data = await response.json();
+      setProducts(data.products || []);
     } catch (error) {
       console.error('Error fetching flash sale products:', error);
     } finally {

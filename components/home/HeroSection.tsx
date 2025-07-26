@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronDown, ChevronRight, Package } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
 
 interface Category {
   id: string;
@@ -37,7 +36,6 @@ export default function HeroSection() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClient();
 
   useEffect(() => {
     fetchCategories();
@@ -46,55 +44,12 @@ export default function HeroSection() {
 
   const fetchCategories = async () => {
     try {
-      // First, get all categories
-      const { data: allCategories, error: categoriesError } = await supabase
-        .from('categories')
-        .select('id, name, slug, description, parent_id, image_url')
-        .order('name');
-
-      if (categoriesError) {
-        console.error('Error fetching categories:', categoriesError);
-        return;
+      const response = await fetch('/api/categories');
+      if (!response.ok) {
+        throw new Error('Failed to fetch categories');
       }
-
-      // Get all subcategories (categories with parent_id)
-      const { data: subcategories, error: subError } = await supabase
-        .from('categories')
-        .select('id, name, slug, description, category_id:parent_id, image_url')
-        .not('parent_id', 'is', null)
-        .order('name');
-
-      if (subError) {
-        console.error('Error fetching subcategories:', subError);
-        return;
-      }
-
-      // Group subcategories by parent
-      const subcategoriesByParent = subcategories?.reduce((acc, sub) => {
-        if (sub.category_id) {
-          if (!acc[sub.category_id]) {
-            acc[sub.category_id] = [];
-          }
-          acc[sub.category_id].push({
-            id: sub.id,
-            name: sub.name,
-            slug: sub.slug,
-            category_id: sub.category_id
-          });
-        }
-        return acc;
-      }, {} as Record<string, SubCategory[]>) || {};
-
-      // Build the final categories array
-      const processedCategories = allCategories?.map(category => ({
-        ...category,
-        subcategories: subcategoriesByParent[category.id] || []
-      })).filter(category => 
-        // Show categories that either have subcategories OR are not subcategories themselves
-        category.subcategories.length > 0 || !category.parent_id
-      ) || [];
-
-      setCategories(processedCategories);
+      const data = await response.json();
+      setCategories(data.categories || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
@@ -102,18 +57,12 @@ export default function HeroSection() {
 
   const fetchBanners = async () => {
     try {
-      const { data: bannersData, error } = await supabase
-        .from('banners')
-        .select('*')
-        .eq('is_active', true)
-        .order('position');
-
-      if (error) {
-        console.error('Error fetching banners:', error);
-        return;
+      const response = await fetch('/api/banners?is_active=true');
+      if (!response.ok) {
+        throw new Error('Failed to fetch banners');
       }
-
-      setBanners(bannersData || []);
+      const data = await response.json();
+      setBanners(data.banners || []);
     } catch (error) {
       console.error('Error fetching banners:', error);
     } finally {

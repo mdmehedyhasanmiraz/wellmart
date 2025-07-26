@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 import ProductCard from "../shop/ProductCard";
 import type { Product } from "@/types/product";
 import { Loader2, Package } from "lucide-react";
@@ -15,18 +14,18 @@ export default function TopProductsArchive() {
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("is_active", true)
-        .order("created_at", { ascending: false })
-        .limit(6);
-      if (error) {
+      try {
+        const response = await fetch('/api/products/public?limit=6');
+        if (!response.ok) {
+          throw new Error('Failed to fetch top products');
+        }
+        const data = await response.json();
+        setProducts(data.products || []);
+      } catch (error) {
         console.error("Error fetching products:", error);
+      } finally {
+        setIsLoading(false);
       }
-      setProducts(data || []);
-      setIsLoading(false);
     };
     fetchProducts();
   }, []);

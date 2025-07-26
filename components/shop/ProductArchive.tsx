@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
 import type { Product, ProductFilters, Category, Manufacturer } from '@/types/product';
 import ProductCard from './ProductCard';
 import ProductFiltersComponent from './ProductFilters';
@@ -27,93 +26,64 @@ export default function ProductArchive({
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const supabase = createClient();
   const ITEMS_PER_PAGE = 12;
 
   // Fetch categories and manufacturers
   useEffect(() => {
     const fetchMetadata = async () => {
       try {
-        const [categoriesResult, manufacturersResult] = await Promise.all([
-          supabase.from('categories').select('*').order('name'),
-          supabase.from('manufacturers').select('*').order('name')
+        const [categoriesResponse, manufacturersResponse] = await Promise.all([
+          fetch('/api/categories'),
+          fetch('/api/manufacturers')
         ]);
 
-        if (categoriesResult.data) setCategories(categoriesResult.data);
-        if (manufacturersResult.data) setManufacturers(manufacturersResult.data);
+        if (categoriesResponse.ok) {
+          const categoriesData = await categoriesResponse.json();
+          setCategories(categoriesData.categories || []);
+        }
+        if (manufacturersResponse.ok) {
+          const manufacturersData = await manufacturersResponse.json();
+          setManufacturers(manufacturersData.manufacturers || []);
+        }
       } catch (error) {
         console.error('Error fetching metadata:', error);
       }
     };
 
     fetchMetadata();
-  }, [supabase]);
+  }, []);
 
   // Fetch products
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
       try {
-        // Build the query with proper filters
-        let query = supabase
-          .from('products')
-          .select('*', { count: 'exact' })
-          .eq('is_active', true)
-          .order('created_at', { ascending: false });
+        // Build query parameters
+        const params = new URLSearchParams();
+        
+        if (filters.search) params.append('search', filters.search);
+        if (filters.category_id) params.append('category_id', filters.category_id);
+        if (filters.manufacturer_id) params.append('manufacturer_id', filters.manufacturer_id);
+        if (filters.min_price) params.append('min_price', filters.min_price.toString());
+        if (filters.max_price) params.append('max_price', filters.max_price.toString());
+        if (filters.in_stock) params.append('in_stock', 'true');
+        if (filters.sort_by) params.append('sort_by', filters.sort_by);
+        if (filters.sort_order) params.append('sort_order', filters.sort_order);
+        
+        params.append('page', currentPage.toString());
+        params.append('limit', ITEMS_PER_PAGE.toString());
 
-        // Apply status filter - show both published and draft products for now
-        // You can change this to only show published products when ready
-
-        // Apply search filter
-        if (filters.search) {
-          query = query.ilike('name', `%${filters.search}%`);
+        const response = await fetch(`/api/products/public?${params}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
         }
 
-        // Apply category filter
-        if (filters.category_id) {
-          query = query.eq('category_id', filters.category_id);
-        }
+        const data = await response.json();
+        console.log('Products:', data.products, 'Count:', data.total);
 
-        // Apply manufacturer filter
-        if (filters.manufacturer_id) {
-          query = query.eq('manufacturer_id', filters.manufacturer_id);
-        }
-
-        // Apply price filters
-        if (filters.min_price) {
-          query = query.gte('price_regular', filters.min_price);
-        }
-        if (filters.max_price) {
-          query = query.lte('price_regular', filters.max_price);
-        }
-
-        // Apply stock filter
-        if (filters.in_stock) {
-          query = query.gt('stock', 0);
-        }
-
-        // Apply sorting
-        if (filters.sort_by) {
-          query = query.order(filters.sort_by, { 
-            ascending: filters.sort_order === 'asc' 
-          });
-        }
-
-        // Apply pagination
-        const from = (currentPage - 1) * ITEMS_PER_PAGE;
-        const to = from + ITEMS_PER_PAGE - 1;
-        query = query.range(from, to);
-
-        const { data, error, count } = await query;
-        console.log('Products:', data, 'Error:', error, 'Count:', count);
-
-        if (error) {
-          console.error('Error fetching products:', error);
-          return;
-        }
-
-        setProducts(data || []);
-        setTotalCount(count || 0);
+        setProducts(data.products || []);
+        setTotalCount(data.total || 0);
       } catch (error) {
         console.error('Error fetching products:', error);
       } finally {
@@ -122,7 +92,7 @@ export default function ProductArchive({
     };
 
     fetchProducts();
-  }, [filters, currentPage, supabase]);
+  }, [filters, currentPage]);
 
   const handleFiltersChange = (newFilters: ProductFilters) => {
     setFilters(newFilters);
