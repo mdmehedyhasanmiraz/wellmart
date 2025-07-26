@@ -54,7 +54,7 @@ function CartPanelContent({ setIsCartOpen }: { setIsCartOpen: (open: boolean) =>
     return 0;
   }
   function getProductTotal(item: CartItem | GuestCartItem) {
-    return item.quantity * getProductPrice(item);
+    return item.quantity * (getProductPrice(item) as number);
   }
 
   if (loading) {
@@ -81,7 +81,7 @@ function CartPanelContent({ setIsCartOpen }: { setIsCartOpen: (open: boolean) =>
             </div>
             <div className="flex-1 min-w-0 ml-4">
               <h3 className="text-base font-medium text-gray-900 truncate">{getProductName(item)}</h3>
-              <p className="text-sm text-gray-500 mb-1">Price: ৳{getProductPrice(item).toFixed(2)}</p>
+              <p className="text-sm text-gray-500 mb-1">Price: ৳{(getProductPrice(item) as number).toFixed(2)}</p>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => updateCartItem(getItemId(item), item.quantity - 1)}
@@ -288,6 +288,7 @@ export default function Header() {
     { name: 'Categories', href: '/categories' },
     { name: 'Home', href: '/' },
     { name: 'Shop', href: '/shop' },
+    { name: 'Flash Sale', href: '/flash-sale', special: true },
     { name: 'Deals', href: '/shop' },
     { name: 'About', href: '/about' },
     { name: 'Contact', href: '/contact' },
@@ -498,7 +499,13 @@ export default function Header() {
                 <li key={item.name}>
                   <Link
                     href={item.href}
-                    className={`inline-block px-4 py-3 text-sm font-medium rounded-t-md transition-colors duration-200 ${isActive ? 'bg-lime-50 text-lime-700 border-b-2 border-lime-600' : 'text-gray-700 hover:bg-gray-50 hover:text-lime-700'}`}
+                    className={`inline-block px-4 py-3 text-sm font-medium rounded-t-md transition-colors duration-200 ${
+                      item.special 
+                        ? 'bg-red-600 text-white hover:bg-red-700 border-b-2 border-red-600' 
+                        : isActive 
+                          ? 'bg-lime-50 text-lime-700 border-b-2 border-lime-600' 
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-lime-700'
+                    }`}
                   >
                     {item.name}
                   </Link>
@@ -602,7 +609,11 @@ export default function Header() {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                  className={`block px-3 py-2 text-base font-medium rounded-md transition-colors ${
+                    item.special 
+                      ? 'bg-red-600 text-white hover:bg-red-700' 
+                      : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.name}

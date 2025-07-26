@@ -208,11 +208,11 @@ export class CartService {
   }
 
   // Merge guest cart with user cart (simplified version)
-  async mergeGuestCart(userId: string, guestCart: GuestCartItem[]): Promise<void> {
-    // This method is now handled in the CartContext
-    // The context will call addToCart for each item individually
-    console.log('mergeGuestCart called - handled by context');
-  }
+  // async mergeGuestCart(userId: string, guestCart: GuestCartItem[]): Promise<void> {
+  //   // This method is now handled in the CartContext
+  //   // The context will call addToCart for each item individually
+  //   console.log('mergeGuestCart called - handled by context');
+  // }
 
   // Validate cart items (check stock availability)
   async validateCart(userId: string): Promise<{ valid: boolean; errors: string[] }> {

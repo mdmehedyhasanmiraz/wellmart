@@ -33,7 +33,7 @@ function getProductPrice(item: CartItem | GuestCartItem) {
   return 0;
 }
 function getProductTotal(item: CartItem | GuestCartItem) {
-  return item.quantity * getProductPrice(item);
+  return item.quantity * (getProductPrice(item) as number);
 }
 
 export default function CartPage() {
@@ -88,7 +88,7 @@ export default function CartPage() {
               </div>
               <div className="flex-1 min-w-0 ml-4">
                     <h3 className="text-lg font-medium text-gray-900 truncate">{getProductName(item)}</h3>
-                    <p className="text-sm text-gray-500 mb-2">Price: ৳{getProductPrice(item).toFixed(2)}</p>
+                    <p className="text-sm text-gray-500 mb-2">Price: ৳{(getProductPrice(item) as number).toFixed(2)}</p>
                 <div className="flex items-center space-x-2">
                   <button
                         onClick={() => updateCartItem(getItemId(item), item.quantity - 1)}

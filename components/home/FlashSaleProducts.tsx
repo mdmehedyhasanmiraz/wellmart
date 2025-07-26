@@ -106,14 +106,24 @@ export default function FlashSaleProducts() {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Flash Sale</h2>
-              <p className="text-gray-600">Limited time offers - Don't miss out!</p>
+              <p className="text-gray-600">Limited time offers - Don&apos;t miss out!</p>
             </div>
           </div>
           
-          {/* Timer placeholder - you can add real countdown later */}
-          <div className="hidden md:flex items-center gap-2 text-red-600">
-            <Clock className="w-5 h-5" />
-            <span className="font-semibold">Ends Soon</span>
+          <div className="flex items-center gap-4">
+            {/* Timer placeholder - you can add real countdown later */}
+            <div className="hidden md:flex items-center gap-2 text-red-600">
+              <Clock className="w-5 h-5" />
+              <span className="font-semibold">Ends Soon</span>
+            </div>
+            
+            {/* View All Link */}
+            <Link 
+              href="/flash-sale"
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors text-sm"
+            >
+              View All
+            </Link>
           </div>
         </div>
 

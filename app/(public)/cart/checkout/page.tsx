@@ -395,7 +395,7 @@ export default function CheckoutPage() {
                       <div className="text-xs text-gray-500">Qty: {item.quantity}</div>
                     </div>
                     <div className="font-semibold text-lime-700 text-sm min-w-[50px] text-right">
-                      ৳{(getProductPrice(item.product) * item.quantity).toFixed(2)}
+                      ৳{(getProductPrice(item.product) as number * item.quantity).toFixed(2)}
                     </div>
                   </div>
                 ))
@@ -715,7 +715,7 @@ export default function CheckoutPage() {
                         <div className="text-sm text-gray-500">Qty: {item.quantity}</div>
                       </div>
                       <div className="font-semibold text-lime-700 text-base min-w-[60px] text-right">
-                        ৳{(getProductPrice(item.product) * item.quantity).toFixed(2)}
+                        ৳{(getProductPrice(item.product) as number * item.quantity).toFixed(2)}
                       </div>
                     </div>
                   ))
