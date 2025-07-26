@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     }
 
     // Check if user is admin/manager
-    const { data: dbUser } = await supabaseAdmin
+    const { data: dbUser } = await supabaseAdmin!
       .from('users')
       .select('role')
       .eq('id', user.id)
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
     // Build the query
-    let query = supabaseAdmin
+    let query = supabaseAdmin!
       .from('products')
       .select(`
         *,

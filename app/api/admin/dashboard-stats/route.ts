@@ -14,7 +14,7 @@ export async function GET() {
     }
 
     // Check if user is admin/manager
-    const { data: dbUser } = await supabaseAdmin
+    const { data: dbUser } = await supabaseAdmin!
       .from('users')
       .select('role')
       .eq('id', user.id)
@@ -27,7 +27,7 @@ export async function GET() {
     // Use optimized function if available, otherwise fall back to individual queries
     try {
       // Try to use the optimized function first
-      const { data: statsData, error: statsError } = await supabaseAdmin
+      const { data: statsData, error: statsError } = await supabaseAdmin!
         .rpc('get_dashboard_stats');
 
       if (statsError) {
@@ -35,11 +35,11 @@ export async function GET() {
       }
 
       // Get low stock products
-      const { data: lowStockData, error: lowStockError } = await supabaseAdmin
+      const { data: lowStockData } = await supabaseAdmin!
         .rpc('get_low_stock_products', { limit_count: 10 });
 
       // Get recent notifications
-      const { data: notificationsData, error: notificationsError } = await supabaseAdmin
+      const { data: notificationsData } = await supabaseAdmin!
         .rpc('get_recent_notifications', { limit_count: 5 });
 
       return NextResponse.json({
@@ -58,7 +58,7 @@ export async function GET() {
 
     } catch (functionError) {
       // Fall back to individual optimized queries
-      console.log('Using fallback queries:', functionError.message);
+      console.log('Using fallback queries:', functionError);
       
       // Use Promise.all for parallel execution
       const [
@@ -69,12 +69,12 @@ export async function GET() {
         salesResult,
         lowStockResult
       ] = await Promise.all([
-        supabaseAdmin.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true),
-        supabaseAdmin.from('users').select('*', { count: 'exact', head: true }),
-        supabaseAdmin.from('user_orders').select('*', { count: 'exact', head: true }),
-        supabaseAdmin.from('reviews').select('*', { count: 'exact', head: true }),
-        supabaseAdmin.from('user_orders').select('total').eq('status', 'delivered'),
-        supabaseAdmin.from('products').select('id, name, stock').lt('stock', 6).eq('is_active', true).order('stock').limit(10)
+        supabaseAdmin!.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true),
+        supabaseAdmin!.from('users').select('*', { count: 'exact', head: true }),
+        supabaseAdmin!.from('user_orders').select('*', { count: 'exact', head: true }),
+        supabaseAdmin!.from('reviews').select('*', { count: 'exact', head: true }),
+        supabaseAdmin!.from('user_orders').select('total').eq('status', 'delivered'),
+        supabaseAdmin!.from('products').select('id, name, stock').lt('stock', 6).eq('is_active', true).order('stock').limit(10)
       ]);
 
       // Calculate total sales
@@ -82,8 +82,8 @@ export async function GET() {
 
       // Get recent notifications
       const [recentOrders, recentUsers] = await Promise.all([
-        supabaseAdmin.from('user_orders').select('created_at').order('created_at', { ascending: false }).limit(1),
-        supabaseAdmin.from('users').select('created_at').order('created_at', { ascending: false }).limit(1)
+        supabaseAdmin!.from('user_orders').select('created_at').order('created_at', { ascending: false }).limit(1),
+        supabaseAdmin!.from('users').select('created_at').order('created_at', { ascending: false }).limit(1)
       ]);
 
       const notifications = [];
