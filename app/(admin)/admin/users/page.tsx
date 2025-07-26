@@ -36,7 +36,6 @@ export default function UsersPage() {
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
   const [showFilters, setShowFilters] = useState(false);
-  const supabase = createClient();
 
   useEffect(() => {
     fetchUsers();
