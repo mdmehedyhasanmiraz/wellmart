@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, Zap, ShoppingCart, Star, Truck, Tag } from 'lucide-react';
+import { Zap, ShoppingCart, Truck, Tag } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import type { Product } from '@/types/product';
@@ -96,6 +96,7 @@ export default function FlashSalePage() {
       toast.success('Added to cart!');
     } catch (error) {
       toast.error('Failed to add to cart');
+      console.error('Failed to add to cart', error);
     }
   };
 
@@ -122,7 +123,7 @@ export default function FlashSalePage() {
               <Zap className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-300" />
             </div>
             <p className="text-xl sm:text-2xl mb-8 text-yellow-100">
-              Limited Time Offers - Don't Miss Out!
+              Limited Time Offers - Don&apos;t Miss Out!
             </p>
             
             {/* Countdown Timer */}
@@ -277,10 +278,10 @@ export default function FlashSalePage() {
             {/* Bottom CTA */}
             <div className="text-center mt-12">
               <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Don't Miss These Amazing Deals!</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Don&apos;t Miss These Amazing Deals!</h2>
                 <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
                   These flash sale products are available for a limited time only. 
-                  Add them to your cart now before they're gone!
+                  Add them to your cart now before they&apos;re gone!
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link 
