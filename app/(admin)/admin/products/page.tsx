@@ -26,19 +26,19 @@ interface Product {
   image_urls: string[];
   description: string;
   category_id: string | null;
-  manufacturer_id: string | null;
+  company_id: string | null;
   is_active: boolean;
   flash_sale: boolean | null;
   created_at: string;
   category_name?: string;
-  manufacturer_name?: string;
+  company_name?: string;
 }
 
 interface Category {
   id: string;
   name: string;
 }
-interface Manufacturer {
+interface Company {
   id: string;
   name: string;
 }
@@ -48,20 +48,20 @@ export default function ProductsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedManufacturer, setSelectedManufacturer] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
   const [categories, setCategories] = useState<Category[]>([]);
-  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
     fetchProducts();
     fetchCategories();
-    fetchManufacturers();
-  }, [searchTerm, selectedCategory, selectedManufacturer, statusFilter, sortBy, sortOrder]);
+    fetchCompanies();
+  }, [searchTerm, selectedCategory, selectedCompany, statusFilter, sortBy, sortOrder]);
 
   const fetchProducts = async () => {
     try {
@@ -76,8 +76,8 @@ export default function ProductsPage() {
       if (selectedCategory) {
         query = query.eq('category_id', selectedCategory);
       }
-      if (selectedManufacturer) {
-        query = query.eq('manufacturer_id', selectedManufacturer);
+      if (selectedCompany) {
+        query = query.eq('company_id', selectedCompany);
       }
       if (statusFilter === 'active') {
         query = query.eq('is_active', true);
@@ -91,23 +91,32 @@ export default function ProductsPage() {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Fetch category and manufacturer names for each product
+      // Fetch category and company names for each product
       const categoryIds = Array.from(new Set((data || []).map((p: Product) => p.category_id).filter(Boolean)));
-      const manufacturerIds = Array.from(new Set((data || []).map((p: Product) => p.manufacturer_id).filter(Boolean)));
+      const companyIds = Array.from(new Set((data || []).map((p: Product) => p.company_id).filter(Boolean)));
       let categoryMap: Record<string, string> = {};
-      let manufacturerMap: Record<string, string> = {};
-      if (categoryIds.length) {
-        const { data: cats } = await supabase.from('categories').select('id, name').in('id', categoryIds);
-        categoryMap = Object.fromEntries((cats || []).map((c: Category) => [c.id, c.name]));
+      let companyMap: Record<string, string> = {};
+
+      if (categoryIds.length > 0) {
+        const { data: categories } = await supabase
+          .from('categories')
+          .select('id, name')
+          .in('id', categoryIds);
+        categoryMap = (categories || []).reduce((acc, cat) => ({ ...acc, [cat.id]: cat.name }), {});
       }
-      if (manufacturerIds.length) {
-        const { data: mans } = await supabase.from('manufacturers').select('id, name').in('id', manufacturerIds);
-        manufacturerMap = Object.fromEntries((mans || []).map((m: Manufacturer) => [m.id, m.name]));
+
+      if (companyIds.length > 0) {
+        const { data: companies } = await supabase
+          .from('companies')
+          .select('id, name')
+          .in('id', companyIds);
+        companyMap = (companies || []).reduce((acc, comp) => ({ ...acc, [comp.id]: comp.name }), {});
       }
+
       const productsWithNames = (data || []).map((p: Product) => ({
         ...p,
         category_name: p.category_id ? categoryMap[p.category_id] : undefined,
-        manufacturer_name: p.manufacturer_id ? manufacturerMap[p.manufacturer_id] : undefined,
+        company_name: p.company_id ? companyMap[p.company_id] : undefined,
       }));
       setProducts(productsWithNames);
     } catch (error) {
@@ -123,9 +132,9 @@ export default function ProductsPage() {
     setCategories(data || []);
   };
 
-  const fetchManufacturers = async () => {
-    const { data } = await supabase.from('manufacturers').select('id, name');
-    setManufacturers(data || []);
+  const fetchCompanies = async () => {
+    const { data } = await supabase.from('companies').select('id, name');
+    setCompanies(data || []);
   };
 
   const handleDeleteProduct = async (productId: string) => {
@@ -265,14 +274,14 @@ export default function ProductsPage() {
             </select>
 
             <select
-              value={selectedManufacturer}
-              onChange={(e) => setSelectedManufacturer(e.target.value)}
+              value={selectedCompany}
+              onChange={(e) => setSelectedCompany(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-transparent"
             >
-              <option value="">All Manufacturers</option>
-              {manufacturers.map((manufacturer) => (
-                <option key={manufacturer.id} value={manufacturer.id}>
-                  {manufacturer.name}
+              <option value="">All Companies</option>
+              {companies.map((company) => (
+                <option key={company.id} value={company.id}>
+                  {company.name}
                 </option>
               ))}
             </select>
@@ -342,7 +351,7 @@ export default function ProductsPage() {
                             {product.name}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {product.manufacturer_name}
+                            {product.company_name}
                           </div>
                         </div>
                       </div>
@@ -430,7 +439,7 @@ export default function ProductsPage() {
             <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
             <p className="text-gray-500 mb-4">
-              {searchTerm || selectedCategory || selectedManufacturer || statusFilter !== 'all'
+              {searchTerm || selectedCategory || selectedCompany || statusFilter !== 'all'
                 ? 'Try adjusting your filters'
                 : 'Get started by adding your first product'
               }

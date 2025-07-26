@@ -212,12 +212,12 @@ export default function CheckoutPage() {
             stock: product?.stock || 0,
             description: product?.description || '',
             category_id: product?.category_id || '',
-            manufacturer_id: product?.manufacturer_id || '',
+            company_id: product?.company_id || '',
             is_active: product?.is_active || false,
             created_at: product?.created_at || '',
             updated_at: product?.updated_at || '',
             category: product?.category || null,
-            manufacturer: product?.manufacturer || null,
+            company: product?.company || null,
           }
         };
       });

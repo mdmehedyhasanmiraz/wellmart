@@ -69,38 +69,38 @@ export default function RootLayout({
     <html lang="en" className="h-full">
       <body className={`${inter.className} h-full flex flex-col`}>
         <AuthProvider>
-          <CartProvider>
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: '#fff',
-                  color: '#000',
+        <CartProvider>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#fff',
+                color: '#000',
+              },
+              success: {
+                duration: 3000,
+                iconTheme: {
+                  primary: '#10B981',
+                  secondary: '#fff',
                 },
-                success: {
-                  duration: 3000,
-                  iconTheme: {
-                    primary: '#10B981',
-                    secondary: '#fff',
-                  },
+              },
+              error: {
+                duration: 5000,
+                iconTheme: {
+                  primary: '#EF4444',
+                  secondary: '#fff',
                 },
-                error: {
-                  duration: 5000,
-                  iconTheme: {
-                    primary: '#EF4444',
-                    secondary: '#fff',
-                  },
-                },
-              }}
-            />
-            
-            <main className="flex-1 text-black bg-gray-50">
-              {children}
-            </main>
+              },
+            }}
+          />
+          
+          <main className="flex-1 text-black bg-gray-50">
+            {children}
+          </main>
             
             <LoginPopup />
-          </CartProvider>
+        </CartProvider>
         </AuthProvider>
       </body>
     </html>

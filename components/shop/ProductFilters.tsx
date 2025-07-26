@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { ProductFilters, Category, Manufacturer } from '@/types/product';
+import type { ProductFilters, Category, Company } from '@/types/product';
 import { Search, Filter, X } from 'lucide-react';
 
 interface ProductFiltersProps {
   filters: ProductFilters;
   onFiltersChange: (filters: ProductFilters) => void;
   categories: Category[];
-  manufacturers: Manufacturer[];
+  companies: Company[];
   isLoading?: boolean;
 }
 
@@ -16,7 +16,7 @@ export default function ProductFilters({
   filters,
   onFiltersChange,
   categories,
-  manufacturers,
+  companies,
   isLoading = false
 }: ProductFiltersProps) {
   const [localFilters, setLocalFilters] = useState<ProductFilters>(filters);
@@ -107,21 +107,21 @@ export default function ProductFilters({
             </select>
           </div>
 
-          {/* Manufacturer Filter */}
+          {/* Company Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Manufacturer
+              Company
             </label>
             <select
-              value={localFilters.manufacturer_id || ''}
-              onChange={(e) => handleFilterChange('manufacturer_id', e.target.value || undefined)}
+              value={localFilters.company_id || ''}
+              onChange={(e) => handleFilterChange('company_id', e.target.value || undefined)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={isLoading}
             >
-              <option value="">All Manufacturers</option>
-              {manufacturers.map((manufacturer) => (
-                <option key={manufacturer.id} value={manufacturer.id}>
-                  {manufacturer.name}
+              <option value="">All Companies</option>
+              {companies.map((company) => (
+                <option key={company.id} value={company.id}>
+                  {company.name}
                 </option>
               ))}
             </select>

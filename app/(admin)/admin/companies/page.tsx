@@ -7,7 +7,8 @@ import {
   Search, 
   Edit, 
   Trash2, 
-  Building2
+  Building2,
+  Package
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
@@ -121,13 +122,14 @@ export default function CompaniesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {companies.map((company) => (
           <div key={company.id} className="bg-white rounded-lg shadow overflow-hidden">
-            {/* Manufacturer Logo */}
-            <div className="h-32 bg-gray-200 flex items-center justify-center">
-              {/* Removed logo_url as per new interface */}
-              <Building2 className="w-8 h-8 text-gray-400" />
+            {/* Company Logo */}
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                <Package className="w-6 h-6 text-gray-400" />
+              </div>
             </div>
 
-            {/* Manufacturer Content */}
+            {/* Company Content */}
             <div className="p-4">
               <div className="flex items-start justify-between mb-2">
                 <h3 className="text-lg font-medium text-gray-900">

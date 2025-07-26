@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import type { Product, ProductFilters, Category, Manufacturer } from '@/types/product';
+import type { Product, ProductFilters, Category, Company } from '@/types/product';
 import ProductCard from './ProductCard';
 import ProductFiltersComponent from './ProductFilters';
 import { Grid, List, Loader2, Package } from 'lucide-react';
@@ -20,7 +20,7 @@ export default function ProductArchive({
 }: ProductArchiveProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [filters, setFilters] = useState<ProductFilters>(initialFilters);
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -30,17 +30,17 @@ export default function ProductArchive({
   const supabase = createClient();
   const ITEMS_PER_PAGE = 12;
 
-  // Fetch categories and manufacturers
+  // Fetch categories and companies
   useEffect(() => {
     const fetchMetadata = async () => {
       try {
-        const [categoriesResult, manufacturersResult] = await Promise.all([
+        const [categoriesResult, companiesResult] = await Promise.all([
           supabase.from('categories').select('*').order('name'),
-          supabase.from('manufacturers').select('*').order('name')
+          supabase.from('companies').select('*').order('name')
         ]);
 
         if (categoriesResult.data) setCategories(categoriesResult.data);
-        if (manufacturersResult.data) setManufacturers(manufacturersResult.data);
+        if (companiesResult.data) setCompanies(companiesResult.data);
       } catch (error) {
         console.error('Error fetching metadata:', error);
       }
@@ -74,9 +74,9 @@ export default function ProductArchive({
           query = query.eq('category_id', filters.category_id);
         }
 
-        // Apply manufacturer filter
-        if (filters.manufacturer_id) {
-          query = query.eq('manufacturer_id', filters.manufacturer_id);
+        // Apply company filter
+        if (filters.company_id) {
+          query = query.eq('company_id', filters.company_id);
         }
 
         // Apply price filters
@@ -155,7 +155,7 @@ export default function ProductArchive({
                 filters={filters}
                 onFiltersChange={handleFiltersChange}
                 categories={categories}
-                manufacturers={manufacturers}
+                companies={companies}
                 isLoading={isLoading}
               />
             </div>
