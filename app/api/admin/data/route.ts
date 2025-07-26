@@ -646,8 +646,6 @@ async function getCoupons(searchParams: URLSearchParams) {
 }
 
 async function getAnalytics(searchParams: URLSearchParams) {
-  const timeRange = searchParams.get('timeRange') || '30';
-
   try {
     // Fetch basic stats from correct tables
     const [
