@@ -9,7 +9,7 @@ import {
   Trash2, 
   Building2
 } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
+
 import { toast } from 'react-hot-toast';
 
 interface Company {
@@ -24,7 +24,6 @@ export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const supabase = createClient();
 
   useEffect(() => {
     fetchCompanies();
@@ -32,20 +31,21 @@ export default function CompaniesPage() {
 
   const fetchCompanies = async () => {
     try {
-      let query = supabase
-        .from('companies')
-        .select('*')
-        .order('name');
+      setIsLoading(true);
+      
+      const params = new URLSearchParams({
+        search: searchTerm,
+        page: '1',
+        limit: '50'
+      });
 
-      if (searchTerm) {
-        query = query.ilike('name', `%${searchTerm}%`);
+      const response = await fetch(`/api/admin/companies?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch companies');
       }
 
-      const { data, error } = await query;
-
-      if (error) throw error;
-      
-      setCompanies(data || []);
+      const data = await response.json();
+      setCompanies(data.companies);
     } catch (error) {
       console.error('Error fetching companies:', error);
       toast.error('Failed to load companies');
@@ -58,12 +58,13 @@ export default function CompaniesPage() {
     if (!confirm('Are you sure you want to delete this company? Products from this company will be unassigned.')) return;
 
     try {
-      const { error } = await supabase
-        .from('companies')
-        .delete()
-        .eq('id', companyId);
+      const response = await fetch(`/api/admin/companies/${companyId}`, {
+        method: 'DELETE'
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to delete company');
+      }
 
       toast.success('Company deleted successfully');
       fetchCompanies();

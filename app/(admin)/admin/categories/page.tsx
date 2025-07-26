@@ -9,7 +9,7 @@ import {
   Trash2, 
   Package
 } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
+
 import { toast } from 'react-hot-toast';
 
 interface Category {
@@ -26,7 +26,6 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const supabase = createClient();
 
   useEffect(() => {
     fetchCategories();
@@ -34,29 +33,21 @@ export default function CategoriesPage() {
 
   const fetchCategories = async () => {
     try {
-      let query = supabase
-        .from('categories')
-        .select(`
-          *,
-          product_count:products(count)
-        `)
-        .order('name');
+      setIsLoading(true);
+      
+      const params = new URLSearchParams({
+        search: searchTerm,
+        page: '1',
+        limit: '50'
+      });
 
-      if (searchTerm) {
-        query = query.ilike('name', `%${searchTerm}%`);
+      const response = await fetch(`/api/admin/categories?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch categories');
       }
 
-      const { data, error } = await query;
-
-      if (error) throw error;
-      
-      // Transform the data to handle the count properly
-      const transformedData = data?.map(category => ({
-        ...category,
-        product_count: category.product_count?.[0]?.count || 0
-      })) || [];
-      
-      setCategories(transformedData);
+      const data = await response.json();
+      setCategories(data.categories);
     } catch (error) {
       console.error('Error fetching categories:', error);
       toast.error('Failed to load categories');
@@ -69,12 +60,13 @@ export default function CategoriesPage() {
     if (!confirm('Are you sure you want to delete this category? Products in this category will be uncategorized.')) return;
 
     try {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', categoryId);
+      const response = await fetch(`/api/admin/categories/${categoryId}`, {
+        method: 'DELETE'
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to delete category');
+      }
 
       toast.success('Category deleted successfully');
       fetchCategories();
@@ -86,12 +78,17 @@ export default function CategoriesPage() {
 
   const handleToggleStatus = async (categoryId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from('categories')
-        .update({ is_active: !currentStatus })
-        .eq('id', categoryId);
+      const response = await fetch(`/api/admin/categories/${categoryId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ is_active: !currentStatus })
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to update category status');
+      }
 
       toast.success(`Category ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
       fetchCategories();

@@ -13,7 +13,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
+
 import { toast } from 'react-hot-toast';
 
 interface Product {
@@ -55,61 +55,37 @@ export default function ProductsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
   const [showFilters, setShowFilters] = useState(false);
-  const supabase = createClient();
 
   useEffect(() => {
     fetchProducts();
-    fetchCategories();
-    fetchManufacturers();
   }, [searchTerm, selectedCategory, selectedManufacturer, statusFilter, sortBy, sortOrder]);
+
+  useEffect(() => {
+    fetchFilters();
+  }, []);
 
   const fetchProducts = async () => {
     try {
-      let query = supabase
-        .from('products')
-        .select('*');
+      setIsLoading(true);
+      
+      const params = new URLSearchParams({
+        search: searchTerm,
+        category: selectedCategory,
+        manufacturer: selectedManufacturer,
+        status: statusFilter,
+        sortBy,
+        sortOrder,
+        page: '1',
+        limit: '50'
+      });
 
-      // Apply filters
-      if (searchTerm) {
-        query = query.ilike('name', `%${searchTerm}%`);
-      }
-      if (selectedCategory) {
-        query = query.eq('category_id', selectedCategory);
-      }
-      if (selectedManufacturer) {
-        query = query.eq('manufacturer_id', selectedManufacturer);
-      }
-      if (statusFilter === 'active') {
-        query = query.eq('is_active', true);
-      } else if (statusFilter === 'inactive') {
-        query = query.eq('is_active', false);
+      const response = await fetch(`/api/admin/products?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch products');
       }
 
-      // Apply sorting
-      query = query.order(sortBy, { ascending: sortOrder === 'asc' });
-
-      const { data, error } = await query;
-      if (error) throw error;
-
-      // Fetch category and manufacturer names for each product
-      const categoryIds = Array.from(new Set((data || []).map((p: Product) => p.category_id).filter(Boolean)));
-      const manufacturerIds = Array.from(new Set((data || []).map((p: Product) => p.manufacturer_id).filter(Boolean)));
-      let categoryMap: Record<string, string> = {};
-      let manufacturerMap: Record<string, string> = {};
-      if (categoryIds.length) {
-        const { data: cats } = await supabase.from('categories').select('id, name').in('id', categoryIds);
-        categoryMap = Object.fromEntries((cats || []).map((c: Category) => [c.id, c.name]));
-      }
-      if (manufacturerIds.length) {
-        const { data: mans } = await supabase.from('manufacturers').select('id, name').in('id', manufacturerIds);
-        manufacturerMap = Object.fromEntries((mans || []).map((m: Manufacturer) => [m.id, m.name]));
-      }
-      const productsWithNames = (data || []).map((p: Product) => ({
-        ...p,
-        category_name: p.category_id ? categoryMap[p.category_id] : undefined,
-        manufacturer_name: p.manufacturer_id ? manufacturerMap[p.manufacturer_id] : undefined,
-      }));
-      setProducts(productsWithNames);
+      const data = await response.json();
+      setProducts(data.products);
     } catch (error) {
       console.error('Error fetching products:', error);
       toast.error('Failed to load products');
@@ -118,26 +94,33 @@ export default function ProductsPage() {
     }
   };
 
-  const fetchCategories = async () => {
-    const { data } = await supabase.from('categories').select('id, name');
-    setCategories(data || []);
-  };
+  const fetchFilters = async () => {
+    try {
+      const response = await fetch('/api/admin/filters');
+      if (!response.ok) {
+        throw new Error('Failed to fetch filters');
+      }
 
-  const fetchManufacturers = async () => {
-    const { data } = await supabase.from('manufacturers').select('id, name');
-    setManufacturers(data || []);
+      const data = await response.json();
+      setCategories(data.categories);
+      setManufacturers(data.manufacturers);
+    } catch (error) {
+      console.error('Error fetching filters:', error);
+      toast.error('Failed to load filters');
+    }
   };
 
   const handleDeleteProduct = async (productId: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', productId);
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: 'DELETE'
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to delete product');
+      }
 
       toast.success('Product deleted successfully');
       fetchProducts();
@@ -149,12 +132,17 @@ export default function ProductsPage() {
 
   const handleToggleStatus = async (productId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from('products')
-        .update({ is_active: !currentStatus })
-        .eq('id', productId);
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ is_active: !currentStatus })
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to update product status');
+      }
 
       toast.success(`Product ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
       fetchProducts();
