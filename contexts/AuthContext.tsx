@@ -1,0 +1,115 @@
+'use client';
+
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createClient } from '@/utils/supabase/client';
+import { toast } from 'react-hot-toast';
+
+interface User {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  role: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  isLoginPopupOpen: boolean;
+  openLoginPopup: () => void;
+  closeLoginPopup: () => void;
+  checkUser: () => Promise<void>;
+  signOut: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isLoginPopupOpen, setIsLoginPopupOpen] = useState(false);
+  const supabase = createClient();
+
+  const checkUser = async () => {
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      
+      if (authUser) {
+        // Fetch user details from the database
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const { user: userData } = await response.json();
+          setUser(userData);
+        } else {
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Error checking user:', error);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      toast.success('Signed out successfully');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast.error('Error signing out');
+    }
+  };
+
+  const openLoginPopup = () => {
+    setIsLoginPopupOpen(true);
+  };
+
+  const closeLoginPopup = () => {
+    setIsLoginPopupOpen(false);
+  };
+
+  useEffect(() => {
+    checkUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        await checkUser();
+        closeLoginPopup();
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const value = {
+    user,
+    loading,
+    isLoginPopupOpen,
+    openLoginPopup,
+    closeLoginPopup,
+    checkUser,
+    signOut,
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+} 

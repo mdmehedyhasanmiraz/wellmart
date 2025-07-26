@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 import { CartSummary, GuestCart, CartContextType, GuestCartItem } from '@/types/cart';
 import { CartService } from '@/lib/services/cart';
 import { getItemTotal } from '@/utils/priceUtils';
+import { useAuth } from './AuthContext';
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -18,13 +19,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     item_count: 0
   });
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const { user } = useAuth();
   const supabase = createClient();
   const cartService = new CartService();
 
-  // Check user authentication
+  // Load guest cart on mount
   useEffect(() => {
-    checkUser();
     loadGuestCart();
   }, []);
 
@@ -39,25 +39,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } else {
       setCart(null);
     }
+    setLoading(false);
   }, [user]);
-
-  const checkUser = async () => {
-    try {
-      const response = await fetch('/api/auth/me');
-      const result = await response.json();
-      
-      if (result.success) {
-        setUser(result.user);
-      } else {
-        setUser(null);
-      }
-    } catch (error) {
-      console.error('Error checking user:', error);
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadUserCart = async () => {
     if (!user) return;

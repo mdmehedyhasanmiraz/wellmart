@@ -3,6 +3,8 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import { CartProvider } from '@/contexts/CartContext';
+import { AuthProvider } from '@/contexts/AuthContext';
+import LoginPopup from '@/components/AuthLoginPopup';
 import ogImage from './opengraph-image.webp';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -66,36 +68,40 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className={`${inter.className} h-full flex flex-col`}>
-        <CartProvider>
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#fff',
-                color: '#000',
-              },
-              success: {
-                duration: 3000,
-                iconTheme: {
-                  primary: '#10B981',
-                  secondary: '#fff',
+        <AuthProvider>
+          <CartProvider>
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: '#fff',
+                  color: '#000',
                 },
-              },
-              error: {
-                duration: 5000,
-                iconTheme: {
-                  primary: '#EF4444',
-                  secondary: '#fff',
+                success: {
+                  duration: 3000,
+                  iconTheme: {
+                    primary: '#10B981',
+                    secondary: '#fff',
+                  },
                 },
-              },
-            }}
-          />
-          
-          <main className="flex-1 text-black bg-gray-50">
-            {children}
-          </main>
-        </CartProvider>
+                error: {
+                  duration: 5000,
+                  iconTheme: {
+                    primary: '#EF4444',
+                    secondary: '#fff',
+                  },
+                },
+              }}
+            />
+            
+            <main className="flex-1 text-black bg-gray-50">
+              {children}
+            </main>
+            
+            <LoginPopup />
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

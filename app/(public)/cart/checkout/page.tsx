@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { ShoppingCart } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -63,19 +64,12 @@ function getProductPrice(product: ProductType) {
 
 export default function CheckoutPage() {
   const { cart, guestCart } = useCart();
+  const { user, openLoginPopup } = useAuth();
   const isGuest = !cart;
   const items = isGuest ? guestCart.items : cart?.items || [];
   const total = isGuest ? guestCart.total_price : cart?.total_price || 0;
   const router = useRouter();
 
-  interface User {
-    id: string;
-    name: string;
-    phone: string;
-    email: string;
-  }
-
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [payment, setPayment] = useState('bkash');
   const [billing, setBilling] = useState({
@@ -127,13 +121,13 @@ export default function CheckoutPage() {
         const result = await response.json();
         
         if (result.success) {
-          setUser(result.user);
+          // setUser(result.user); // This line is removed as per the new_code
         } else {
-          setUser(null);
+          // setUser(null); // This line is removed as per the new_code
         }
       } catch (error) {
         console.error('Error checking user:', error);
-        setUser(null);
+        // setUser(null); // This line is removed as per the new_code
       } finally {
         setLoading(false);
       }
@@ -755,7 +749,7 @@ export default function CheckoutPage() {
                       <p className="text-center text-sm">Please log in to proceed with bKash payment.</p>
                       <button
                         type="button"
-                        onClick={() => router.push('/login?next=' + encodeURIComponent(window.location.pathname))}
+                        onClick={openLoginPopup}
                         className="mt-3 w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold rounded-lg py-2 transition-colors text-sm"
                       >
                         Log In

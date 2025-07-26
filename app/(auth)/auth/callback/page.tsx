@@ -18,15 +18,15 @@ export default function OAuthCallback() {
         // Optionally: sync user to your DB here via API call
         // await fetch('/api/auth/sync-supabase', { method: 'POST' });
         if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-          window.location.href = 'http://localhost:3000/dashboard';
+          window.location.href = 'http://localhost:3000/';
         } else {
-          router.replace('/dashboard');
+          router.replace('/');
         }
       } else {
         if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-          window.location.href = 'http://localhost:3000/login';
+          window.location.href = 'http://localhost:3000/';
         } else {
-          router.replace('/login');
+          router.replace('/');
         }
       }
     };

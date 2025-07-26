@@ -5,11 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Search, User, ShoppingCart, Menu, ChevronDown, LogOut, Package, UserCheck } from 'lucide-react';
 import type { CartItem, GuestCartItem } from '@/types/cart';
 import type { Product, Category } from '@/types/product';
 import Image from 'next/image';
-import { supabaseAuthService } from '@/lib/services/supabaseAuth';
 import { createClient } from '@/utils/supabase/client';
 
 interface User {
@@ -126,13 +126,13 @@ function CartPanelContent({ setIsCartOpen }: { setIsCartOpen: (open: boolean) =>
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [user, setUser] = useState<User | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const router = useRouter();
   const { getCartCount } = useCart();
+  const { user, signOut, openLoginPopup } = useAuth();
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -140,7 +140,7 @@ export default function Header() {
   const [siteSettings, setSiteSettings] = useState<{ logo_url: string }>({ logo_url: '/logos/logo-wellmart.png' });
 
   useEffect(() => {
-    checkUser();
+    // checkUser(); // This function is removed as per the new auth system.
   }, []);
 
   useEffect(() => {
@@ -243,33 +243,34 @@ export default function Header() {
     };
   }, []);
 
-  const checkUser = async () => {
-    try {
-      const response = await fetch('/api/auth/me');
-      const result = await response.json();
-      if (result.success) {
-        setUser(result.user);
-      } else {
-        setUser(null);
-      }
-    } catch (error) {
-      setUser(null);
-      console.log(error);
-    }
-  };
+  // const checkUser = async () => { // This function is removed as per the new auth system.
+  //   try {
+  //     const response = await fetch('/api/auth/me');
+  //     const result = await response.json();
+  //     if (result.success) {
+  //       setUser(result.user);
+  //     } else {
+  //       setUser(null);
+  //     }
+  //   } catch (error) {
+  //     setUser(null);
+  //     console.log(error);
+  //   }
+  // };
 
-  const handleSignOut = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      await supabaseAuthService.signOutFromSupabase();
-      setUser(null);
-      router.push('/');
-      toast.success('Signed out successfully');
-    } catch (error) {
-      console.error('Logout error:', error);
-      router.push('/');
-    }
-  };
+  // const handleSignOut = async () => { // This function is removed as per the new auth system.
+  //   try {
+  //     await fetch('/api/auth/logout', { method: 'POST' });
+  //     // The supabaseAuthService.signOutFromSupabase() call is removed as per the new auth system.
+  //     // The user state will be updated by the AuthContext.
+  //     setUser(null);
+  //     router.push('/');
+  //     toast.success('Signed out successfully');
+  //   } catch (error) {
+  //     console.error('Logout error:', error);
+  //     router.push('/');
+  //   }
+  // };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -446,7 +447,7 @@ export default function Header() {
                       </Link>
                       <hr className="my-1" />
                       <button
-                        onClick={handleSignOut}
+                        onClick={signOut}
                         className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
                         <LogOut className="h-4 w-4 mr-2" />
@@ -455,10 +456,13 @@ export default function Header() {
                     </div>
                   </div>
                 ) : (
-                  <Link href="/login" className="flex items-center space-x-1 p-2 text-gray-700 hover:text-gray-900 cursor-pointer">
+                  <button
+                    onClick={openLoginPopup}
+                    className="flex items-center space-x-1 p-2 text-gray-700 hover:text-gray-900 cursor-pointer"
+                  >
                     <UserCheck className="h-6 w-6" />
                     <span className="hidden sm:block text-sm font-medium">Sign In</span>
-                  </Link>
+                  </button>
                 )}
               </div>
 
