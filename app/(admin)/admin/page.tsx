@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
 import Link from 'next/link';
 import { 
   Package, 
@@ -44,77 +43,35 @@ export default function AdminDashboard() {
     growth: 0
   });
   const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClient();
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
-    fetchDashboardStats();
-    fetchLowStock();
-    fetchNotifications();
+    fetchDashboardData();
     const interval = setInterval(() => {
-      fetchDashboardStats();
-      fetchLowStock();
-      fetchNotifications();
-    }, 30000); // 30s
+      fetchDashboardData();
+    }, 60000); // Increased to 60s to reduce load
     return () => clearInterval(interval);
   }, []);
 
-  const fetchDashboardStats = async () => {
+  const fetchDashboardData = async () => {
     try {
-      // Fetch basic stats from correct tables
-      const [productsResult, usersResult, ordersResult, reviewsResult] = await Promise.all([
-        supabase.from('products').select('*', { count: 'exact', head: true }),
-        supabase.from('users').select('*', { count: 'exact', head: true }),
-        supabase.from('user_orders').select('*', { count: 'exact', head: true }),
-        supabase.from('reviews').select('*', { count: 'exact', head: true })
-      ]);
-
-      // Calculate total sales from user_orders
-      const { data: salesData } = await supabase
-        .from('user_orders')
-        .select('total')
-        .eq('status', 'delivered');
-
-      const totalSales = salesData?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
-
-      setStats({
-        totalProducts: productsResult.count || 0,
-        totalUsers: usersResult.count || 0,
-        totalOrders: ordersResult.count || 0,
-        totalReviews: reviewsResult.count || 0,
-        sales: totalSales,
-        growth: 12.5 // Mock growth percentage
-      });
+      setIsLoading(true);
+      const response = await fetch('/api/admin/dashboard-stats');
+      const result = await response.json();
+      
+      if (result.success) {
+        setStats(result.stats);
+        setLowStockProducts(result.lowStockProducts || []);
+        setNotifications(result.notifications || []);
+      } else {
+        console.error('Error fetching dashboard data:', result.error);
+      }
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+      console.error('Error fetching dashboard data:', error);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const fetchLowStock = async () => {
-    try {
-      const { data } = await supabase.from('products').select('id, name, stock').lt('stock', 6).order('stock');
-      setLowStockProducts(data || []);
-    } catch (e) {
-      setLowStockProducts([]);
-      console.error('Error fetching low stock products:', e);
-    }
-  };
-
-  const fetchNotifications = async () => {
-    // Example: fetch new orders, new users, low stock, etc.
-    const [orders, users, lowStock] = await Promise.all([
-      supabase.from('user_orders').select('id, created_at').order('created_at', { ascending: false }).limit(1),
-      supabase.from('users').select('id, created_at').order('created_at', { ascending: false }).limit(1),
-      supabase.from('products').select('id, name, stock').lt('stock', 6).order('stock').limit(1)
-    ]);
-    const notifs: Notification[] = [];
-    if (orders.data && orders.data.length > 0) notifs.push({ type: 'order', message: 'New order received', time: orders.data[0].created_at });
-    if (users.data && users.data.length > 0) notifs.push({ type: 'user', message: 'New user registered', time: users.data[0].created_at });
-    if (lowStock.data && lowStock.data.length > 0) notifs.push({ type: 'lowstock', message: `Low stock: ${lowStock.data[0].name}`, time: new Date().toISOString() });
-    setNotifications(notifs);
   };
 
   // Add formatCurrency and formatPercentage helpers from analytics page
