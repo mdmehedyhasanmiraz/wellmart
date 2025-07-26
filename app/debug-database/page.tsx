@@ -52,6 +52,7 @@ export default function DebugDatabase() {
       testEndpoint('/api/auth/me', 'Auth Me Endpoint'),
       testEndpoint('/api/check-tables', 'Database Tables'),
       testEndpoint('/api/test-login-flow', 'Login Flow Test'),
+      testEndpoint('/api/test-complete-login', 'Complete Login Test'),
     ]);
     
     setLoading(false);
@@ -141,6 +142,12 @@ export default function DebugDatabase() {
               className="block w-full text-left bg-gray-100 hover:bg-gray-200 p-3 rounded-lg"
             >
               Test Login Flow
+            </button>
+            <button
+              onClick={() => testEndpoint('/api/test-complete-login', 'Complete Login Test')}
+              className="block w-full text-left bg-gray-100 hover:bg-gray-200 p-3 rounded-lg"
+            >
+              Test Complete Login
             </button>
           </div>
         </div>
