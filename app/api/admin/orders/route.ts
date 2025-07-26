@@ -3,6 +3,42 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 
+// Add Order type for type safety
+interface Order {
+  id: string;
+  user_id: string;
+  total: number;
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'paid';
+  payment_status?: 'pending' | 'paid' | 'failed' | 'refunded';
+  payment_method: 'bkash' | 'nagad' | 'bank';
+  payment_channel?: 'bkash' | 'nagad' | 'bank';
+  payment_transaction_id?: string;
+  payment_amount?: number;
+  payment_date?: string;
+  payment_currency?: string;
+  payment_reference?: string;
+  payment_notes?: string;
+  billing_name: string;
+  billing_phone: string;
+  billing_email?: string;
+  billing_address: string;
+  billing_city: string;
+  billing_district: string;
+  billing_country: string;
+  billing_postal?: string;
+  shipping_name: string;
+  shipping_phone: string;
+  shipping_email?: string;
+  shipping_address: string;
+  shipping_city: string;
+  shipping_district: string;
+  shipping_country: string;
+  shipping_postal?: string;
+  cart_items: unknown[];
+  notes?: string;
+  created_at: string;
+}
+
 export async function GET(request: Request) {
   try {
     // Check authentication
@@ -66,7 +102,7 @@ export async function GET(request: Request) {
     }
 
     // Transform the data to match the expected format
-    const transformedOrders = (data || []).map((order: any) => ({
+    const transformedOrders = (data || []).map((order: Order) => ({
       ...order,
       user: {
         name: order.billing_name,
