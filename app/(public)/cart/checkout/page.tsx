@@ -4,13 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { ShoppingCart } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import BkashPaymentButton from '@/components/payment/BkashPaymentButton';
 import type { CartItem, GuestCartItem } from '@/types/cart';
-import { bankDetails } from '@/lib/config/bankDetails';
-import { CartService } from '@/lib/services/cart';
-import { Product } from '@/types/product';
 import { createClient } from '@/utils/supabase/client';
 // Use require for JSON imports to avoid type errors
 import divisionsData from '@/data/bd-geo/bd-divisions.json';
@@ -21,20 +17,6 @@ import upazilasData from '@/data/bd-geo/bd-upazilas.json';
 interface Division { id: string; name: string; }
 interface District { id: string; name: string; division_id: string; }
 interface Upazila { id: string; name: string; district_id: string; }
-
-// Types for form data
-interface BillingData {
-  name: string;
-  phone: string;
-  email: string;
-  address: string;
-  city: string;
-  postal: string;
-  country: string;
-  district: string;
-  division: string;
-  upazila: string;
-}
 
 export default function CheckoutPage() {
   const { cart, guestCart } = useCart();

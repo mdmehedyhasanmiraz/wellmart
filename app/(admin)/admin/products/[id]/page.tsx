@@ -116,19 +116,29 @@ export default function EditProductPage() {
         return;
       }
 
-      // Fetch product using admin privileges via API to bypass RLS
-      const response = await fetch(`/api/admin/data?type=product&id=${productId}`);
-      const result = await response.json();
-      
-      if (!result.success) {
-        console.error('[fetchProduct] API error:', result.error);
-        toast.error(result.error || 'Failed to load product');
+      // Fetch product directly from Supabase
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+
+      if (error) {
+        console.error('[fetchProduct] Supabase error:', error);
+        toast.error('Failed to load product');
         setNotFound(true);
         setIsLoading(false);
         return;
       }
 
-      const data = result.product;
+      if (!data) {
+        console.error('[fetchProduct] No product found');
+        toast.error('Product not found');
+        setNotFound(true);
+        setIsLoading(false);
+        return;
+      }
+
       console.log('[fetchProduct] Product data loaded:', data);
 
       setFormData({
@@ -430,53 +440,22 @@ export default function EditProductPage() {
       
       console.log('[handleSubmit] Product data to update:', productData);
       
-      // Update product using optimized mutations API
-      const requestBody = {
-        action: 'update',
-        table: 'products',
-        id: productId,
-        data: productData
-      };
-      
-      console.log('[handleSubmit] Sending request to /api/admin/mutations:', requestBody);
-      
-      const response = await fetch('/api/admin/mutations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody)
-      });
+      // Update product directly using Supabase
+      const { data: updatedProduct, error: updateError } = await supabase
+        .from('products')
+        .update(productData)
+        .eq('id', productId)
+        .select()
+        .single();
 
-      console.log('[handleSubmit] Response status:', response.status);
-      console.log('[handleSubmit] Response headers:', Object.fromEntries(response.headers.entries()));
-
-      let result: MutationResponse | null = null;
-      try {
-        const responseText = await response.text();
-        console.log('[handleSubmit] Raw response text:', responseText);
-        
-        if (responseText) {
-          result = JSON.parse(responseText);
-        }
-      } catch (err) {
-        console.error('[handleSubmit] Failed to parse JSON response:', err);
-        toast.error('Failed to update product: Invalid server response');
+      if (updateError) {
+        console.error('[handleSubmit] Supabase update error:', updateError);
+        toast.error(updateError.message || 'Failed to update product');
         setIsLoading(false);
         return;
       }
-      
-      console.log('[handleSubmit] Parsed API response:', result);
-      
-      if (!result || !result.success) {
-        const errorMessage = result?.error || result?.details || 'Failed to update product';
-        console.error('[handleSubmit] API returned error:', errorMessage);
-        toast.error(errorMessage);
-        setIsLoading(false);
-        return;
-      }
-      
-      console.log('[handleSubmit] Product updated successfully');
+
+      console.log('[handleSubmit] Product updated successfully:', updatedProduct);
       toast.success('Product updated successfully');
       router.push('/admin/products');
       
