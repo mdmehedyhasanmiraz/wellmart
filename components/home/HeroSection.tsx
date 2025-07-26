@@ -288,37 +288,7 @@ type HeroSliderProps = { banners: Banner[] };
 function HeroSlider({ banners }: HeroSliderProps) {
   const [currentBanner, setCurrentBanner] = useState(0);
   const [currentImage, setCurrentImage] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
   const count = banners.length;
-
-  // Autoplay functionality
-  useEffect(() => {
-    if (count === 0 || isPaused) return;
-
-    const bannerInterval = setInterval(() => {
-      setCurrentBanner((prev) => (prev + 1) % count);
-      setCurrentImage(0);
-    }, 5000); // Change banner every 5 seconds
-
-    return () => clearInterval(bannerInterval);
-  }, [count, isPaused]);
-
-  // Auto-advance images within current banner
-  useEffect(() => {
-    if (count === 0 || isPaused) return;
-    
-    const banner = banners[currentBanner];
-    const images = Array.isArray(banner?.image_urls) ? banner.image_urls : [];
-    
-    if (images.length <= 1) return;
-
-    const imageInterval = setInterval(() => {
-      setCurrentImage((prev) => (prev + 1) % images.length);
-    }, 3000); // Change image every 3 seconds
-
-    return () => clearInterval(imageInterval);
-  }, [currentBanner, count, isPaused, banners]);
-
   if (count === 0) {
     return (
       <div className="h-[200px] md:h-[320px] lg:h-[384px] bg-gradient-to-r from-lime-500 to-lime-600 rounded-xl flex items-center justify-center mb-6">
@@ -330,25 +300,14 @@ function HeroSlider({ banners }: HeroSliderProps) {
       </div>
     );
   }
-
   const goToBanner = (idx: number) => {
     setCurrentBanner((idx + count) % count);
     setCurrentImage(0);
   };
-
-  const goToImage = (idx: number) => {
-    setCurrentImage(idx);
-  };
-
   const banner = banners[currentBanner];
   const images = Array.isArray(banner.image_urls) ? banner.image_urls : [];
-
   return (
-    <div 
-      className="relative mb-6 w-full aspect-[3/1] rounded-xl overflow-hidden"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
+    <div className="relative mb-6 w-full aspect-[3/1] rounded-xl overflow-hidden">
       {images.length > 0 ? (
         images.map((img, idx) => (
           <a
@@ -370,27 +329,25 @@ function HeroSlider({ banners }: HeroSliderProps) {
           </a>
         ))
       ) : null}
-      
       {/* Arrows for banners */}
       {count > 1 && (
         <>
           <button
             onClick={() => goToBanner(currentBanner - 1)}
-            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 z-20 transition-all duration-200"
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 z-20"
             aria-label="Previous banner"
           >
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" /></svg>
           </button>
           <button
             onClick={() => goToBanner(currentBanner + 1)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 z-20 transition-all duration-200"
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 z-20"
             aria-label="Next banner"
           >
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg>
           </button>
         </>
       )}
-      
       {/* Dots for banners */}
       {count > 1 && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-20">
@@ -398,21 +355,20 @@ function HeroSlider({ banners }: HeroSliderProps) {
             <button
               key={idx}
               onClick={() => goToBanner(idx)}
-              className={`w-3 h-3 rounded-full transition-all duration-200 ${idx === currentBanner ? 'bg-lime-500' : 'bg-white/60'} border border-white hover:bg-lime-400`}
+              className={`w-3 h-3 rounded-full ${idx === currentBanner ? 'bg-lime-500' : 'bg-white/60'} border border-white`}
               aria-label={`Go to banner ${idx + 1}`}
             />
           ))}
         </div>
       )}
-      
       {/* Dots for images in current banner */}
       {images.length > 1 && (
         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-2 z-20">
           {images.map((_, idx) => (
             <button
               key={idx}
-              onClick={() => goToImage(idx)}
-              className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${idx === currentImage ? 'bg-lime-500' : 'bg-white/60'} border border-white hover:bg-lime-400`}
+              onClick={() => setCurrentImage(idx)}
+              className={`w-2.5 h-2.5 rounded-full ${idx === currentImage ? 'bg-lime-500' : 'bg-white/60'} border border-white`}
               aria-label={`Go to image ${idx + 1}`}
             />
           ))}
