@@ -40,7 +40,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (response.ok) {
           const { user: userData } = await response.json();
           setUser(userData);
+        } else if (response.status === 404) {
+          // User doesn't exist in database, try to sync them
+          console.log('User not found in database, attempting to sync...');
+          const syncResponse = await fetch('/api/auth/sync-supabase', { 
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+          
+          if (syncResponse.ok) {
+            const { user: syncedUser } = await syncResponse.json();
+            setUser(syncedUser);
+            console.log('User synced successfully');
+          } else {
+            console.error('Failed to sync user');
+            setUser(null);
+          }
         } else {
+          console.error('Error fetching user:', response.status);
           setUser(null);
         }
       } else {

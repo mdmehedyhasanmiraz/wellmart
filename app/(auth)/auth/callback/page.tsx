@@ -11,18 +11,37 @@ export default function OAuthCallback() {
     const handleOAuth = async () => {
       const supabase = createClient();
       const { data, error } = await supabase.auth.getUser();
-      console.log(data);
-      console.log(error);
+      console.log('Auth callback - User data:', data);
+      console.log('Auth callback - Error:', error);
 
       if (data?.user) {
-        // Optionally: sync user to your DB here via API call
-        // await fetch('/api/auth/sync-supabase', { method: 'POST' });
+        try {
+          // Sync user to your DB via API call
+          const syncResponse = await fetch('/api/auth/sync-supabase', { 
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+          
+          if (syncResponse.ok) {
+            const syncData = await syncResponse.json();
+            console.log('User synced successfully:', syncData);
+          } else {
+            console.error('Failed to sync user:', await syncResponse.text());
+          }
+        } catch (syncError) {
+          console.error('Error syncing user:', syncError);
+        }
+
+        // Redirect to home page
         if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
           window.location.href = 'http://localhost:3000/';
         } else {
           router.replace('/');
         }
       } else {
+        // No user found, redirect to home page
         if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
           window.location.href = 'http://localhost:3000/';
         } else {
