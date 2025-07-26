@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import AdminImage from '@/components/admin/AdminImage';
 import { toast } from 'react-hot-toast';
+import { createClient } from '@/utils/supabase/client';
 
 interface Product {
   id: string;
@@ -55,6 +56,7 @@ export default function ProductsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const supabase = createClient();
 
   useEffect(() => {
     fetchProducts();
@@ -62,62 +64,108 @@ export default function ProductsPage() {
     fetchCompanies();
   }, [searchTerm, selectedCategory, selectedCompany, statusFilter, sortBy, sortOrder]);
 
-        const fetchProducts = async () => {
-        try {
-          setIsLoading(true);
+  const fetchProducts = async () => {
+    try {
+      setIsLoading(true);
+      console.log('[fetchProducts] Fetching products with filters...');
 
-          // Build query parameters
-          const params = new URLSearchParams();
-          params.append('type', 'products');
-          if (searchTerm) params.append('search', searchTerm);
-          if (selectedCategory) params.append('category', selectedCategory);
-          if (selectedCompany) params.append('company', selectedCompany);
-          if (statusFilter !== 'all') params.append('status', statusFilter);
-          params.append('sortBy', sortBy);
-          params.append('sortOrder', sortOrder);
+      // Build the query
+      let query = supabase
+        .from('products')
+        .select(`
+          *,
+          categories!inner(id, name),
+          companies!inner(id, name)
+        `);
 
-          const response = await fetch(`/api/admin/data?${params.toString()}`);
-          const result = await response.json();
+      // Apply filters
+      if (searchTerm) {
+        query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+      }
+      if (selectedCategory) {
+        query = query.eq('category_id', selectedCategory);
+      }
+      if (selectedCompany) {
+        query = query.eq('company_id', selectedCompany);
+      }
+      if (statusFilter !== 'all') {
+        query = query.eq('is_active', statusFilter === 'active');
+      }
 
-          if (result.success) {
-            setProducts(result.products || []);
-          } else {
-            console.error('Error fetching products:', result.error);
-            toast.error('Failed to load products');
-          }
-        } catch (error) {
-          console.error('Error fetching products:', error);
-          toast.error('Failed to load products');
-        } finally {
-          setIsLoading(false);
-        }
-      };
+      // Apply sorting
+      query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('[fetchProducts] Supabase error:', error);
+        toast.error('Failed to load products');
+        return;
+      }
+
+      // Transform data to include category and company names
+      const transformedProducts = data?.map(product => ({
+        ...product,
+        category_name: product.categories?.name,
+        company_name: product.companies?.name
+      })) || [];
+
+      console.log('[fetchProducts] Products loaded:', transformedProducts.length);
+      setProducts(transformedProducts);
+      
+    } catch (error) {
+      console.error('[fetchProducts] Error:', error);
+      toast.error('Failed to load products');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/admin/data?type=categories');
-      const result = await response.json();
-      if (result.success) {
-        setCategories(result.categories || []);
-      } else {
-        console.error('Error fetching categories:', result.error);
+      console.log('[fetchCategories] Fetching categories...');
+      
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name')
+        .order('name');
+
+      if (error) {
+        console.error('[fetchCategories] Supabase error:', error);
+        toast.error('Failed to load categories');
+        return;
       }
+
+      console.log('[fetchCategories] Categories loaded:', data?.length || 0);
+      setCategories(data || []);
+      
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error('[fetchCategories] Error:', error);
+      toast.error('Failed to load categories');
     }
   };
 
   const fetchCompanies = async () => {
     try {
-      const response = await fetch('/api/admin/data?type=companies');
-      const result = await response.json();
-      if (result.success) {
-        setCompanies(result.companies || []);
-      } else {
-        console.error('Error fetching companies:', result.error);
+      console.log('[fetchCompanies] Fetching companies...');
+      
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, name')
+        .order('name');
+
+      if (error) {
+        console.error('[fetchCompanies] Supabase error:', error);
+        toast.error('Failed to load companies');
+        return;
       }
+
+      console.log('[fetchCompanies] Companies loaded:', data?.length || 0);
+      setCompanies(data || []);
+      
     } catch (error) {
-      console.error('Error fetching companies:', error);
+      console.error('[fetchCompanies] Error:', error);
+      toast.error('Failed to load companies');
     }
   };
 
@@ -125,26 +173,19 @@ export default function ProductsPage() {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
-      const response = await fetch('/api/admin/mutations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'delete',
-          table: 'products',
-          id: productId
-        })
-      });
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
 
-      const result = await response.json();
-
-      if (result.success) {
-        toast.success('Product deleted successfully');
-        fetchProducts();
-      } else {
-        throw new Error(result.error);
+      if (error) {
+        console.error('Supabase error deleting product:', error);
+        toast.error('Failed to delete product');
+        return;
       }
+
+      toast.success('Product deleted successfully');
+      fetchProducts();
     } catch (error) {
       console.error('Error deleting product:', error);
       toast.error('Failed to delete product');
@@ -153,27 +194,19 @@ export default function ProductsPage() {
 
   const handleToggleStatus = async (productId: string, currentStatus: boolean) => {
     try {
-      const response = await fetch('/api/admin/mutations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'update',
-          table: 'products',
-          id: productId,
-          data: { is_active: !currentStatus }
-        })
-      });
+      const { error } = await supabase
+        .from('products')
+        .update({ is_active: !currentStatus })
+        .eq('id', productId);
 
-      const result = await response.json();
-
-      if (result.success) {
-        toast.success(`Product ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
-        fetchProducts();
-      } else {
-        throw new Error(result.error);
+      if (error) {
+        console.error('Supabase error updating product status:', error);
+        toast.error('Failed to update product status');
+        return;
       }
+
+      toast.success(`Product ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
+      fetchProducts();
     } catch (error) {
       console.error('Error updating product status:', error);
       toast.error('Failed to update product status');

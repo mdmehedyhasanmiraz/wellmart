@@ -38,13 +38,6 @@ interface User {
   role: string;
 }
 
-type MutationResponse = {
-  success?: boolean;
-  error?: string;
-  details?: string;
-  [key: string]: unknown;
-};
-
 export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
