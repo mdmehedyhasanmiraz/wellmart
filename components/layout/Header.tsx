@@ -457,7 +457,7 @@ export default function Header() {
                   </div>
                 ) : (
                   <button
-                    onClick={openLoginPopup}
+                    onClick={() => router.push('/login')}
                     className="flex items-center space-x-1 p-2 text-gray-700 hover:text-gray-900 cursor-pointer"
                   >
                     <UserCheck className="h-6 w-6" />

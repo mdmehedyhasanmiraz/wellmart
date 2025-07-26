@@ -148,7 +148,7 @@ export default function LoginPopup() {
   if (!isLoginPopupOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-100 overflow-y-auto bg-white">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         {/* Background overlay */}
         <div 
@@ -167,7 +167,7 @@ export default function LoginPopup() {
           </button>
 
           {/* Content */}
-          <div className="bg-gradient-to-br from-lime-50 to-white p-8">
+          <div className="bg-white p-8">
             <div className="flex flex-col items-center">
               <Image src="/logos/logo-wellmart.png" alt="Wellmart Logo" width={140} height={140} className="mb-4" />
               <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
