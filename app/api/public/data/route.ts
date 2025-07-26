@@ -4,39 +4,85 @@ import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type');
 
   try {
+    // Check if supabaseAdmin is available
+    if (!supabaseAdmin) {
+      console.error('supabaseAdmin is not available - service role key may be missing');
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Database service not available',
+        timing: Date.now() - startTime
+      }, { status: 500 });
+    }
+
+    let result;
     switch (type) {
       case 'categories':
-        return await getCategories();
+        result = await getCategories();
+        break;
       case 'banners':
-        return await getBanners();
+        result = await getBanners();
+        break;
       case 'flash-sale-products':
-        return await getFlashSaleProducts();
+        result = await getFlashSaleProducts();
+        break;
       case 'featured-products':
-        return await getFeaturedProducts();
+        result = await getFeaturedProducts();
+        break;
       case 'top-products':
-        return await getTopProducts();
+        result = await getTopProducts();
+        break;
       case 'recent-products':
-        return await getRecentProducts();
+        result = await getRecentProducts();
+        break;
       case 'shop-products':
-        return await getShopProducts(searchParams);
+        result = await getShopProducts(searchParams);
+        break;
       case 'product-details':
         const slug = searchParams.get('slug');
         if (!slug) {
           return NextResponse.json({ success: false, error: 'Product slug is required' }, { status: 400 });
         }
-        return await getProductDetails(slug);
+        result = await getProductDetails(slug);
+        break;
       case 'cart':
-        return getCartData();
+        result = getCartData();
+        break;
       default:
         return NextResponse.json({ success: false, error: 'Invalid type parameter' }, { status: 400 });
     }
+
+    // Add timing information to the response
+    const totalTiming = Date.now() - startTime;
+    
+    // Handle both Promise and direct NextResponse returns
+    if (result instanceof Promise) {
+      const resolvedResult = await result;
+      if (resolvedResult && resolvedResult.body) {
+        const responseData = JSON.parse(await resolvedResult.text());
+        responseData.timing = totalTiming;
+        return NextResponse.json(responseData, { status: resolvedResult.status });
+      }
+      return resolvedResult;
+    } else if (result && result.body) {
+      const responseData = JSON.parse(await result.text());
+      responseData.timing = totalTiming;
+      return NextResponse.json(responseData, { status: result.status });
+    }
+
+    return result;
   } catch (error) {
     console.error('API error:', error);
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+    const totalTiming = Date.now() - startTime;
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Internal server error',
+      timing: totalTiming
+    }, { status: 500 });
   }
 }
 
@@ -152,8 +198,18 @@ async function getFlashSaleProducts() {
 }
 
 async function getFeaturedProducts() {
+  const startTime = Date.now();
   try {
-    const { data, error } = await supabaseAdmin!
+    if (!supabaseAdmin) {
+      console.error('supabaseAdmin is not available in getFeaturedProducts');
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Database service not available',
+        timing: Date.now() - startTime
+      }, { status: 500 });
+    }
+
+    const { data, error } = await supabaseAdmin
       .from('products')
       .select(`
         *,
@@ -165,23 +221,42 @@ async function getFeaturedProducts() {
       .limit(6);
 
     if (error) {
+      console.error('Supabase error in getFeaturedProducts:', error);
       throw error;
     }
 
+    const timing = Date.now() - startTime;
+    console.log(`getFeaturedProducts completed in ${timing}ms, returned ${data?.length || 0} products`);
+
     return NextResponse.json({
       success: true,
-      products: data || []
+      products: data || [],
+      timing
     });
 
   } catch (error) {
     console.error('Error fetching featured products:', error);
-    return NextResponse.json({ error: 'Failed to fetch featured products' }, { status: 500 });
+    return NextResponse.json({ 
+      success: false,
+      error: 'Failed to fetch featured products',
+      timing: Date.now() - startTime
+    }, { status: 500 });
   }
 }
 
 async function getTopProducts() {
+  const startTime = Date.now();
   try {
-    const { data, error } = await supabaseAdmin!
+    if (!supabaseAdmin) {
+      console.error('supabaseAdmin is not available in getTopProducts');
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Database service not available',
+        timing: Date.now() - startTime
+      }, { status: 500 });
+    }
+
+    const { data, error } = await supabaseAdmin
       .from('products')
       .select(`
         *,
@@ -193,17 +268,26 @@ async function getTopProducts() {
       .limit(8);
 
     if (error) {
+      console.error('Supabase error in getTopProducts:', error);
       throw error;
     }
 
+    const timing = Date.now() - startTime;
+    console.log(`getTopProducts completed in ${timing}ms, returned ${data?.length || 0} products`);
+
     return NextResponse.json({
       success: true,
-      products: data || []
+      products: data || [],
+      timing
     });
 
   } catch (error) {
     console.error('Error fetching top products:', error);
-    return NextResponse.json({ error: 'Failed to fetch top products' }, { status: 500 });
+    return NextResponse.json({ 
+      success: false,
+      error: 'Failed to fetch top products',
+      timing: Date.now() - startTime
+    }, { status: 500 });
   }
 }
 
