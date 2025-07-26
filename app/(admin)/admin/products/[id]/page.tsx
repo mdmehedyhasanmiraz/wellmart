@@ -24,7 +24,7 @@ interface Category {
   name: string;
 }
 
-interface Manufacturer {
+interface Company {
   id: string;
   name: string;
 }
@@ -44,7 +44,7 @@ export default function EditProductPage() {
   const supabase = createClient();
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -65,7 +65,7 @@ export default function EditProductPage() {
     stock: '',
     pack_size: '',
     category_id: '',
-    manufacturer_id: '',
+    company_id: '',
     is_active: true,
     flash_sale: null as boolean | null,
     sku: '',
@@ -74,7 +74,7 @@ export default function EditProductPage() {
 
   useEffect(() => {
     fetchCategories();
-    fetchManufacturers();
+    fetchCompanies();
     fetchUser();
     if (productId) fetchProduct();
     // eslint-disable-next-line
@@ -115,7 +115,7 @@ export default function EditProductPage() {
       stock: data.stock?.toString() || '',
       pack_size: data.pack_size || '',
       category_id: data.category_id || '',
-      manufacturer_id: data.manufacturer_id || '',
+      company_id: data.company_id || '',
       is_active: data.is_active,
       flash_sale: data.flash_sale,
       sku: data.sku || '',
@@ -162,16 +162,16 @@ export default function EditProductPage() {
     }
   };
 
-  const fetchManufacturers = async () => {
+  const fetchCompanies = async () => {
     try {
-      const { data, error } = await supabase.from('manufacturers').select('id, name').order('name');
+      const { data, error } = await supabase.from('companies').select('id, name').order('name');
       if (error) {
-        toast.error('Failed to load manufacturers');
+        toast.error('Failed to load companies');
         return;
       }
-      setManufacturers(data || []);
+      setCompanies(data || []);
     } catch (error) {
-      toast.error('Failed to load manufacturers');
+      toast.error('Failed to load companies');
       console.log(error);
     }
   };
@@ -325,7 +325,7 @@ export default function EditProductPage() {
         stock: parseInt(formData.stock),
         pack_size: formData.pack_size,
         category_id: formData.category_id || null,
-        manufacturer_id: formData.manufacturer_id || null,
+        company: { id: formData.company_id || null } as Company,
         is_active: formData.is_active,
         flash_sale: formData.flash_sale,
         sku: formData.sku || "",
@@ -577,26 +577,26 @@ export default function EditProductPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Company ({manufacturers.length} available)
+                    Company ({companies.length} available)
                   </label>
                   <select
-                    name="manufacturer_id"
-                    value={formData.manufacturer_id}
+                    name="company_id"
+                    value={formData.company_id}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-transparent"
                   >
                     <option value="">Select company</option>
-                    {manufacturers.length === 0 ? (
+                    {companies.length === 0 ? (
                       <option value="" disabled>No companies available</option>
                     ) : (
-                      manufacturers.map((man) => (
-                        <option key={man.id} value={man.id}>
-                          {man.name}
+                      companies.map((company) => (
+                        <option key={company.id} value={company.id}>
+                          {company.name}
                         </option>
                       ))
                     )}
                   </select>
-                  {manufacturers.length === 0 && (
+                  {companies.length === 0 && (
                     <p className="text-xs text-red-500 mt-1">
                       No companies found. Please add companies first.
                     </p>
