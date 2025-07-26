@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { CartItem, CartSummary, AddToCartRequest, GuestCartItem } from '@/types/cart';
+import { CartItem, CartSummary, AddToCartRequest } from '@/types/cart';
 
 export class CartService {
   private async getSupabase() {
