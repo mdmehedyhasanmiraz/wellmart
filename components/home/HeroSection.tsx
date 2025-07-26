@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronDown, ChevronRight, Package } from 'lucide-react';
+import { Banner } from '@/types/banner';
 
 
 interface Category {
@@ -20,16 +21,6 @@ interface SubCategory {
   name: string;
   slug: string;
   category_id: string;
-}
-
-interface Banner {
-  id: string;
-  title: string;
-  subtitle?: string;
-  image_urls: string[];
-  link_url?: string;
-  is_active: boolean;
-  position: 'main' | 'card1' | 'card2' | 'card3' | 'card4' | 'hero';
 }
 
 interface HeroSectionProps {

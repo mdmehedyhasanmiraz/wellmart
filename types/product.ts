@@ -49,17 +49,7 @@ export interface Company {
   // Add other fields as needed
 }
 
-export interface Banner {
-  id: string;
-  title: string;
-  subtitle?: string;
-  image_urls: string[];
-  link_url?: string;
-  position: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+export type { Banner } from './banner';
 
 export interface ProductFilters {
   search?: string;

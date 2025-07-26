@@ -2,11 +2,11 @@ export interface Banner {
   id: string;
   title: string;
   subtitle?: string;
-  image_url: string;
+  image_urls: string[];
   link_url?: string;
-  position: 'main' | 'card1' | 'card2' | 'card3' | 'card4';
+  position: 'main' | 'card1' | 'card2' | 'card3' | 'card4' | 'hero';
   is_active: boolean;
-  sort_order: number;
+  sort_order?: number;
   created_at: string;
   updated_at: string;
 }
@@ -14,11 +14,11 @@ export interface Banner {
 export interface BannerFormData {
   title: string;
   subtitle?: string;
-  image_url: string;
+  image_urls: string[];
   link_url?: string;
-  position: 'main' | 'card1' | 'card2' | 'card3' | 'card4';
+  position: 'main' | 'card1' | 'card2' | 'card3' | 'card4' | 'hero';
   is_active: boolean;
-  sort_order: number;
+  sort_order?: number;
 }
 
 export interface BannerFilters {

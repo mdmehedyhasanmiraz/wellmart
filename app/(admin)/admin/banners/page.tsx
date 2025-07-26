@@ -16,19 +16,7 @@ import {
 import AdminImage from '@/components/admin/AdminImage';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
-
-interface Banner {
-  id: string;
-  title: string;
-  subtitle: string;
-  image_urls: string[];
-  link_url: string | null;
-  position: 'hero' | 'card1' | 'card2' | 'card3' | 'card4';
-  is_active: boolean;
-  sort_order?: number;
-  created_at: string;
-  updated_at: string;
-}
+import { Banner } from '@/types/banner';
 
 export default function BannersPage() {
   const [banners, setBanners] = useState<Banner[]>([]);
