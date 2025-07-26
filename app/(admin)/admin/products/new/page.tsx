@@ -13,7 +13,6 @@ import {
   FileText,
   Image as ImageIcon
 } from 'lucide-react';
-import AdminImage from '@/components/admin/AdminImage';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
@@ -25,7 +24,7 @@ interface Category {
   name: string;
 }
 
-interface Company {
+interface Manufacturer {
   id: string;
   name: string;
 }
@@ -43,7 +42,7 @@ export default function NewProductPage() {
   const supabase = createClient();
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -64,9 +63,8 @@ export default function NewProductPage() {
     stock: '',
     pack_size: '',
     category_id: '',
-    company_id: '',
+    manufacturer_id: '',
     is_active: true,
-    flash_sale: null as boolean | null,
     sku: '',
     video: '',
   });
@@ -74,7 +72,7 @@ export default function NewProductPage() {
 
   useEffect(() => {
     fetchCategories();
-    fetchCompanies();
+    fetchManufacturers();
     fetchUser();
   }, []);
 
@@ -128,35 +126,33 @@ export default function NewProductPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/admin/data?type=categories');
-      const result = await response.json();
-      if (result.success) {
-        console.log('Categories loaded:', result.categories);
-        setCategories(result.categories || []);
-      } else {
-        console.error('Error fetching categories:', result.error);
+      const { data, error } = await supabase.from('categories').select('id, name').order('name');
+      if (error) {
+        console.error('Error fetching categories:', error);
         toast.error('Failed to load categories');
+        return;
       }
+      console.log('Categories loaded:', data);
+      setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
       toast.error('Failed to load categories');
     }
   };
 
-  const fetchCompanies = async () => {
+  const fetchManufacturers = async () => {
     try {
-      const response = await fetch('/api/admin/data?type=companies');
-      const result = await response.json();
-      if (result.success) {
-        console.log('Companies loaded:', result.companies);
-        setCompanies(result.companies || []);
-      } else {
-        console.error('Error fetching companies:', result.error);
-        toast.error('Failed to load companies');
+      const { data, error } = await supabase.from('manufacturers').select('id, name').order('name');
+      if (error) {
+        console.error('Error fetching manufacturers:', error);
+        toast.error('Failed to load manufacturers');
+        return;
       }
+      console.log('Manufacturers loaded:', data);
+      setManufacturers(data || []);
     } catch (error) {
-      console.error('Error fetching companies:', error);
-      toast.error('Failed to load companies');
+      console.error('Error fetching manufacturers:', error);
+      toast.error('Failed to load manufacturers');
     }
   };
 
@@ -196,10 +192,10 @@ export default function NewProductPage() {
       if (bucketError) {
         console.error('Bucket access error:', bucketError);
         toast.error('Cannot access images bucket. Please check storage permissions.');
-        setBucketImages([]);
-        setLoadingImages(false);
         return;
       }
+
+      console.log('Bucket access successful, checking products folder...');
 
       // Now check the products folder
       const { data, error } = await supabase.storage
@@ -212,15 +208,15 @@ export default function NewProductPage() {
       if (error) {
         console.error('Error fetching bucket images:', error);
         toast.error('Failed to load images from bucket');
-        setBucketImages([]);
-        setLoadingImages(false);
         return;
       }
 
+      console.log('Bucket files found:', data);
+
       if (!data || data.length === 0) {
+        console.log('No files found in products folder');
         toast.success('No images found in the products folder. Upload some images first.');
         setBucketImages([]);
-        setLoadingImages(false);
         return;
       }
 
@@ -229,29 +225,28 @@ export default function NewProductPage() {
           .filter(file => file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i))
           .map(async (file) => {
             const filePath = `products/${file.name}`;
+            
             try {
+              // Try to get a signed URL first (this should work regardless of bucket settings)
               const { data: signedData, error: signedError } = await supabase.storage
                 .from('images')
                 .createSignedUrl(filePath, 3600); // 1 hour expiry
-              if (signedError || !signedData?.signedUrl) {
-                if (signedError) {
-                  console.error(`Signed URL error for ${file.name}:`, signedError);
-                }
+              
+              if (signedError) {
+                console.error(`Signed URL error for ${file.name}:`, signedError);
                 // Fallback to public URL
-                const { data: publicData } = supabase.storage
+                const { data: { publicUrl } } = supabase.storage
                   .from('images')
                   .getPublicUrl(filePath);
-                if (publicData?.publicUrl) {
-                  return {
-                    url: publicData.publicUrl,
-                    name: file.name,
-                    path: filePath
-                  };
-                } else {
-                  console.error(`No valid URL for file: ${file.name}`);
-                  return null;
-                }
+                console.log(`File: ${file.name}, Path: ${filePath}, Public URL: ${publicUrl}`);
+                return {
+                  url: publicUrl,
+                  name: file.name,
+                  path: filePath
+                };
               }
+              
+              console.log(`File: ${file.name}, Path: ${filePath}, Signed URL: ${signedData.signedUrl}`);
               return {
                 url: signedData.signedUrl,
                 name: file.name,
@@ -260,32 +255,23 @@ export default function NewProductPage() {
             } catch (error) {
               console.error(`Error generating URL for ${file.name}:`, error);
               // Fallback to public URL
-              const { data: publicData } = supabase.storage
+              const { data: { publicUrl } } = supabase.storage
                 .from('images')
                 .getPublicUrl(filePath);
-              if (publicData?.publicUrl) {
-                return {
-                  url: publicData.publicUrl,
-                  name: file.name,
-                  path: filePath
-                };
-              } else {
-                console.error(`No valid URL for file: ${file.name}`);
-                return null;
-              }
+              return {
+                url: publicUrl,
+                name: file.name,
+                path: filePath
+              };
             }
           })
       );
 
-      const validImages = imageUrls.filter(Boolean) as { url: string; name: string; path: string }[];
-      setBucketImages(validImages);
-      if (validImages.length === 0) {
-        toast.error('No valid images found in the products folder.');
-      }
+      console.log('Generated image URLs:', imageUrls);
+      setBucketImages(imageUrls);
     } catch (error) {
       console.error('Error fetching bucket images:', error);
       toast.error('Failed to load images from bucket');
-      setBucketImages([]);
     } finally {
       setLoadingImages(false);
     }
@@ -367,9 +353,8 @@ export default function NewProductPage() {
         stock: parseInt(formData.stock),
         pack_size: formData.pack_size,
         category_id: formData.category_id || null,
-        company_id: formData.company_id || null,
+        manufacturer_id: formData.manufacturer_id || null,
         is_active: formData.is_active,
-        flash_sale: formData.flash_sale,
         sku: formData.sku || "",
         image_urls: allImageUrls,
         keywords: keywords.length > 0 ? keywords : [
@@ -392,22 +377,11 @@ export default function NewProductPage() {
         productData.price_purchase = formData.price_purchase ? parseFloat(formData.price_purchase) : null;
       }
 
-      const response = await fetch('/api/admin/mutations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'create',
-          table: 'products',
-          data: productData
-        })
-      });
+      const { error } = await supabase
+        .from('products')
+        .insert([productData]);
 
-      const result = await response.json();
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to create product');
-      }
+      if (error) throw error;
 
       toast.success('Product created successfully');
       router.push('/admin/products');
@@ -655,26 +629,26 @@ export default function NewProductPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Company ({companies.length} available)
+                    Company ({manufacturers.length} available)
                   </label>
                   <select
-                    name="company_id"
-                    value={formData.company_id}
+                    name="manufacturer_id"
+                    value={formData.manufacturer_id}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-transparent"
                   >
                     <option value="">Select company</option>
-                    {companies.length === 0 ? (
+                    {manufacturers.length === 0 ? (
                       <option value="" disabled>No companies available</option>
                     ) : (
-                      companies.map((company) => (
-                        <option key={company.id} value={company.id}>
-                          {company.name}
+                      manufacturers.map((man) => (
+                        <option key={man.id} value={man.id}>
+                          {man.name}
                         </option>
                       ))
                     )}
                   </select>
-                  {companies.length === 0 && (
+                  {manufacturers.length === 0 && (
                     <p className="text-xs text-red-500 mt-1">
                       No companies found. Please add companies first.
                     </p>
@@ -699,11 +673,10 @@ export default function NewProductPage() {
                   <div className="grid grid-cols-2 gap-2">
                     {imagePreviews.map((preview, index) => (
                       <div key={index} className="relative">
-                        <AdminImage
+                        <img
                           src={preview}
                           alt={`Preview ${index + 1}`}
                           className="w-full h-24 object-cover rounded-lg"
-                          fallbackIcon={<ImageIcon className="w-8 h-8 text-gray-400" />}
                         />
                         <button
                           type="button"
@@ -792,14 +765,18 @@ export default function NewProductPage() {
                           >
                             {/* Image */}
                             <div className="relative w-24 h-24 flex-shrink-0">
-                              <AdminImage
+                              <img
                                 src={image.url}
                                 alt={`Image ${index + 1}`}
                                 className="w-full h-full object-cover"
-                                fallbackIcon={<ImageIcon className="w-6 h-6 text-gray-400" />}
-                                onError={() => {
+                                onLoad={() => {
+                                  console.log(`Successfully loaded image: ${image.url}`);
+                                }}
+                                onError={(e) => {
                                   console.error(`Failed to load image: ${image.url}`);
                                   testImageUrl(image.url);
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
                                 }}
                               />
                               <div className="hidden absolute inset-0 bg-gray-200 flex items-center justify-center">
@@ -888,24 +865,6 @@ export default function NewProductPage() {
                 />
                 <label className="ml-2 text-sm text-gray-700">
                   Active (visible to customers)
-                </label>
-              </div>
-
-              <div className="flex items-center mt-3">
-                <input
-                  type="checkbox"
-                  name="flash_sale"
-                  checked={formData.flash_sale === true}
-                  onChange={(e) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      flash_sale: e.target.checked ? true : null
-                    }));
-                  }}
-                  className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                />
-                <label className="ml-2 text-sm text-gray-700">
-                  Flash Sale (show in flash sale section)
                 </label>
               </div>
             </div>

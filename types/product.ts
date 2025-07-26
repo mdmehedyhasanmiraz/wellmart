@@ -14,13 +14,12 @@ export interface Product {
   video: string | null;
   description: string;
   category_id: string | null;
-  company_id: string | null;
+  manufacturer_id: string | null;
   is_active: boolean;
-  flash_sale: boolean | null;
   created_at: string;
   updated_at: string;
   category?: Category;
-  company?: Company;
+  manufacturer?: Manufacturer;
   keywords?: string[];
 }
 
@@ -43,18 +42,10 @@ export interface Manufacturer {
   created_at: string;
 }
 
-export interface Company {
-  id: string;
-  name: string;
-  // Add other fields as needed
-}
-
-export type { Banner } from './banner';
-
 export interface ProductFilters {
   search?: string;
   category_id?: string;
-  company_id?: string;
+  manufacturer_id?: string;
   min_price?: number;
   max_price?: number;
   in_stock?: boolean;
