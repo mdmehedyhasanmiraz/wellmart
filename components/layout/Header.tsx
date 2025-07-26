@@ -132,7 +132,7 @@ export default function Header() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const router = useRouter();
   const { getCartCount } = useCart();
-  const { user, signOut, openLoginPopup } = useAuth();
+  const { user, signOut } = useAuth();
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
