@@ -313,7 +313,7 @@ export default function Header() {
                 <Image 
                   src={siteSettings.logo_url}
                   alt="Wellmart Logo"
-                  className="h-11 w-auto"
+                  className="h-8 lg:h-11 w-auto"
                   width={100}
                   height={100}
                 />
