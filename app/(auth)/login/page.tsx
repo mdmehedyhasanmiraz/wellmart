@@ -5,13 +5,13 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { createClient } from '@/utils/supabase/client';
+import { getAndClearRedirectUrl } from '@/utils/redirectUtils';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [otpMode, setOtpMode] = useState(false);
   const [otpStep, setOtpStep] = useState<'request' | 'verify'>('request');
-  // const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -53,7 +53,10 @@ function LoginForm() {
         return;
       }
       toast.success('Login successful! Redirecting...');
-      router.push('/dashboard');
+      
+      // Get the redirect URL and navigate
+      const redirectUrl = getAndClearRedirectUrl();
+      router.push(redirectUrl);
     } catch (err) {
       toast.error('Login failed');
       console.error('Login failed', err);
@@ -77,7 +80,6 @@ function LoginForm() {
         setLoading(false);
         return;
       }
-      // setOtpSent(true);
       setOtpStep('verify');
       toast.success('OTP sent to your email!');
     } catch (err) {
@@ -103,7 +105,10 @@ function LoginForm() {
         return;
       }
       toast.success('Login successful! Redirecting...');
-      router.push('/dashboard');
+      
+      // Get the redirect URL and navigate
+      const redirectUrl = getAndClearRedirectUrl();
+      router.push(redirectUrl);
     } catch (err) {
       toast.error('OTP verification failed');
       console.error('OTP verify error', err);
@@ -113,18 +118,19 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-lime-50 to-white py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white/90 shadow-xl rounded-2xl p-8 border border-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
         <div className="flex flex-col items-center">
           <Image src="/logos/logo-wellmart.png" alt="Wellmart Logo" width={140} height={140} className="mb-4" />
           <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
-            Sign in
+            Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Sign in with your email or social account
           </p>
         </div>
-        <div className="mt-8 space-y-6">
+
+        <div className="bg-white p-8 rounded-lg shadow-md">
           {/* Social Sign-In Buttons */}
           <button
             type="button"
@@ -144,7 +150,8 @@ function LoginForm() {
             <img src="/logos/logo-google.svg" alt="Facebook" className="w-5 h-5" />
             Continue with Facebook
           </button>
-          {/* Email Sign-In */}
+          
+          {/* Email Sign-In Toggle */}
           <div className="flex justify-center mb-2">
             <button
               type="button"
@@ -161,6 +168,8 @@ function LoginForm() {
               Email OTP
             </button>
           </div>
+
+          {/* Email Sign-In Forms */}
           {!otpMode ? (
             <form onSubmit={handleEmailPasswordSignIn} className="space-y-4">
               <div>
@@ -195,6 +204,7 @@ function LoginForm() {
                   placeholder="••••••••"
                 />
               </div>
+              
               <div>
                 <button
                   type="submit"
@@ -206,6 +216,7 @@ function LoginForm() {
               </div>
             </form>
           ) : (
+            /* OTP Forms */
             otpStep === 'request' ? (
               <form onSubmit={handleEmailOtpSignIn} className="space-y-4">
                 <div>
@@ -224,13 +235,14 @@ function LoginForm() {
                     placeholder="you@example.com"
                   />
                 </div>
+                
                 <div>
                   <button
                     type="submit"
                     disabled={loading}
                     className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-semibold rounded-xl text-white bg-lime-600 hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 disabled:opacity-50 shadow-md"
                   >
-                    {loading ? 'Sending OTP...' : 'Send OTP to Email'}
+                    {loading ? 'Sending OTP...' : 'Send OTP'}
                   </button>
                 </div>
               </form>
@@ -238,34 +250,26 @@ function LoginForm() {
               <form onSubmit={handleVerifyOtp} className="space-y-4">
                 <div>
                   <label htmlFor="otp" className="block text-sm font-medium text-gray-700">
-                    Enter 6-digit OTP sent to your email
+                    Enter OTP
                   </label>
                   <input
                     id="otp"
                     name="otp"
                     type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]{6}"
-                    maxLength={6}
                     required
                     value={otpCode}
-                    onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                    className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500 focus:z-10 text-base shadow-sm tracking-widest text-center"
-                    placeholder="------"
+                    onChange={e => setOtpCode(e.target.value)}
+                    className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500 focus:z-10 text-base shadow-sm"
+                    placeholder="Enter the 6-digit code"
+                    maxLength={6}
                   />
                 </div>
-                <div className="flex justify-between items-center">
-                  <button
-                    type="button"
-                    className="text-sm text-gray-500 hover:text-lime-600 underline"
-                    onClick={() => { setOtpStep('request'); setOtpCode(''); }}
-                  >
-                    Back
-                  </button>
+                
+                <div>
                   <button
                     type="submit"
-                    disabled={verifying || otpCode.length !== 6}
-                    className="group relative flex justify-center py-3 px-6 border border-transparent text-base font-semibold rounded-xl text-white bg-lime-600 hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 disabled:opacity-50 shadow-md"
+                    disabled={verifying}
+                    className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-semibold rounded-xl text-white bg-lime-600 hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 disabled:opacity-50 shadow-md"
                   >
                     {verifying ? 'Verifying...' : 'Verify OTP'}
                   </button>
@@ -281,11 +285,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-lime-600"></div>
-      </div>
-    }>
+    <Suspense fallback={<div>Loading...</div>}>
       <LoginForm />
     </Suspense>
   );

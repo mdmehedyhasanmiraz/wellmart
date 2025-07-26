@@ -3,6 +3,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
+import { getAndClearRedirectUrl } from '@/utils/redirectUtils';
+import { useRouter } from 'next/navigation';
 
 interface User {
   id: string;
@@ -15,11 +17,9 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  isLoginPopupOpen: boolean;
-  openLoginPopup: () => void;
-  closeLoginPopup: () => void;
   checkUser: () => Promise<void>;
   signOut: () => Promise<void>;
+  requireAuth: (redirectTo?: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,8 +27,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isLoginPopupOpen, setIsLoginPopupOpen] = useState(false);
   const supabase = createClient();
+  const router = useRouter();
 
   const checkUser = async () => {
     console.log('[AuthContext] checkUser called');
@@ -114,12 +114,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const openLoginPopup = () => {
-    setIsLoginPopupOpen(true);
-  };
-
-  const closeLoginPopup = () => {
-    setIsLoginPopupOpen(false);
+  const requireAuth = (redirectTo?: string) => {
+    if (!user) {
+      // Save current URL for post-login redirect
+      const currentUrl = redirectTo || (typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('redirectAfterLogin', currentUrl);
+      }
+      router.push('/login');
+    }
   };
 
   useEffect(() => {
@@ -130,7 +133,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('[AuthContext] Auth state change:', event, session?.user?.email);
       if (event === 'SIGNED_IN' && session?.user) {
         await checkUser();
-        closeLoginPopup();
+        
+        // Redirect to saved URL after successful login
+        const redirectUrl = getAndClearRedirectUrl();
+        if (redirectUrl && redirectUrl !== '/login') {
+          router.push(redirectUrl);
+        }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
       }
@@ -142,11 +150,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = {
     user,
     loading,
-    isLoginPopupOpen,
-    openLoginPopup,
-    closeLoginPopup,
     checkUser,
     signOut,
+    requireAuth,
   };
 
   return (

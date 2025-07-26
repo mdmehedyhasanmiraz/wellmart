@@ -2,17 +2,15 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
-import { CartProvider } from '@/contexts/CartContext';
 import { AuthProvider } from '@/contexts/AuthContext';
-import LoginPopup from '@/components/AuthLoginPopup';
-import ogImage from './opengraph-image.webp';
+import { CartProvider } from '@/contexts/CartContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Wellmart - Your Trusted Shopping Destination',
-  description: 'Discover quality products at great prices. Shop the latest trends with secure payment and fast delivery.',
-  keywords: 'ecommerce, online shopping, retail, products, deals',
+  title: 'Wellmart - Your Trusted Online Store',
+  description: 'Discover quality products at great prices. Shop electronics, fashion, home & garden, and more.',
+  keywords: 'online store, shopping, electronics, fashion, home, garden, Bangladesh',
   authors: [{ name: 'Wellmart Team' }],
   creator: 'Wellmart',
   publisher: 'Wellmart',
@@ -21,18 +19,21 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://wellmart.com.bd'),
+  metadataBase: new URL('https://wellmart.com'),
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
-    title: 'Wellmart - Your Trusted Shopping Destination',
-    description: 'Discover quality products at great prices. Shop the latest trends with secure payment and fast delivery.',
-    url: 'https://wellmart.com.bd',
+    title: 'Wellmart - Your Trusted Online Store',
+    description: 'Discover quality products at great prices. Shop electronics, fashion, home & garden, and more.',
+    url: 'https://wellmart.com',
     siteName: 'Wellmart',
     images: [
       {
-        url: ogImage.src,
+        url: '/opengraph-image.webp',
         width: 1200,
         height: 630,
-        alt: 'Wellmart - Online Shopping',
+        alt: 'Wellmart - Your Trusted Online Store',
       },
     ],
     locale: 'en_US',
@@ -40,9 +41,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Wellmart - Your Trusted Shopping Destination',
-    description: 'Discover quality products at great prices. Shop the latest trends with secure payment and fast delivery.',
-    images: [ogImage.src],
+    title: 'Wellmart - Your Trusted Online Store',
+    description: 'Discover quality products at great prices. Shop electronics, fashion, home & garden, and more.',
+    images: ['/opengraph-image.webp'],
   },
   robots: {
     index: true,
@@ -55,9 +56,9 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  // verification: {
-  //   google: 'your-google-verification-code',
-  // },
+  verification: {
+    google: 'your-google-verification-code',
+  },
 };
 
 export default function RootLayout({
@@ -98,8 +99,6 @@ export default function RootLayout({
           <main className="flex-1 text-black bg-gray-50">
             {children}
           </main>
-            
-            <LoginPopup />
         </CartProvider>
         </AuthProvider>
       </body>

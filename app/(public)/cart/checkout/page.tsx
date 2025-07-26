@@ -19,52 +19,26 @@ import upazilasData from '@/data/bd-geo/bd-upazilas.json';
 
 // Types for geo data
 interface Division { id: string; name: string; }
-interface District { id: string; division_id: string; name: string; }
-interface Upazila { id: string; district_id: string; name: string; }
+interface District { id: string; name: string; division_id: string; }
+interface Upazila { id: string; name: string; district_id: string; }
 
-const paymentMethods = [
-  { id: 'bkash', label: 'bKash Payment' },
-  { id: 'nagad', label: 'Nagad Payment' },
-  { id: 'bank', label: 'Bank Transfer' },
-  { id: 'cod', label: 'Cash on Delivery' },
-];
-
-// Helper functions for product image and price
-type ProductType = CartItem['product'] | GuestCartItem['product'];
-
-function getProductImage(product: ProductType) {
-  if (product) {
-    // CartItem['product'] type
-    if ('image_urls' in product && Array.isArray(product.image_urls) && product.image_urls.length > 0) {
-      return product.image_urls[0];
-    }
-    // GuestCartItem['product'] type
-    if ('image_url' in product && typeof product.image_url === 'string' && product.image_url) {
-      return product.image_url;
-    }
-  }
-  return '/images/avatar.png';
-}
-function getProductPrice(product: ProductType) {
-  if (product) {
-    // CartItem['product'] type
-    if ('price_offer' in product && typeof product.price_offer !== 'undefined' && product.price_offer !== null && product.price_offer !== 0) {
-      return product.price_offer;
-    }
-    if ('price_regular' in product && typeof product.price_regular !== 'undefined') {
-      return product.price_regular;
-    }
-    // GuestCartItem['product'] type
-    if ('price' in product && typeof product.price !== 'undefined') {
-      return product.price;
-    }
-  }
-  return 0;
+// Types for form data
+interface BillingData {
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  postal: string;
+  country: string;
+  district: string;
+  division: string;
+  upazila: string;
 }
 
 export default function CheckoutPage() {
   const { cart, guestCart } = useCart();
-  const { user, openLoginPopup } = useAuth();
+  const { user, requireAuth } = useAuth();
   const isGuest = !cart;
   const items = isGuest ? guestCart.items : cart?.items || [];
   const total = isGuest ? guestCart.total_price : cart?.total_price || 0;
@@ -166,10 +140,12 @@ export default function CheckoutPage() {
       return updated;
     });
   };
+
   const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setShipping(prev => {
       const updated = { ...prev, [name]: value };
+      // Reset dependent fields
       if (name === 'division') {
         updated.district = '';
         updated.upazila = '';
@@ -180,72 +156,57 @@ export default function CheckoutPage() {
     });
   };
 
-  const createOrder = async (paymentMethod: string, paymentStatus: string = 'pending') => {
+  const createOrder = async (paymentMethod: string, status: string) => {
     setIsSubmitting(true);
-    
     try {
-      // Process cart items to include proper price information
-      const processedCartItems = items.map((item: CartItem | GuestCartItem) => {
-        let price = 0;
-        const product = item.product as Product;
-        
-        if (cart) {
-          // User cart - use price_offer if available, otherwise price_regular
-          price = product?.price_offer || product?.price_regular || 0;
-        } else {
-          // Guest cart - use price
-          price = product?.price_offer || product?.price_regular || 0;
-        }
-        
-        return {
-          product_id: item.product_id,
-          quantity: item.quantity,
-          price: price,
-          product: {
-            id: product?.id,
-            name: product?.name,
-            image_url: product?.image_urls?.[0],
-            sku: product?.sku,
-            price_offer: product?.price_offer,
-            price_regular: product?.price_regular,
-            price: product?.price_offer || product?.price_regular || 0,
-            stock: product?.stock || 0,
-            description: product?.description || '',
-            category_id: product?.category_id || '',
-            company_id: product?.company_id || '',
-            is_active: product?.is_active || false,
-            created_at: product?.created_at || '',
-            updated_at: product?.updated_at || '',
-            category: product?.category || null,
-            company: product?.company || null,
-          }
-        };
-      });
-
       const orderData = {
         user_id: user?.id || null,
-        cart_items: processedCartItems,
-        total: total,
+        items: items.map((item: CartItem | GuestCartItem) => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.total
+        })),
+        total_amount: total,
         payment_method: paymentMethod,
-        payment_status: paymentStatus,
-        billing_name: billing.name,
-        billing_phone: billing.phone,
-        billing_email: billing.email,
-        billing_address: billing.address,
-        billing_city: billing.city,
-        billing_district: billing.district,
-        billing_country: billing.country,
-        billing_postal: billing.postal,
-        shipping_name: sameShipping ? billing.name : shipping.name,
-        shipping_phone: sameShipping ? billing.phone : shipping.phone,
-        shipping_email: sameShipping ? billing.email : shipping.email,
-        shipping_address: sameShipping ? billing.address : shipping.address,
-        shipping_city: sameShipping ? billing.city : shipping.city,
-        shipping_district: sameShipping ? billing.district : shipping.district,
-        shipping_country: sameShipping ? billing.country : shipping.country,
-        shipping_postal: sameShipping ? billing.postal : shipping.postal,
+        status: status,
+        billing_address: {
+          name: billing.name,
+          phone: billing.phone,
+          email: billing.email,
+          address: billing.address,
+          city: billing.city,
+          postal: billing.postal,
+          country: billing.country,
+          district: billing.district,
+          division: billing.division,
+          upazila: billing.upazila,
+        },
+        shipping_address: sameShipping ? {
+          name: billing.name,
+          phone: billing.phone,
+          email: billing.email,
+          address: billing.address,
+          city: billing.city,
+          postal: billing.postal,
+          country: billing.country,
+          district: billing.district,
+          division: billing.division,
+          upazila: billing.upazila,
+        } : {
+          name: shipping.name,
+          phone: shipping.phone,
+          email: shipping.email,
+          address: shipping.address,
+          city: shipping.city,
+          postal: shipping.postal,
+          country: shipping.country,
+          district: shipping.district,
+          division: shipping.division,
+          upazila: shipping.upazila,
+        },
         notes: notes,
-        status: 'pending'
+        guest_cart: isGuest ? guestCart : null
       };
 
       const response = await fetch('/api/orders/create', {
@@ -260,24 +221,13 @@ export default function CheckoutPage() {
 
       if (result.success) {
         toast.success('Order placed successfully!');
-        // Clear cart after successful order
-        if (cart) {
-          // Clear user cart
-          const cartService = new CartService();
-          await cartService.clearUserCart(user!.id);
-        } else {
-          // Clear guest cart
-          localStorage.removeItem('guestCart');
-        }
-        
-        // Redirect to order confirmation page
         router.push(`/orders/${result.order.id}`);
       } else {
-        toast.error(result.error || 'Failed to place order');
+        toast.error(result.error || 'Failed to create order');
       }
     } catch (error) {
       console.error('Error creating order:', error);
-      toast.error('Failed to place order. Please try again.');
+      toast.error('Failed to create order');
     } finally {
       setIsSubmitting(false);
     }
@@ -356,514 +306,524 @@ export default function CheckoutPage() {
         
         {/* Mobile Order Summary - Show at top on mobile */}
         <div className="lg:hidden mb-6">
-          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <ShoppingCart className="w-5 h-5 text-lime-600" />
-              Order Summary
-            </h2>
-            {/* Free Delivery Message */}
-            {total >= freeDeliveryMin ? (
-              <div className="mb-3 p-2 rounded bg-green-50 text-green-700 text-center text-sm font-medium border border-green-200">
-                🎉 You qualify for <b>Free Delivery</b>!
-              </div>
-            ) : (
-              <div className="mb-3 p-2 rounded bg-yellow-50 text-yellow-700 text-center text-sm font-medium border border-yellow-200">
-                Add <b>৳{(freeDeliveryMin - total).toFixed(2)}</b> more for <b>Free Delivery</b>!
-              </div>
-            )}
-            <div className="divide-y divide-gray-100 mb-4">
-              {(items.length || 0) === 0 ? (
-                <div className="text-gray-500 py-4 text-center">Your cart is empty</div>
-              ) : (
-                items.slice(0, 3).map((item: CartItem | GuestCartItem) => (
-                  <div key={item.product_id} className="flex items-center py-3 gap-3">
-                    <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                      <img
-                        src={getProductImage(item.product)}
-                        alt={item.product?.name || 'Product'}
-                        className="object-cover w-full h-full"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-900 text-sm truncate">{item.product?.name || 'Product'}</div>
-                      <div className="text-xs text-gray-500">Qty: {item.quantity}</div>
-                    </div>
-                    <div className="font-semibold text-lime-700 text-sm min-w-[50px] text-right">
-                      ৳{(getProductPrice(item.product) as number * item.quantity).toFixed(2)}
-                    </div>
-                  </div>
-                ))
-              )}
-              {(items.length || 0) > 3 && (
-                <div className="py-2 text-center text-sm text-gray-500">
-                  +{(items.length || 0) - 3} more items
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Order Summary</h3>
+            <div className="space-y-2">
+              {items.map((item: CartItem | GuestCartItem) => (
+                <div key={item.product_id} className="flex justify-between text-sm">
+                  <span className="text-gray-600">{item.product_name} × {item.quantity}</span>
+                  <span className="font-medium">৳{item.total.toFixed(2)}</span>
                 </div>
-              )}
+              ))}
             </div>
-            <div className="border-t border-gray-100 pt-3 flex justify-between items-center">
-              <span className="text-base font-bold text-gray-900">Total</span>
-              <span className="text-xl font-bold text-lime-600">৳{total.toFixed(2)}</span>
+            <div className="border-t border-gray-200 mt-3 pt-3">
+              <div className="flex justify-between font-semibold text-lg">
+                <span>Total</span>
+                <span>৳{total.toFixed(2)}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          {/* Billing & Shipping Forms */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Billing Address */}
-            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Billing Address</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <label htmlFor="name" className="block text-sm text-gray-800 font-medium mb-1">Full Name <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={billing.name}
-                    onChange={handleBillingChange}
-                    className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="phone" className="block text-gray-800 font-medium mb-1">Phone Number <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    name="phone"
-                    value={billing.phone}
-                    onChange={handleBillingChange}
-                    className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="email" className="block text-gray-800 font-medium mb-1">Email Address</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={billing.email}
-                    onChange={handleBillingChange}
-                    className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="division" className="block text-gray-800 font-medium mb-1">Division <span className="text-red-500">*</span></label>
-                  <select
-                    name="division"
-                    value={billing.division || ''}
-                    onChange={handleBillingChange}
-                    className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
-                    required
-                  >
-                    <option value="">Select Division</option>
-                    {divisions.map((div: Division) => (
-                      <option key={div.id} value={div.id}>{div.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="district" className="block text-gray-800 font-medium mb-1">District <span className="text-red-500">*</span></label>
-                  <select
-                    name="district"
-                    value={billing.district || ''}
-                    onChange={handleBillingChange}
-                    className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
-                    required
-                    disabled={!billing.division}
-                  >
-                    <option value="">Select District</option>
-                    {billingDistricts.map((dist: District) => (
-                      <option key={dist.id} value={dist.id}>{dist.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="upazila" className="block text-gray-800 font-medium mb-1">Upazila/Thana <span className="text-red-500">*</span></label>
-                  <select
-                    name="upazila"
-                    value={billing.upazila || ''}
-                    onChange={handleBillingChange}
-                    className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
-                    required
-                    disabled={!billing.district}
-                  >
-                    <option value="">Select Upazila/Thana</option>
-                    {billingUpazilas.map((upz: Upazila) => (
-                      <option key={upz.id} value={upz.id}>{upz.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="city" className="block text-gray-800 font-medium mb-1">City <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={billing.city}
-                    onChange={handleBillingChange}
-                    className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="postal" className="block text-gray-800 font-medium mb-1">Postal Code <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    name="postal"
-                    value={billing.postal}
-                    onChange={handleBillingChange}
-                    className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
-                    required
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label htmlFor="address" className="block text-gray-800 font-medium mb-1">Street Address <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    name="address"
-                    value={billing.address}
-                    onChange={handleBillingChange}
-                    className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Shipping Address */}
-            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-              <label className="flex items-center gap-2 mb-4 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={sameShipping}
-                  onChange={() => setSameShipping(!sameShipping)}
-                  className="accent-lime-600 w-5 h-5"
-                />
-                <span className="text-gray-800 font-medium">Shipping address is same as billing</span>
-              </label>
-              {!sameShipping && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Checkout Form */}
+          <div className="lg:col-span-2">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Billing Information */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Billing Information</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="sm:col-span-2">
-                    <label htmlFor="shipping-name" className="block text-gray-800 font-medium mb-1">Full Name <span className="text-red-500">*</span></label>
+                  <div>
+                    <label htmlFor="billing-name" className="block text-sm font-medium text-gray-700 mb-1">
+                      Full Name *
+                    </label>
                     <input
                       type="text"
+                      id="billing-name"
                       name="name"
-                      value={shipping.name}
-                      onChange={handleShippingChange}
-                      className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                      value={billing.name}
+                      onChange={handleBillingChange}
                       required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
                     />
                   </div>
                   <div>
-                    <label htmlFor="shipping-phone" className="block text-gray-800 font-medium mb-1">Phone Number <span className="text-red-500">*</span></label>
+                    <label htmlFor="billing-phone" className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone Number *
+                    </label>
                     <input
-                      type="text"
+                      type="tel"
+                      id="billing-phone"
                       name="phone"
-                      value={shipping.phone}
-                      onChange={handleShippingChange}
-                      className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                      value={billing.phone}
+                      onChange={handleBillingChange}
                       required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
                     />
                   </div>
                   <div>
-                    <label htmlFor="shipping-email" className="block text-gray-800 font-medium mb-1">Email Address</label>
+                    <label htmlFor="billing-email" className="block text-sm font-medium text-gray-700 mb-1">
+                      Email Address
+                    </label>
                     <input
                       type="email"
+                      id="billing-email"
                       name="email"
-                      value={shipping.email}
-                      onChange={handleShippingChange}
-                      className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                      value={billing.email}
+                      onChange={handleBillingChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
                     />
                   </div>
                   <div>
-                    <label htmlFor="shipping-division" className="block text-gray-800 font-medium mb-1">Division <span className="text-red-500">*</span></label>
-                    <select
-                      name="division"
-                      value={shipping.division || ''}
-                      onChange={handleShippingChange}
-                      className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                    <label htmlFor="billing-country" className="block text-sm font-medium text-gray-700 mb-1">
+                      Country *
+                    </label>
+                    <input
+                      type="text"
+                      id="billing-country"
+                      name="country"
+                      value={billing.country}
+                      onChange={handleBillingChange}
                       required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="billing-division" className="block text-sm font-medium text-gray-700 mb-1">
+                      Division *
+                    </label>
+                    <select
+                      id="billing-division"
+                      name="division"
+                      value={billing.division}
+                      onChange={handleBillingChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
                     >
                       <option value="">Select Division</option>
-                      {divisions.map((div: Division) => (
-                        <option key={div.id} value={div.id}>{div.name}</option>
+                      {divisions.map((division) => (
+                        <option key={division.id} value={division.id}>
+                          {division.name}
+                        </option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label htmlFor="shipping-district" className="block text-gray-800 font-medium mb-1">District <span className="text-red-500">*</span></label>
+                    <label htmlFor="billing-district" className="block text-sm font-medium text-gray-700 mb-1">
+                      District *
+                    </label>
                     <select
+                      id="billing-district"
                       name="district"
-                      value={shipping.district || ''}
-                      onChange={handleShippingChange}
-                      className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                      value={billing.district}
+                      onChange={handleBillingChange}
                       required
-                      disabled={!shipping.division}
+                      disabled={!billing.division}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500 disabled:bg-gray-100"
                     >
                       <option value="">Select District</option>
-                      {shippingDistricts.map((dist: District) => (
-                        <option key={dist.id} value={dist.id}>{dist.name}</option>
+                      {billingDistricts.map((district) => (
+                        <option key={district.id} value={district.id}>
+                          {district.name}
+                        </option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label htmlFor="shipping-upazila" className="block text-gray-800 font-medium mb-1">Upazila/Thana <span className="text-red-500">*</span></label>
+                    <label htmlFor="billing-upazila" className="block text-sm font-medium text-gray-700 mb-1">
+                      Upazila
+                    </label>
                     <select
+                      id="billing-upazila"
                       name="upazila"
-                      value={shipping.upazila || ''}
-                      onChange={handleShippingChange}
-                      className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
-                      required
-                      disabled={!shipping.district}
+                      value={billing.upazila}
+                      onChange={handleBillingChange}
+                      disabled={!billing.district}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500 disabled:bg-gray-100"
                     >
-                      <option value="">Select Upazila/Thana</option>
-                      {shippingUpazilas.map((upz: Upazila) => (
-                        <option key={upz.id} value={upz.id}>{upz.name}</option>
+                      <option value="">Select Upazila</option>
+                      {billingUpazilas.map((upazila) => (
+                        <option key={upazila.id} value={upazila.id}>
+                          {upazila.name}
+                        </option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label htmlFor="shipping-city" className="block text-gray-800 font-medium mb-1">City <span className="text-red-500">*</span></label>
+                    <label htmlFor="billing-city" className="block text-sm font-medium text-gray-700 mb-1">
+                      City *
+                    </label>
                     <input
                       type="text"
+                      id="billing-city"
                       name="city"
-                      value={shipping.city}
-                      onChange={handleShippingChange}
-                      className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                      value={billing.city}
+                      onChange={handleBillingChange}
                       required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
                     />
                   </div>
                   <div>
-                    <label htmlFor="shipping-postal" className="block text-gray-800 font-medium mb-1">Postal Code <span className="text-red-500">*</span></label>
+                    <label htmlFor="billing-postal" className="block text-sm font-medium text-gray-700 mb-1">
+                      Postal Code *
+                    </label>
                     <input
                       type="text"
+                      id="billing-postal"
                       name="postal"
-                      value={shipping.postal}
-                      onChange={handleShippingChange}
-                      className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                      value={billing.postal}
+                      onChange={handleBillingChange}
                       required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label htmlFor="shipping-address" className="block text-gray-800 font-medium mb-1">Street Address <span className="text-red-500">*</span></label>
-                    <input
-                      type="text"
+                    <label htmlFor="billing-address" className="block text-sm font-medium text-gray-700 mb-1">
+                      Address *
+                    </label>
+                    <textarea
+                      id="billing-address"
                       name="address"
-                      value={shipping.address}
-                      onChange={handleShippingChange}
-                      className="border border-gray-200 rounded-lg w-full px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                      value={billing.address}
+                      onChange={handleBillingChange}
                       required
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
                     />
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
 
-            {/* Additional Notes */}
-            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-              <label htmlFor="notes" className="block text-gray-800 font-medium mb-2">Additional Notes</label>
-              <textarea
-                id="notes"
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                placeholder="Any special instructions?"
-                className="w-full border border-gray-200 rounded-lg px-3 sm:px-4 py-2 focus:ring-2 focus:ring-lime-200 focus:border-lime-400 min-h-[80px]"
-              />
-            </div>
-          </div>
-
-          {/* Desktop Order Summary & Payment */}
-          <div className="lg:col-span-1">
-            <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-4 sm:p-6 space-y-6 sticky top-4">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-lime-600" />
-                Order Summary
-              </h2>
-              
-              {/* Free Delivery Message */}
-              {total >= freeDeliveryMin ? (
-                <div className="mb-4 p-3 rounded bg-green-50 text-green-700 text-center text-sm font-medium border border-green-200">
-                  🎉 You qualify for <b>Free Delivery</b>!
+              {/* Shipping Information */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">Shipping Information</h2>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={sameShipping}
+                      onChange={(e) => setSameShipping(e.target.checked)}
+                      className="rounded border-gray-300 text-lime-600 focus:ring-lime-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Same as billing address</span>
+                  </label>
                 </div>
-              ) : (
-                <div className="mb-4 p-3 rounded bg-yellow-50 text-yellow-700 text-center text-sm font-medium border border-yellow-200">
-                  Add <b>৳{(freeDeliveryMin - total).toFixed(2)}</b> more for <b>Free Delivery</b>!
-                </div>
-              )}
-              
-              {/* Desktop Order Items */}
-              <div className="hidden lg:block divide-y divide-gray-100">
-                {(items.length || 0) === 0 ? (
-                  <div className="text-gray-500 py-8 text-center">Your cart is empty</div>
-                ) : (
-                  items.map((item: CartItem | GuestCartItem) => (
-                    <div key={item.product_id} className="flex items-center py-4 gap-4">
-                      <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                        <img
-                          src={getProductImage(item.product)}
-                          alt={item.product?.name || 'Product'}
-                          className="object-cover w-full h-full"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-gray-900 truncate">{item.product?.name || 'Product'}</div>
-                        <div className="text-sm text-gray-500">Qty: {item.quantity}</div>
-                      </div>
-                      <div className="font-semibold text-lime-700 text-base min-w-[60px] text-right">
-                        ৳{(getProductPrice(item.product) as number * item.quantity).toFixed(2)}
-                      </div>
+                
+                {!sameShipping && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="shipping-name" className="block text-sm font-medium text-gray-700 mb-1">
+                        Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        id="shipping-name"
+                        name="name"
+                        value={shipping.name}
+                        onChange={handleShippingChange}
+                        required={!sameShipping}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+                      />
                     </div>
-                  ))
+                    <div>
+                      <label htmlFor="shipping-phone" className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone Number *
+                      </label>
+                      <input
+                        type="tel"
+                        id="shipping-phone"
+                        name="phone"
+                        value={shipping.phone}
+                        onChange={handleShippingChange}
+                        required={!sameShipping}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="shipping-email" className="block text-sm font-medium text-gray-700 mb-1">
+                        Email Address
+                      </label>
+                      <input
+                        type="email"
+                        id="shipping-email"
+                        name="email"
+                        value={shipping.email}
+                        onChange={handleShippingChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="shipping-country" className="block text-sm font-medium text-gray-700 mb-1">
+                        Country *
+                      </label>
+                      <input
+                        type="text"
+                        id="shipping-country"
+                        name="country"
+                        value={shipping.country}
+                        onChange={handleShippingChange}
+                        required={!sameShipping}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="shipping-division" className="block text-sm font-medium text-gray-700 mb-1">
+                        Division *
+                      </label>
+                      <select
+                        id="shipping-division"
+                        name="division"
+                        value={shipping.division}
+                        onChange={handleShippingChange}
+                        required={!sameShipping}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+                      >
+                        <option value="">Select Division</option>
+                        {divisions.map((division) => (
+                          <option key={division.id} value={division.id}>
+                            {division.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="shipping-district" className="block text-sm font-medium text-gray-700 mb-1">
+                        District *
+                      </label>
+                      <select
+                        id="shipping-district"
+                        name="district"
+                        value={shipping.district}
+                        onChange={handleShippingChange}
+                        required={!sameShipping}
+                        disabled={!shipping.division}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500 disabled:bg-gray-100"
+                      >
+                        <option value="">Select District</option>
+                        {shippingDistricts.map((district) => (
+                          <option key={district.id} value={district.id}>
+                            {district.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="shipping-upazila" className="block text-sm font-medium text-gray-700 mb-1">
+                        Upazila
+                      </label>
+                      <select
+                        id="shipping-upazila"
+                        name="upazila"
+                        value={shipping.upazila}
+                        onChange={handleShippingChange}
+                        disabled={!shipping.district}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500 disabled:bg-gray-100"
+                      >
+                        <option value="">Select Upazila</option>
+                        {shippingUpazilas.map((upazila) => (
+                          <option key={upazila.id} value={upazila.id}>
+                            {upazila.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="shipping-city" className="block text-sm font-medium text-gray-700 mb-1">
+                        City *
+                      </label>
+                      <input
+                        type="text"
+                        id="shipping-city"
+                        name="city"
+                        value={shipping.city}
+                        onChange={handleShippingChange}
+                        required={!sameShipping}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="shipping-postal" className="block text-sm font-medium text-gray-700 mb-1">
+                        Postal Code *
+                      </label>
+                      <input
+                        type="text"
+                        id="shipping-postal"
+                        name="postal"
+                        value={shipping.postal}
+                        onChange={handleShippingChange}
+                        required={!sameShipping}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label htmlFor="shipping-address" className="block text-sm font-medium text-gray-700 mb-1">
+                        Address *
+                      </label>
+                      <textarea
+                        id="shipping-address"
+                        name="address"
+                        value={shipping.address}
+                        onChange={handleShippingChange}
+                        required={!sameShipping}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+                      />
+                    </div>
+                  </div>
                 )}
               </div>
-              
-              <div className="border-t border-gray-100 pt-4 mt-4 flex justify-between items-center">
-                <span className="text-lg font-bold text-gray-900">Total</span>
-                <span className="text-2xl font-bold text-lime-600">৳{total.toFixed(2)}</span>
-              </div>
-              
+
               {/* Payment Method */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Payment Method</h3>
-                <div className="space-y-2">
-                  {paymentMethods.map((method) => (
-                    <label key={method.id} className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-gray-200 hover:bg-lime-50 transition-colors">
-                      <input
-                        type="radio"
-                        name="payment"
-                        value={method.id}
-                        checked={payment === method.id}
-                        onChange={() => setPayment(method.id)}
-                        className="accent-lime-600 w-4 h-4 sm:w-5 sm:h-5"
-                      />
-                      <span className="text-gray-800 font-medium text-sm sm:text-base">{method.label}</span>
-                    </label>
-                  ))}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Payment Method</h2>
+                <div className="space-y-3">
+                  <label className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="bkash"
+                      checked={payment === 'bkash'}
+                      onChange={(e) => setPayment(e.target.value)}
+                      className="text-lime-600 focus:ring-lime-500"
+                    />
+                    <div className="ml-3">
+                      <div className="flex items-center">
+                        <img src="/logos/logo-bkash-round.svg" alt="bKash" className="w-6 h-6 mr-2" />
+                        <span className="font-medium">bKash</span>
+                      </div>
+                      <p className="text-sm text-gray-500">Pay with bKash mobile banking</p>
+                    </div>
+                  </label>
+                  
+                  <label className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="nagad"
+                      checked={payment === 'nagad'}
+                      onChange={(e) => setPayment(e.target.value)}
+                      className="text-lime-600 focus:ring-lime-500"
+                    />
+                    <div className="ml-3">
+                      <span className="font-medium">Nagad</span>
+                      <p className="text-sm text-gray-500">Pay with Nagad mobile banking</p>
+                    </div>
+                  </label>
+                  
+                  <label className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="bank"
+                      checked={payment === 'bank'}
+                      onChange={(e) => setPayment(e.target.value)}
+                      className="text-lime-600 focus:ring-lime-500"
+                    />
+                    <div className="ml-3">
+                      <span className="font-medium">Bank Transfer</span>
+                      <p className="text-sm text-gray-500">Pay via bank transfer</p>
+                    </div>
+                  </label>
+                  
+                  <label className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="cod"
+                      checked={payment === 'cod'}
+                      onChange={(e) => setPayment(e.target.value)}
+                      className="text-lime-600 focus:ring-lime-500"
+                    />
+                    <div className="ml-3">
+                      <span className="font-medium">Cash on Delivery</span>
+                      <p className="text-sm text-gray-500">Pay when you receive your order</p>
+                    </div>
+                  </label>
                 </div>
               </div>
 
-              {/* Payment Method Specific Content */}
-              {payment === 'bkash' ? (
-                <div>
-                  {!user ? (
-                    <div className="p-4 bg-yellow-100 border-l-4 border-yellow-400 text-yellow-700 rounded-lg">
-                      <p className="text-center text-sm">Please log in to proceed with bKash payment.</p>
-                      <button
-                        type="button"
-                        onClick={openLoginPopup}
-                        className="mt-3 w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold rounded-lg py-2 transition-colors text-sm"
-                      >
-                        Log In
-                      </button>
-                    </div>
-                  ) : (
-                    <BkashPaymentButton
-                      amount={total}
-                      user_id={user.id}
-                      email={billing.email || user.email || ''}
-                      name={billing.name}
-                      phone={billing.phone}
-                      purpose="order"
-                      disabled={!isFormValid}
-                    />
-                  )}
-                </div>
-              ) : payment === 'bank' ? (
-                <div className="space-y-4">
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h3 className="text-base sm:text-lg font-semibold text-blue-900 mb-3 flex items-center">
-                      <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                      </svg>
-                      Bank Transfer Details
-                    </h3>
-                    <div className="space-y-2 text-xs sm:text-sm">
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium text-gray-700">Bank Name:</span>
-                        <span className="text-gray-900">{bankDetails.bankName}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium text-gray-700">Account Name:</span>
-                        <span className="text-gray-900">{bankDetails.accountName}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium text-gray-700">Account Number:</span>
-                        <span className="text-gray-900 font-mono">{bankDetails.accountNumber}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium text-gray-700">Branch:</span>
-                        <span className="text-gray-900">{bankDetails.branch}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium text-gray-700">Routing Number:</span>
-                        <span className="text-gray-900 font-mono">{bankDetails.routingNumber}</span>
-                      </div>
-                      {bankDetails.swiftCode && (
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium text-gray-700">SWIFT Code:</span>
-                          <span className="text-gray-900 font-mono">{bankDetails.swiftCode}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium text-gray-700">Amount to Transfer:</span>
-                        <span className="text-base sm:text-lg font-bold text-lime-600">৳{total.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <h4 className="font-semibold text-yellow-800 mb-2 flex items-center text-sm sm:text-base">
-                      <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                      Important Instructions
-                    </h4>
-                    <ul className="text-xs sm:text-sm text-yellow-700 space-y-1">
-                      {bankDetails.instructions.map((instruction, index) => (
-                        <li key={index}>• {instruction.replace('{amount}', `৳${total.toFixed(2)}`)}</li>
-                      ))}
-                    </ul>
-                  </div>
+              {/* Order Notes */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Notes (Optional)</h2>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Any special instructions for your order..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+                />
+              </div>
 
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg py-3 text-base sm:text-lg shadow transition-colors flex items-center justify-center"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-5 border-b-2 border-white mr-2"></div>
-                        Placing Order...
-                      </>
+              {/* Payment Button */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                {payment === 'bkash' ? (
+                  <div>
+                    {!user ? (
+                      <div className="p-4 bg-yellow-100 border-l-4 border-yellow-400 text-yellow-700 rounded-lg">
+                        <p className="text-center text-sm">Please log in to proceed with bKash payment.</p>
+                        <button
+                          type="button"
+                          onClick={() => requireAuth()}
+                          className="mt-3 w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold rounded-lg py-2 transition-colors text-sm"
+                        >
+                          Log In
+                        </button>
+                      </div>
                     ) : (
-                      'Place Order with Bank Transfer'
+                      <BkashPaymentButton
+                        amount={total}
+                        user_id={user.id}
+                        email={billing.email || user.email || ''}
+                        name={billing.name}
+                        phone={billing.phone}
+                        purpose="order"
+                        disabled={!isFormValid}
+                      />
                     )}
-                  </button>
-                </div>
-              ) : payment === 'nagad' ? (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h3 className="text-base sm:text-lg font-semibold text-green-900 mb-3 flex items-center">
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                    </svg>
-                    Nagad Payment
-                  </h3>
-                  <p className="text-green-700 mb-4 text-sm">Nagad payment integration coming soon. Please select another payment method.</p>
+                  </div>
+                ) : (
                   <button
                     type="submit"
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg py-3 text-base sm:text-lg shadow transition-colors"
+                    disabled={isSubmitting || !isFormValid}
+                    className="w-full bg-lime-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-lime-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    Proceed to Payment
+                    {isSubmitting ? 'Processing...' : `Place Order - ৳${total.toFixed(2)}`}
                   </button>
-                </div>
-              ) : (
-                <button
-                  type="submit"
-                  className="w-full bg-lime-600 hover:bg-lime-700 text-white font-semibold rounded-lg py-3 text-base sm:text-lg shadow transition-colors"
-                >
-                  Proceed to Payment
-                </button>
-              )}
+                )}
+              </div>
             </form>
+          </div>
+
+          {/* Order Summary - Desktop */}
+          <div className="hidden lg:block">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
+              <div className="space-y-3">
+                {items.map((item: CartItem | GuestCartItem) => (
+                  <div key={item.product_id} className="flex justify-between text-sm">
+                    <span className="text-gray-600">{item.product_name} × {item.quantity}</span>
+                    <span className="font-medium">৳{item.total.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="border-t border-gray-200 mt-4 pt-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span>৳{total.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Shipping</span>
+                  <span>{total >= freeDeliveryMin ? 'Free' : '৳60.00'}</span>
+                </div>
+                <div className="border-t border-gray-200 pt-2">
+                  <div className="flex justify-between font-semibold text-lg">
+                    <span>Total</span>
+                    <span>৳{(total >= freeDeliveryMin ? total : total + 60).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

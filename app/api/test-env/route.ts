@@ -15,7 +15,7 @@ export async function GET() {
     if (supabaseAdmin) {
       try {
         // Try a simple query to test the connection
-        const { data, error } = await supabaseAdmin
+        const { error } = await supabaseAdmin
           .from('users')
           .select('count')
           .limit(1);
