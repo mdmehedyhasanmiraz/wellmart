@@ -314,8 +314,8 @@ export default function Header() {
                   src={siteSettings.logo_url}
                   alt="Wellmart Logo"
                   className="h-11 w-auto"
-                  width={90}
-                  height={90}
+                  width={100}
+                  height={100}
                 />
               </Link>
             </div>

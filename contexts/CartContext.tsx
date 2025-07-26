@@ -46,8 +46,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (!user) return;
 
     try {
-      const userCart = await cartService.getUserCart(user.id);
-      setCart(userCart ? JSON.parse(JSON.stringify(userCart)) : null);
+      // Use the unified API endpoint for better performance
+      const response = await fetch('/api/public/data?type=cart');
+      const result = await response.json();
+      
+      if (result.success && result.cart) {
+        setCart(result.cart);
+      } else {
+        console.error('Error loading user cart:', result.error || 'Unknown error');
+        toast.error('Failed to load cart');
+      }
     } catch (error) {
       console.error('Error loading user cart:', error);
       toast.error('Failed to load cart');

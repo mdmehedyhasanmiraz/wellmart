@@ -10,19 +10,16 @@ export class CartService {
   async getUserCart(userId: string): Promise<CartSummary> {
     const supabase = await this.getSupabase();
     
+    // Use explicit join instead of relying on relationship detection
     const { data: cartItems, error } = await supabase
       .from('user_carts')
       .select(`
-        *,
-        product:products(
-          id,
-          name,
-          slug,
-          price_regular,
-          price_offer,
-          image_urls,
-          stock
-        )
+        id,
+        user_id,
+        product_id,
+        quantity,
+        created_at,
+        updated_at
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
@@ -32,7 +29,44 @@ export class CartService {
       throw new Error('Failed to fetch cart');
     }
 
-    const items = cartItems || [];
+    if (!cartItems || cartItems.length === 0) {
+      return {
+        items: [],
+        total_items: 0,
+        total_price: 0,
+        item_count: 0
+      };
+    }
+
+    // Fetch product details for each cart item
+    const productIds = cartItems.map(item => item.product_id);
+    const { data: products, error: productsError } = await supabase
+      .from('products')
+      .select(`
+        id,
+        name,
+        slug,
+        price_regular,
+        price_offer,
+        image_urls,
+        stock
+      `)
+      .in('id', productIds);
+
+    if (productsError) {
+      console.error('Error fetching products for cart:', productsError);
+      throw new Error('Failed to fetch product details');
+    }
+
+    // Create a map of products by ID for quick lookup
+    const productsMap = new Map(products?.map(p => [p.id, p]) || []);
+
+    // Combine cart items with product details
+    const items = cartItems.map(item => ({
+      ...item,
+      product: productsMap.get(item.product_id)
+    }));
+
     const total_items = items.reduce((sum, item) => sum + item.quantity, 0);
     const total_price = items.reduce((sum, item) => {
       const price = item.product?.price_offer != null && item.product?.price_offer !== 0
@@ -182,29 +216,54 @@ export class CartService {
   async getCartItemByProduct(userId: string, productId: string): Promise<CartItem | null> {
     const supabase = await this.getSupabase();
     
-    const { data, error } = await supabase
+    // First get the cart item
+    const { data: cartItem, error: cartError } = await supabase
       .from('user_carts')
       .select(`
-        *,
-        product:products(
-          id,
-          name,
-          slug,
-          price,
-          image_url,
-          stock_quantity
-        )
+        id,
+        user_id,
+        product_id,
+        quantity,
+        created_at,
+        updated_at
       `)
       .eq('user_id', userId)
       .eq('product_id', productId)
       .single();
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error getting cart item by product:', error);
+    if (cartError && cartError.code !== 'PGRST116') {
+      console.error('Error getting cart item by product:', cartError);
       return null;
     }
 
-    return data;
+    if (!cartItem) {
+      return null;
+    }
+
+    // Then get the product details
+    const { data: product, error: productError } = await supabase
+      .from('products')
+      .select(`
+        id,
+        name,
+        slug,
+        price_regular,
+        price_offer,
+        image_urls,
+        stock
+      `)
+      .eq('id', productId)
+      .single();
+
+    if (productError) {
+      console.error('Error getting product details:', productError);
+      return null;
+    }
+
+    return {
+      ...cartItem,
+      product
+    };
   }
 
   // Merge guest cart with user cart (simplified version)
@@ -219,25 +278,48 @@ export class CartService {
     const supabase = await this.getSupabase();
     const errors: string[] = [];
 
-    const { data: cartItems, error } = await supabase
+    // Get cart items
+    const { data: cartItems, error: cartError } = await supabase
       .from('user_carts')
       .select(`
         quantity,
-        product:products(
-          name,
-          stock_quantity
-        )
+        product_id
       `)
       .eq('user_id', userId);
 
-    if (error) {
-      console.error('Error validating cart:', error);
+    if (cartError) {
+      console.error('Error validating cart:', cartError);
       return { valid: false, errors: ['Failed to validate cart'] };
     }
 
-    (cartItems as unknown as CartItem[])?.forEach((item) => {
-      if (item.quantity > (item.product?.stock || 0)) {
-        errors.push(`${item.product?.name} - Only ${item.product?.stock} available`);
+    if (!cartItems || cartItems.length === 0) {
+      return { valid: true, errors: [] };
+    }
+
+    // Get product details for validation
+    const productIds = cartItems.map(item => item.product_id);
+    const { data: products, error: productsError } = await supabase
+      .from('products')
+      .select(`
+        id,
+        name,
+        stock
+      `)
+      .in('id', productIds);
+
+    if (productsError) {
+      console.error('Error fetching products for validation:', productsError);
+      return { valid: false, errors: ['Failed to validate products'] };
+    }
+
+    // Create a map of products by ID for quick lookup
+    const productsMap = new Map(products?.map(p => [p.id, p]) || []);
+
+    // Validate each cart item
+    cartItems.forEach((item) => {
+      const product = productsMap.get(item.product_id);
+      if (product && item.quantity > product.stock) {
+        errors.push(`${product.name} - Only ${product.stock} available`);
       }
     });
 

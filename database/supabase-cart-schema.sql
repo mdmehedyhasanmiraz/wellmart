@@ -74,7 +74,11 @@ RETURNS DECIMAL AS $$
 DECLARE
     cart_total DECIMAL;
 BEGIN
-    SELECT COALESCE(SUM(uc.quantity * p.price), 0) INTO cart_total
+    SELECT COALESCE(SUM(uc.quantity * CASE 
+        WHEN p.price_offer IS NOT NULL AND p.price_offer > 0 
+        THEN p.price_offer 
+        ELSE p.price_regular 
+    END), 0) INTO cart_total
     FROM public.user_carts uc
     JOIN public.products p ON uc.product_id = p.id
     WHERE uc.user_id = user_uuid;

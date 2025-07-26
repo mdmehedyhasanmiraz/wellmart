@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       case 'coupons':
         return await getCoupons(searchParams);
       case 'analytics':
-        return await getAnalytics(searchParams);
+        return await getAnalytics();
       default:
         return NextResponse.json({ success: false, error: 'Invalid type parameter' }, { status: 400 });
     }
@@ -645,7 +645,7 @@ async function getCoupons(searchParams: URLSearchParams) {
   });
 }
 
-async function getAnalytics(searchParams: URLSearchParams) {
+async function getAnalytics() {
   try {
     // Fetch basic stats from correct tables
     const [

@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ success: false, error: 'Product slug is required' }, { status: 400 });
         }
         return await getProductDetails(slug);
+      case 'cart':
+        return getCartData();
       default:
         return NextResponse.json({ success: false, error: 'Invalid type parameter' }, { status: 400 });
     }
@@ -399,5 +401,119 @@ async function getProductDetails(slug: string) {
   } catch (error) {
     console.error('Error fetching product details:', error);
     return NextResponse.json({ success: false, error: 'Failed to fetch product details' }, { status: 500 });
+  }
+} 
+
+async function getCartData() {
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get the authenticated user first
+    let currentUser = null;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/me`);
+        if (response.ok) {
+          const result = await response.json();
+          currentUser = result.user;
+        }
+      }
+    } catch (error) {
+      console.log('No authenticated user or auth error:', error);
+    }
+
+    if (!currentUser) {
+      return NextResponse.json({
+        success: true,
+        cart: null,
+        message: 'No authenticated user'
+      });
+    }
+
+    // Get cart items
+    const { data: cartItems, error: cartError } = await supabase
+      .from('user_carts')
+      .select(`
+        id,
+        user_id,
+        product_id,
+        quantity,
+        created_at,
+        updated_at
+      `)
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
+
+    if (cartError) {
+      console.error('Error fetching cart items:', cartError);
+      return NextResponse.json({ error: 'Failed to fetch cart' }, { status: 500 });
+    }
+
+    if (!cartItems || cartItems.length === 0) {
+      return NextResponse.json({
+        success: true,
+        cart: {
+          items: [],
+          total_items: 0,
+          total_price: 0,
+          item_count: 0
+        }
+      });
+    }
+
+    // Get product details for cart items
+    const productIds = cartItems.map(item => item.product_id);
+    const { data: products, error: productsError } = await supabase
+      .from('products')
+      .select(`
+        id,
+        name,
+        slug,
+        price_regular,
+        price_offer,
+        image_urls,
+        stock
+      `)
+      .in('id', productIds);
+
+    if (productsError) {
+      console.error('Error fetching products for cart:', productsError);
+      return NextResponse.json({ error: 'Failed to fetch product details' }, { status: 500 });
+    }
+
+    // Create a map of products by ID for quick lookup
+    const productsMap = new Map(products?.map(p => [p.id, p]) || []);
+
+    // Combine cart items with product details
+    const items = cartItems.map(item => ({
+      ...item,
+      product: productsMap.get(item.product_id)
+    }));
+
+    const total_items = items.reduce((sum, item) => sum + item.quantity, 0);
+    const total_price = items.reduce((sum, item) => {
+      const price = item.product?.price_offer != null && item.product?.price_offer !== 0
+        ? item.product.price_offer
+        : item.product?.price_regular || 0;
+      return sum + (item.quantity * price);
+    }, 0);
+
+    const cart = {
+      items,
+      total_items,
+      total_price,
+      item_count: items.length
+    };
+
+    return NextResponse.json({
+      success: true,
+      cart
+    });
+  } catch (error) {
+    console.error('Error fetching cart data:', error);
+    return NextResponse.json({ error: 'Failed to fetch cart data' }, { status: 500 });
   }
 } 
